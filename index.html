@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#2C1810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CB Checklist">
+<link rel="manifest" href="manifest.json">
+<title>Casa de Bolos | Checklist</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cr:#FDF6EC;--wm:#FEFCF8;--br:#2C1810;--md:#6B3D2E;--lt:#C17F5A;
+  --gd:#D4A843;--gn:#27AE60;--gnb:#EAFAF1;--rd:#C0392B;--or:#E67E22;
+  --r:14px;--rs:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--cr);font-family:'DM Sans',sans-serif;color:var(--br);min-height:100vh;}
+.page{display:none;min-height:100vh;}
+.page.on{display:block;animation:fu .3s ease;}
+@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.hdr{background:var(--br);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+.logo{font-family:'DM Serif Display',serif;color:var(--gd);font-size:1.15rem;}
+.logo small{color:rgba(255,255,255,.4);font-size:.6rem;display:block;letter-spacing:1.5px;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+.hdr-user{color:rgba(255,255,255,.7);font-size:.75rem;}
+.hdr-logout{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);padding:5px 10px;border-radius:20px;font-size:.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.tabs{display:flex;background:var(--wm);border-bottom:2px solid #E8D8C8;position:sticky;top:52px;z-index:99;}
+.tab{flex:1;padding:10px 4px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:.65rem;font-weight:600;color:var(--lt);cursor:pointer;text-transform:uppercase;letter-spacing:.5px;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;}
+.tab.on{color:var(--br);border-bottom-color:var(--gd);}
+
+/* LOGIN */
+#pg-login{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;background:var(--br);}
+.login-card{background:var(--wm);border-radius:20px;padding:28px 24px;width:100%;max-width:380px;}
+.login-title{font-family:'DM Serif Display',serif;font-size:1.3rem;margin-bottom:20px;}
+.lf-group{margin-bottom:14px;}
+.lf-label{font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--md);margin-bottom:6px;display:block;}
+.lf-input{width:100%;padding:12px 14px;border-radius:var(--rs);border:2px solid #E8D8C8;background:#FFF;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--br);outline:none;transition:border .2s;}
+.lf-input:focus{border-color:var(--gd);}
+.login-err{color:var(--rd);font-size:.78rem;margin-bottom:12px;display:none;}
+.login-err.show{display:block;}
+
+/* BUTTONS */
+.btn{display:block;width:100%;background:var(--br);color:var(--gd);border:none;border-radius:var(--rs);padding:14px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn:hover{background:var(--md);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-outline{background:transparent;color:var(--md);border:2px solid #E8D8C8;border-radius:var(--rs);padding:11px 16px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;}
+
+/* BODY */
+.body-wrap{padding:20px 16px 100px;max-width:540px;margin:0 auto;}
+.pg-title{font-family:'DM Serif Display',serif;font-size:1.6rem;line-height:1.2;margin-bottom:4px;}
+.pg-sub{color:var(--lt);font-size:.83rem;margin-bottom:20px;}
+.fg{margin-bottom:14px;}
+.fl{font-size:.68rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--md);margin-bottom:6px;display:block;}
+select,input[type=text],input[type=password],input[type=tel]{width:100%;padding:11px 13px;border-radius:var(--rs);border:2px solid #E8D8C8;background:var(--wm);font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--br);outline:none;transition:border .2s;-webkit-appearance:none;}
+select:focus,input:focus{border-color:var(--gd);}
+.sw{position:relative;}
+.sw::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--lt);pointer-events:none;}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;}
+@media(max-width:360px){.cards{grid-template-columns:1fr 1fr;}}
+.card{border:2px solid #E8D8C8;border-radius:var(--rs);padding:11px 8px;cursor:pointer;background:var(--wm);transition:all .2s;text-align:center;}
+.card:hover{border-color:var(--gd);}
+.card.sel{border-color:var(--gd);background:linear-gradient(135deg,#FFF9E6,#FEF3D0);box-shadow:0 0 0 3px rgba(212,168,67,.15);}
+.cbar{height:4px;border-radius:99px;margin-bottom:7px;}
+.cicon{font-size:1.4rem;margin-bottom:3px;}
+.cname{font-size:.68rem;font-weight:600;color:var(--br);line-height:1.3;}
+.ccnt{font-size:.58rem;color:var(--lt);margin-top:2px;}
+.cat-lbl{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--md);margin:14px 0 7px;padding:3px 9px;background:#F0E4D4;border-radius:20px;display:inline-block;}
+
+/* STATUS BAR */
+.sheets-bar{display:flex;align-items:center;gap:8px;background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--rs);padding:9px 13px;margin-bottom:14px;font-size:.75rem;}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dg{background:var(--gn);}.dr{background:var(--rd);}.do{background:var(--or);}
+.stext{flex:1;color:var(--md);}
+
+/* CHECKLIST */
+#pg-cl-wrap{max-width:540px;margin:0 auto;}
+.cl-hdr{padding:14px 18px;display:flex;align-items:center;gap:11px;}
+.cl-back{border:none;background:rgba(255,255,255,.15);color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cl-name{font-family:'DM Serif Display',serif;color:var(--gd);font-size:1.1rem;}
+.cl-sub{color:rgba(255,255,255,.5);font-size:.7rem;margin-top:1px;}
+.prog-wrap{background:var(--wm);padding:11px 18px;border-bottom:1px solid #E8D8C8;}
+.prog-row{display:flex;justify-content:space-between;font-size:.68rem;font-weight:600;color:var(--md);margin-bottom:5px;text-transform:uppercase;letter-spacing:.7px;}
+.prog-track{height:5px;background:#E8D8C8;border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--lt),var(--gd));border-radius:99px;transition:width .4s ease;}
+.ibody{padding:14px 13px 120px;}
+.stitle{font-family:'DM Serif Display',serif;font-size:.95rem;color:var(--md);margin:18px 0 9px;padding-left:9px;border-left:3px solid var(--gd);}
+.item{background:var(--wm);border-radius:var(--rs);border:2px solid #EDE4D8;margin-bottom:8px;overflow:hidden;transition:border .2s;}
+.item.done{border-color:var(--gn);}
+.item-top{display:flex;align-items:flex-start;padding:11px 12px;gap:10px;cursor:pointer;}
+.ichk{width:23px;height:23px;border-radius:50%;border:2.5px solid #CCC;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .2s;font-size:.8rem;}
+.item.done .ichk{background:var(--gn);border-color:var(--gn);color:white;}
+.itxt{flex:1;font-size:.83rem;line-height:1.4;color:var(--br);}
+.itxt.alrt{font-weight:700;color:var(--rd);}
+.pbadge{font-size:.6rem;background:#FFF3E0;color:var(--lt);border:1px solid #F0D8C0;border-radius:20px;padding:2px 6px;font-weight:600;flex-shrink:0;margin-top:2px;}
+.item.done .pbadge{background:var(--gnb);color:var(--gn);border-color:#B8EFD0;}
+.item-extras{border-top:1px dashed #DDD;padding:10px 12px;background:#FAFAF8;display:none;}
+.item-extras.show{display:block;}
+.ex-lbl{font-size:.65rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
+.obs-input{width:100%;padding:9px 11px;border-radius:8px;border:2px solid #E8D8C8;background:#FFF;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--br);outline:none;resize:none;transition:border .2s;min-height:60px;}
+.obs-input:focus{border-color:var(--gd);}
+.count-row{display:flex;align-items:center;gap:10px;margin-top:8px;background:#FFF9F0;border-radius:8px;padding:10px 12px;border:1px solid #F0D8A0;}
+.count-label{font-size:.78rem;color:var(--md);flex:1;font-weight:500;}
+.count-input{width:80px;padding:7px 10px;border-radius:8px;border:2px solid #E8D8C8;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;color:var(--br);text-align:center;outline:none;}
+.count-input:focus{border-color:var(--gd);}
+.count-unit{font-size:.72rem;color:var(--lt);font-weight:600;}
+.count-alert{font-size:.68rem;color:var(--rd);font-weight:700;margin-top:4px;display:none;}
+.count-alert.show{display:block;}
+.uarea{border:2px dashed var(--gd);border-radius:var(--rs);padding:13px;text-align:center;cursor:pointer;background:#FFFDF5;position:relative;margin-top:10px;}
+.uarea input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.uicon{font-size:1.3rem;margin-bottom:2px;}
+.utxt{font-size:.7rem;color:var(--md);}
+.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px;}
+.thumb{aspect-ratio:1;border-radius:7px;overflow:hidden;position:relative;border:2px solid var(--gn);}
+.thumb img{width:100%;height:100%;object-fit:cover;}
+.thrm{position:absolute;top:2px;right:2px;background:rgba(192,57,43,.85);color:white;border:none;border-radius:50%;width:17px;height:17px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.botbar{position:fixed;bottom:0;left:0;right:0;background:var(--wm);border-top:1px solid #E8D8C8;padding:11px 15px;box-shadow:0 -4px 16px rgba(44,24,16,.1);display:flex;gap:8px;max-width:540px;margin:0 auto;z-index:150;}
+
+/* SUCCESS */
+.ok-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:36px 20px;}
+.ok-icon{width:76px;height:76px;background:var(--gn);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:16px;box-shadow:0 0 0 12px rgba(39,174,96,.12);animation:pop .4s cubic-bezier(.175,.885,.32,1.275);}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.ok-title{font-family:'DM Serif Display',serif;font-size:1.7rem;margin-bottom:7px;}
+.ok-sub{color:var(--lt);font-size:.83rem;line-height:1.5;max-width:260px;margin-bottom:14px;}
+.ok-details{background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:13px 17px;margin:8px 0;text-align:left;width:100%;max-width:360px;}
+.ok-row{display:flex;justify-content:space-between;font-size:.8rem;padding:4px 0;border-bottom:1px solid #F0E8DC;}
+.ok-row:last-child{border:none;}
+.ok-row span:first-child{color:var(--md);}
+.ok-row span:last-child{font-weight:600;}
+
+/* HISTÓRICO */
+.hist-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.hf{padding:6px 12px;border-radius:20px;border:1.5px solid #E8D8C8;background:var(--wm);font-size:.7rem;font-weight:600;cursor:pointer;color:var(--md);font-family:'DM Sans',sans-serif;}
+.hf.on{background:var(--br);color:var(--gd);border-color:var(--br);}
+.hist-item{background:var(--wm);border-radius:var(--rs);border:1px solid #E8D8C8;margin-bottom:8px;overflow:hidden;}
+.hi-top{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;}
+.hi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.hi-info{flex:1;}
+.hi-title{font-weight:600;font-size:.83rem;color:var(--br);}
+.hi-meta{font-size:.7rem;color:var(--lt);margin-top:2px;}
+.hi-pct{font-size:.85rem;font-weight:700;}
+.hi-pct.g{color:var(--gn);}.hi-pct.y{color:var(--or);}.hi-pct.r{color:var(--rd);}
+.hi-chevron{color:var(--lt);font-size:.8rem;transition:transform .2s;}
+.hi-chevron.open{transform:rotate(180deg);}
+.hi-detail{display:none;border-top:1px solid #F0E8DC;padding:12px 13px;background:#FAFAF8;}
+.hi-detail.show{display:block;}
+.hid-row{display:flex;gap:8px;padding:5px 0;font-size:.78rem;border-bottom:1px solid #F5EFE8;align-items:flex-start;}
+.hid-row:last-child{border:none;}
+.hid-status{flex-shrink:0;font-size:.8rem;}
+.hid-text{flex:1;color:var(--br);line-height:1.35;}
+.hid-obs{font-size:.72rem;color:var(--md);font-style:italic;margin-top:2px;}
+.hid-photos{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+.hid-photo{width:60px;height:60px;border-radius:6px;object-fit:cover;border:1px solid #DDD;cursor:pointer;}
+.empty-hist{text-align:center;color:var(--lt);font-size:.83rem;padding:32px 16px;}
+.loading-hist{text-align:center;color:var(--lt);font-size:.83rem;padding:32px 16px;}
+
+/* ADMIN */
+.admin-section{background:var(--wm);border-radius:var(--r);border:1px solid #E8D8C8;padding:18px;margin-bottom:16px;}
+.admin-section-title{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:14px;}
+.user-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F0E8DC;}
+.user-row:last-child{border:none;}
+.user-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:white;flex-shrink:0;}
+.user-info{flex:1;}
+.user-name{font-size:.85rem;font-weight:600;}
+.user-meta{font-size:.7rem;color:var(--lt);}
+.user-role{font-size:.65rem;padding:2px 8px;border-radius:20px;font-weight:700;}
+.role-admin{background:#FFF9E6;color:var(--gd);border:1px solid #F0D8A0;}
+.role-user{background:var(--gnb);color:var(--gn);border:1px solid #B8EFD0;}
+.user-del{background:none;border:none;color:var(--rd);cursor:pointer;font-size:.85rem;padding:4px;}
+.add-user-form{border-top:1px solid #E8D8C8;padding-top:14px;margin-top:4px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.badge-red{background:#FDEDEC;color:var(--rd);border:1px solid #F5B7B1;border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;}
+.badge-green{background:var(--gnb);color:var(--gn);border:1px solid #B8EFD0;border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;}
+
+/* MODAL / OVERLAY */
+.modal-bg{position:fixed;inset:0;background:rgba(44,24,16,.6);z-index:8000;display:none;align-items:flex-end;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--wm);border-radius:20px 20px 0 0;padding:22px 18px;width:100%;max-width:540px;animation:slideUp .3s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.overlay{position:fixed;inset:0;background:rgba(44,24,16,.55);display:none;align-items:center;justify-content:center;z-index:9999;}
+.overlay.on{display:flex;}
+.ov-box{background:var(--wm);border-radius:var(--r);padding:26px 22px;text-align:center;max-width:250px;}
+.spinner{width:42px;height:42px;border:4px solid #E8D8C8;border-top-color:var(--gd);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 13px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--br);color:var(--gd);padding:9px 18px;border-radius:99px;font-size:.76rem;font-weight:600;opacity:0;transition:all .3s;white-space:nowrap;z-index:9999;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <div class="ov-box"><div class="spinner"></div><div style="font-size:.85rem;color:var(--md)"><strong style="color:var(--br);display:block;margin-bottom:3px;" id="ov-txt">Enviando...</strong>Aguarde</div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- ZOOM FOTO -->
+<div class="modal-bg" id="zoom-modal" onclick="closeZoom()">
+  <div style="padding:20px;max-width:520px;width:100%;">
+    <img id="zoom-img" style="width:100%;border-radius:12px;max-height:80vh;object-fit:contain;">
+  </div>
+</div>
+
+<!-- ════ LOGIN ════ -->
+<div class="page on" id="pg-login">
+  <div style="background:var(--br);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;">
+    <div style="font-family:'DM Serif Display',serif;color:var(--gd);font-size:2rem;text-align:center;margin-bottom:4px;">🎂 Casa de Bolos</div>
+    <div style="color:rgba(255,255,255,.4);font-size:.72rem;letter-spacing:2px;margin-bottom:32px;">CONTROLE OPERACIONAL</div>
+    <div class="login-card">
+      <div class="login-title">Entrar no sistema</div>
+      <div class="lf-group"><span class="lf-label">👤 Usuário</span><input class="lf-input" type="text" id="login-user" placeholder="Digite seu usuário" autocomplete="username"></div>
+      <div class="lf-group"><span class="lf-label">🔒 Senha</span><input class="lf-input" type="password" id="login-pass" placeholder="Digite sua senha" autocomplete="current-password"></div>
+      <div class="login-err" id="login-err">Usuário ou senha incorretos</div>
+      <button class="btn" onclick="doLogin()">Entrar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ APP ════ -->
+<div class="page" id="pg-app">
+  <div class="hdr">
+    <div class="logo">Casa de Bolos<small>CONTROLE OPERACIONAL</small></div>
+    <div class="hdr-right">
+      <span class="hdr-user" id="hdr-user-name"></span>
+      <button class="hdr-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+  <div class="tabs" id="main-tabs">
+    <button class="tab on" onclick="goTab('sel')" id="tab-sel">📋 Checklist</button>
+    <button class="tab" onclick="goTab('hist')" id="tab-hist">📂 Histórico</button>
+    <button class="tab" onclick="goTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
+  </div>
+
+  <!-- SELEÇÃO -->
+  <div style="display:none" id="scr-sel">
+  <div class="body-wrap">
+    <div class="sheets-bar"><div class="sdot dg"></div><div class="stext">Firebase conectado ✅</div></div>
+    <h1 class="pg-title">Qual checklist<br>vai fazer?</h1>
+    <p class="pg-sub">Selecione a loja e o tipo de verificação</p>
+    <div class="fg"><span class="fl">📍 Loja</span>
+      <div class="sw"><select id="s-store" onchange="updBtn()">
+        <option value="">Escolha a loja...</option>
+        <option value="meier">Méier</option>
+        <option value="tijuca">Tijuca</option>
+        <option value="copacabana">Copacabana</option>
+        <option value="botafogo">Botafogo</option>
+        <option value="ilha">Ilha do Governador</option>
+      </select></div>
+    </div>
+    <div class="fg"><span class="fl">📋 Tipo de Checklist</span>
+      <div class="cat-lbl">🏪 Atendimento Diário</div><div class="cards" id="cards-atend"></div>
+      <div class="cat-lbl">🍳 Cozinha Diária</div><div class="cards" id="cards-coz"></div>
+      <div class="cat-lbl">📆 Rotinas Semanais</div><div class="cards" id="cards-semanal"></div>
+      <div class="cat-lbl">📊 Controles Gerais</div><div class="cards" id="cards-geral"></div>
+    </div>
+    <button class="btn" id="btn-start" disabled onclick="startCL()">Iniciar Checklist →</button>
+  </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div style="display:none" id="scr-cl">
+  <div id="pg-cl-wrap">
+    <div class="cl-hdr" id="cl-hdr" style="background:var(--br);">
+      <button class="cl-back" onclick="goBack()">←</button>
+      <div><div class="cl-name" id="cl-title">—</div><div class="cl-sub" id="cl-sub">—</div></div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Progresso</span><span id="prog-txt">0/0</span></div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="ibody" id="ibody"></div>
+    <div class="botbar">
+      <button class="btn-outline" onclick="goBack()">← Voltar</button>
+      <button class="btn" id="btn-send" onclick="sendCL()">Enviar</button>
+    </div>
+  </div>
+  </div>
+
+  <!-- SUCESSO -->
+  <div style="display:none" id="scr-ok">
+  <div class="ok-wrap">
+    <div class="ok-icon">✓</div>
+    <h2 class="ok-title">Enviado!</h2>
+    <p class="ok-sub">Checklist salvo no Firebase e disponível para todos.</p>
+    <div class="ok-details" id="okd"></div>
+    <button class="btn" style="max-width:280px;margin-top:10px;" onclick="newCL()">Novo Checklist</button>
+  </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div style="display:none" id="scr-hist">
+  <div class="body-wrap">
+    <h1 class="pg-title">Histórico</h1>
+    <p class="pg-sub" id="hist-sub">Carregando...</p>
+    <div class="hist-filters" id="hist-filters"></div>
+    <div id="hist-list"><div class="loading-hist">⏳ Carregando registros do Firebase...</div></div>
+  </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div style="display:none" id="scr-admin">
+  <div class="body-wrap">
+    <h1 class="pg-title">Admin</h1>
+    <p class="pg-sub">Gerencie usuários e configurações</p>
+    <div class="admin-section">
+      <div class="admin-section-title">👥 Usuários Cadastrados</div>
+      <div id="users-list"></div>
+      <div class="add-user-form">
+        <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">+ Novo Usuário</div>
+        <div class="form-row">
+          <div><span class="fl">Login</span><input type="text" id="nu-login" placeholder="ex: joao.silva"></div>
+          <div><span class="fl">Senha</span><input type="password" id="nu-pass" placeholder="mínimo 4 dígitos"></div>
+        </div>
+        <div class="form-row">
+          <div><span class="fl">Nome completo</span><input type="text" id="nu-name" placeholder="João Silva"></div>
+          <div><span class="fl">Loja</span>
+            <div class="sw"><select id="nu-store">
+              <option value="todas">Todas as lojas</option>
+              <option value="meier">Méier</option>
+              <option value="tijuca">Tijuca</option>
+              <option value="copacabana">Copacabana</option>
+              <option value="botafogo">Botafogo</option>
+              <option value="ilha">Ilha do Governador</option>
+            </select></div>
+          </div>
+        </div>
+        <button class="btn" onclick="addUser()">Cadastrar Usuário</button>
+      </div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-title">📊 Estatísticas Firebase</div>
+      <div id="admin-stats" style="font-size:.83rem;color:var(--md);">Carregando...</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<script type="module">
+// ═══════════════════════════════════════════════
+//  FIREBASE CONFIG
+// ═══════════════════════════════════════════════
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDWrPl9XrcFGQB_X13Pa1RC3nwqUz2Oj-g",
+  authDomain: "casa-de-bolos-checklist.firebaseapp.com",
+  projectId: "casa-de-bolos-checklist",
+  storageBucket: "casa-de-bolos-checklist.firebasestorage.app",
+  messagingSenderId: "912637980142",
+  appId: "1:912637980142:web:6c10825f5ac055e75f32ff"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ═══════════════════════════════════════════════
+//  CONSTANTES
+// ═══════════════════════════════════════════════
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx5ZdcxpuMSlIB2Jivhai-tKNXUEVjEUUiyI33LYnkumKLxxm0LXSp-9vvPQeqj11P18g/exec';
+const WPP_NUM   = '5521982792825';
+const WPP_KEY   = '2540368';
+const STORES    = {meier:'Méier',tijuca:'Tijuca',copacabana:'Copacabana',botafogo:'Botafogo',ilha:'Ilha do Governador'};
+
+// ═══════════════════════════════════════════════
+//  USUÁRIOS MASTER
+// ═══════════════════════════════════════════════
+const MASTER_USERS = [
+  {login:'admin',      pass:'admin123',  name:'Marcio (Admin)',  store:'todas', role:'admin'},
+  {login:'meier',      pass:'35807339',  name:'Loja Meier',      store:'meier', role:'user'},
+  {login:'botafogo',   pass:'39888893',  name:'Loja Botafogo',   store:'botafogo', role:'user'},
+  {login:'copacabana', pass:'39865914',  name:'Loja Copacabana', store:'copacabana', role:'user'},
+  {login:'tijuca',     pass:'31739558',  name:'Loja Tijuca',     store:'tijuca', role:'user'},
+  {login:'ilha',       pass:'21371698',  name:'Loja Ilha',       store:'ilha', role:'user'},
+  {login:'helen',      pass:'991330105', name:'Helen Mendes',    store:'todas', role:'user'},
+  {login:'fabiola',    pass:'979766647', name:'Fabiola Felinto', store:'todas', role:'user'},
+];
+
+function getUsers(){
+  const local = JSON.parse(localStorage.getItem('cb_users')||'[]');
+  const merged = [...MASTER_USERS];
+  local.forEach(u=>{ if(!merged.find(m=>m.login===u.login)) merged.push(u); });
+  return merged;
+}
+function saveUsers(u){
+  const soLocal = u.filter(x=>!MASTER_USERS.find(m=>m.login===x.login));
+  localStorage.setItem('cb_users',JSON.stringify(soLocal));
+}
+
+// ═══════════════════════════════════════════════
+//  CHECKLISTS
+// ═══════════════════════════════════════════════
+const CL={
+  ab_atend:{cat:'atend',name:'Abertura Atendimento',icon:'🌅',color:'#D4A843',sections:[
+    {title:'Apresentação Pessoal',items:[
+      {t:'Uniforme limpo, sapatos limpos, sem brincos, piercing, unhas grandes, anéis e cordão',p:true},
+      {t:'Verificar se máquinas de cartão e telefone estão carregados',p:false},
+      {t:'Ligar o computador e abrir o sistema de notas',p:false},
+      {t:'FOTO GERAL DO ATENDIMENTO: balcão, geladeira de pote, armário de velas e BoloBag, armário de papel acoplado — tudo limpo e organizado',p:true},
+    ]},
+    {title:'Contagem de Embalagens — Abertura',items:[
+      {t:'Sacola média',p:true,count:false,min:20},
+      {t:'Sacola grande',p:true,count:false,min:20},
+      {t:'Embalagem de presente',p:true,count:true,min:20},
+      {t:'Embalagem 32',p:true,count:true,min:20},
+      {t:'Embalagem 50',p:true,count:true,min:20},
+      {t:'Embalagem 56',p:true,count:true,min:20},
+      {t:'Embalagem iFood',p:true,count:true,min:20},
+      {t:'Papel acoplado (rolos)',p:true,count:true,min:5},
+      {t:'Velas',p:true,count:true,min:20},
+      {t:'Granulado (potes)',p:true,count:true,min:5},
+      {t:'BoloBag',p:true,count:true,min:20},
+    ]},
+    {title:'Preparo da Vitrine',items:[
+      {t:'Tirar coberturas de chocolate, ganache, aniversário de chocolate da geladeira, doce de leite e encher saco de churros',p:true},
+      {t:'Separar 3 espátulas, copos de cobertura, balança, reabastecer papel acoplado, granulado, sacola média e grande, embalagem iFood, colher, guardanapo, faca, velas e BoloBag',p:true},
+      {t:'Verificar validade dos bolos e bolos de pote na geladeira',p:false},
+      {t:'Olhar bolos e potes prontos (sobra do dia anterior) e atualizar iFood e 99Food',p:true},
+    ]},
+    {title:'Cardápio & Sistemas',items:[
+      {t:'Olhar caderno de produção e atualizar cardápio Web, iFood e 99Food',p:false},
+      {t:'Separar as encomendas dos bolos que já estão prontos',p:false},
+      {t:'Começar a responder clientes do WhatsApp',p:false},
+      {t:'Fazer lista de transmissão até às 10:00',p:false},
+    ]},
+    {title:'Pós-Venda',items:[
+      {t:'Realizar pós-venda e verificar reclamações. Problema não resolvível: encaminhar ao responsável via WhatsApp IMEDIATAMENTE',p:false},
+    ]},
+  ]},
+  delivery:{cat:'atend',name:'Rotina Delivery',icon:'🛵',color:'#2471A3',sections:[
+    {title:'Abertura & Preparo',items:[
+      {t:'Limpeza da mesa de apoio, abastecimento com papel acoplado, sacolas, etiquetas. Verificar e abastecer impressora',p:true},
+      {t:'Separar pedidos agendados. Verificar bolos para montagem e começar a montar',p:false},
+      {t:'Acessar Cardápio Web, iFood e 99Food e atualizar os sabores disponíveis',p:false},
+      {t:'Revisar mensagens WhatsApp — NENHUM cliente pode ficar sem resposta',p:false},
+      {t:'Confirmar se entregas reservadas são para aquele horário e data',p:false},
+    ]},
+    {title:'Operação de Entregas',items:[
+      {t:'Liberar entregadores com pedidos separados e confirmar forma de pagamento',p:false},
+      {t:'Registrar no Cardápio Web os pedidos que cada entregador está saindo e dar saída no sistema',p:false},
+      {t:'ENTREGADORES SÓ PODEM SAIR COM MÁQUINAS CARREGADAS',p:false},
+      {t:'A cada retorno do entregador: OBRIGATÓRIO fechar as entregas. PROIBIDO fechar só no fim do dia',p:false},
+    ]},
+    {title:'Fechamento Delivery',items:[
+      {t:'Salvar contato de novos clientes todos os dias',p:false},
+      {t:'Fechamento dos entregadores no caderno: coberturas, embalagens, taxas acima de 5km, trocas, quantidade de bolos',p:true},
+      {t:'Limpeza da mesa de apoio, guardar papel acoplado, sacolas, embalagens',p:true},
+      {t:'Lançar todos os pedidos no sistema',p:false},
+    ]},
+  ]},
+  fe_atend:{cat:'atend',name:'Fechamento Atendimento',icon:'🌙',color:'#7D3C98',sections:[
+    {title:'Vitrine & Produtos',items:[
+      {t:'Abastecimento da vitrine — bolos do dia anterior devem ser vendidos PRIMEIRO',p:true},
+      {t:'Verificar geladeira de bolos de pote',p:false},
+      {t:'Montagem dos bolos para exposição no balcão',p:true},
+      {t:'Atualização iFood, 99Food e Cardápio Web',p:false},
+      {t:'Loja com mais de 2 clientes no balcão: PEDIR AJUDA IMEDIATAMENTE',p:false},
+      {t:'Verificar bolos para desenformar e colocar no balcão/geladeira de pote',p:false},
+      {t:'PROIBIDO dar troco aos entregadores',p:false},
+    ]},
+    {title:'Financeiro',items:[
+      {t:'Tirar as notas fiscais (somar cartão, PIX e iFood)',p:true},
+      {t:'Deixar todos os telefones e máquinas de cartão carregando',p:false},
+      {t:'NÃO DEIXAR PAPÉIS EM CIMA DAS MESAS',p:false},
+    ]},
+    {title:'Limpeza',items:[
+      {t:'Arrumar armário do papel acoplado e armário do computador',p:false},
+      {t:'Limpeza do armário de estoque dos bolos de delivery e embalagens',p:true},
+      {t:'Limpeza da geladeira de pote por dentro',p:true},
+      {t:'Limpeza do chão do atendimento e da cozinha',p:true},
+      {t:'Lavar os utensílios utilizados no atendimento',p:false},
+      {t:'Mesa do delivery, mesa de apoio, lixeira e paredes limpas',p:true},
+    ]},
+    {title:'Contagem de Embalagens — Fechamento',items:[
+      {t:'Sacola média',p:true,count:false,min:20},
+      {t:'Sacola grande',p:true,count:false,min:20},
+      {t:'Embalagem de presente',p:true,count:true,min:20},
+      {t:'Embalagem 32',p:true,count:true,min:20},
+      {t:'Embalagem 50',p:true,count:true,min:20},
+      {t:'Embalagem 56',p:true,count:true,min:20},
+      {t:'Embalagem iFood',p:true,count:true,min:20},
+      {t:'Papel acoplado (rolos)',p:true,count:true,min:5},
+      {t:'Velas',p:true,count:true,min:20},
+      {t:'Granulado (potes)',p:true,count:true,min:5},
+      {t:'BoloBag',p:true,count:true,min:20},
+    ]},
+    {title:'Preparo para Amanhã',items:[
+      {t:'Guardar coberturas na geladeira com etiqueta de validade',p:false},
+      {t:'Verificar quais coberturas estão faltando para produção do dia seguinte',p:false},
+      {t:'Se o lixeiro não vier buscar o lixo: LIGAR IMEDIATAMENTE!',p:false},
+    ]},
+  ]},
+  ab_coz:{cat:'coz',name:'Abertura Cozinha',icon:'👨‍🍳',color:'#E67E22',sections:[
+    {title:'Início do Turno',items:[
+      {t:'Bater o ponto assim que começar a trabalhar',p:false},
+      {t:'Usar uniforme limpo da produção na cozinha',p:true},
+      {t:'Verificar se chegou matéria prima e armazenar pela validade',p:false},
+      {t:'Pegar utensílios do dia: faca, espátula, bacia, colher, ralador, potes',p:false},
+      {t:'LAVAR O MAQUINÁRIO antes de usar',p:false},
+    ]},
+    {title:'Verificações & Forno',items:[
+      {t:'Verificar na geladeira produtos abertos para uso imediato',p:false},
+      {t:'Se necessário: cobertura de chocolate FOGO MÉDIO por 40 min, depois desligar e manter por mais 20 min',p:false},
+      {t:'LIGAR O FORNO somente na hora de colocar os bolos — chama em ALTURA MÉDIA',p:false},
+      {t:'FORNO É RESPONSABILIDADE DE TODOS: verificar temperatura 150° constantemente',p:false},
+    ]},
+    {title:'Produção',items:[
+      {t:'Verificar a produção do dia e seguir a ordem correta',p:false},
+      {t:'Durante a produção: mesa limpa e organizada',p:true},
+      {t:'Não começar NENHUMA tarefa do dia posterior sem terminar as tarefas do dia',p:false},
+      {t:'OBRIGAÇÃO de saber os sabores produzidos e marcar bolos de mesma massa com sabores diferentes',p:true},
+      {t:'LOJA LIMPA DURANTE A PRODUÇÃO: chão limpo, matérias primas guardadas, potes fechados',p:true},
+    ]},
+  ]},
+  fe_coz:{cat:'coz',name:'Fechamento Cozinha',icon:'🧹',color:'#27AE60',sections:[
+    {title:'Limpeza de Equipamentos',items:[
+      {t:'Fogão, batedeira, forno, exaustor, liquidificadores, mesas e utensílios LIMPOS',p:true},
+      {t:'Lixeiras limpas diariamente',p:false},
+      {t:'Limpar geladeira e deixar organizada',p:true},
+      {t:'Tanque de apoio limpo e sem nada dentro',p:false},
+      {t:'Tirar grade dos ralos para limpeza e recolocar',p:false},
+    ]},
+    {title:'Preparo para Amanhã',items:[
+      {t:'Formas untadas na quantidade correta?',p:false},
+      {t:'Preparos feitos: queijo ralado, cenoura, banana, maçã, goiabada, gotas gelando, caramelo, farofa, tortas montadas',p:true},
+      {t:'Guardar matérias primas que sobraram com DATA DE VALIDADE',p:false},
+      {t:'Abastecer estoque diário',p:false},
+      {t:'Deixar 2 luvas de molho para lavar no dia seguinte',p:false},
+    ]},
+    {title:'Verificações Finais',items:[
+      {t:'Conferir validades: geladeira, potes embaixo da mesa e estoque diário',p:false},
+      {t:'Verificar se tem alguma fruta podre na fruteira',p:false},
+      {t:'Deixar balança carregando para o dia seguinte',p:false},
+      {t:'DESLIGAR O GÁS',p:false},
+      {t:'Abastecer dispenser de papel toalha, álcool em gel e detergente',p:false},
+      {t:'Guardar TODO material de limpeza no estoque próprio',p:false},
+    ]},
+  ]},
+  limp_seg:{cat:'semanal',name:'Limpeza — Segunda',icon:'📅',color:'#1A5276',sections:[{title:'Segunda-feira',items:[
+    {t:'Limpeza completa da geladeira / câmara fria',p:true},
+    {t:'Limpeza do carrinho de frutas',p:true},
+    {t:'Sanitizar frutas',p:true},
+    {t:'Limpeza das prateleiras do estoque',p:true},
+  ]}]},
+  limp_ter:{cat:'semanal',name:'Limpeza — Terça',icon:'📅',color:'#1F618D',sections:[{title:'Terça-feira',items:[
+    {t:'Limpeza do forno por dentro e por fora',p:true},
+    {t:'Limpeza das mesas de apoio',p:true},
+    {t:'Limpeza do banheiro / vestiário',p:true},
+    {t:'Limpeza completa do fogão',p:true},
+    {t:'Limpeza do exaustor',p:true},
+  ]}]},
+  limp_qua:{cat:'semanal',name:'Limpeza — Quarta',icon:'📅',color:'#2874A6',sections:[{title:'Quarta-feira',items:[
+    {t:'Arrumar e organizar estoque completo',p:true},
+    {t:'Limpar carrinhos de transporte',p:true},
+  ]}]},
+  limp_qui:{cat:'semanal',name:'Limpeza — Quinta',icon:'📅',color:'#2E86C1',sections:[{title:'Quinta-feira',items:[
+    {t:'Limpeza das mesas de apoio',p:true},
+    {t:'Limpeza das paredes da cozinha',p:true},
+    {t:'Limpeza do banheiro / vestiário',p:true},
+  ]}]},
+  limp_sex:{cat:'semanal',name:'Limpeza — Sexta',icon:'📅',color:'#3498DB',sections:[{title:'Sexta-feira',items:[
+    {t:'Manutenção geral: verificar todos os pontos da semana e corrigir pendências',p:true},
+    {t:'Loja em perfeitas condições de higiene para o fim de semana',p:true},
+  ]}]},
+  estoque_sab:{cat:'semanal',name:'Estoque — Sábado',icon:'📦',color:'#784212',sections:[{title:'Contagem do Estoque',items:[
+    {t:'Contar e registrar farinhas (trigo, fubá, tapioca, etc.)',p:true},
+    {t:'Contar e registrar açúcar, achocolatado, chocolate em pó',p:false},
+    {t:'Contar e registrar leite condensado, creme de leite, leite de coco',p:false},
+    {t:'Contar e registrar ovos',p:false},
+    {t:'Contar e registrar coberturas (chocolate, ganache, doce de leite)',p:true},
+    {t:'Contar e registrar embalagens (sacolas, caixas, papel acoplado, etiquetas)',p:false},
+    {t:'Contar e registrar velas, granulado e BoloBag',p:false},
+    {t:'Contar e registrar frutas em estoque',p:true},
+    {t:'Registrar itens em falta para compra da semana seguinte',p:false},
+    {t:'Foto geral do estoque organizado',p:true},
+  ]}]},
+  custo_agua:{cat:'geral',name:'Marcação Água',icon:'💧',color:'#1ABC9C',sections:[{title:'Marcação de Água — Toda Segunda',items:[
+    {t:'Registrar leitura atual do hidrômetro com foto',p:true},
+    {t:'Comparar com leitura da semana anterior e registrar consumo',p:false},
+    {t:'Verificar se há vazamentos visíveis',p:false},
+    {t:'Registrar no caderno: data + leitura + consumo',p:false},
+  ]}]},
+  custo_gas:{cat:'geral',name:'Marcação Gás',icon:'🔥',color:'#E74C3C',sections:[{title:'Marcação de Gás — Toda Segunda',items:[
+    {t:'Verificar e fotografar nível atual do(s) botijão(ões)',p:true},
+    {t:'Registrar quantidade de botijões cheios em estoque',p:false},
+    {t:'Anotar consumo estimado da semana anterior',p:false},
+    {t:'Verificar se há cheiro de gás ou vazamento',p:false},
+    {t:'Registrar no caderno: data + nível + estoque',p:false},
+  ]}]},
+  resposta_app:{cat:'geral',name:'Avaliações Apps',icon:'⭐',color:'#F39C12',sections:[{title:'Responder 99Food e iFood — Toda Segunda',items:[
+    {t:'Acessar painel iFood e verificar avaliações pendentes',p:false},
+    {t:'Responder TODAS as avaliações do iFood',p:true},
+    {t:'Acessar painel 99Food e verificar avaliações pendentes',p:false},
+    {t:'Responder TODAS as avaliações do 99Food',p:true},
+    {t:'Avaliações negativas: registrar e encaminhar ao responsável',p:false},
+    {t:'Foto da tela com todas as avaliações respondidas',p:true},
+  ]}]},
+};
+
+const CATS={atend:'cards-atend',coz:'cards-coz',semanal:'cards-semanal',geral:'cards-geral'};
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let ST={user:null,type:'',store:'',items:[],histFilter:'todos',editingId:null};
+let historyCache=[];
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  buildCards();
+  document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
+});
+
+// ═══════════════════════════════════════════════
+//  LOGIN
+// ═══════════════════════════════════════════════
+function doLogin(){
+  const login=document.getElementById('login-user').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value;
+  const users=getUsers();
+  const user=users.find(u=>u.login===login&&u.pass===pass);
+  if(!user){document.getElementById('login-err').classList.add('show');return;}
+  document.getElementById('login-err').classList.remove('show');
+  ST.user=user;
+  document.getElementById('hdr-user-name').textContent=user.name;
+  document.getElementById('tab-admin').style.display=user.role==='admin'?'':'none';
+  buildStoreSelect(user);
+  showPage('pg-app');
+  goTab('sel');
+}
+
+function doLogout(){ST.user=null;showAllScr('sel');showPage('pg-login');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';}
+
+function buildStoreSelect(user){
+  const sel=document.getElementById('s-store');
+  sel.innerHTML='';
+  if(user.role==='admin'||user.store==='todas'){
+    sel.innerHTML=`<option value="">Escolha a loja...</option><option value="meier">Méier</option><option value="tijuca">Tijuca</option><option value="copacabana">Copacabana</option><option value="botafogo">Botafogo</option><option value="ilha">Ilha do Governador</option>`;
+    sel.disabled=false;
+  } else {
+    sel.innerHTML=`<option value="${user.store}">${STORES[user.store]}</option>`;
+    sel.value=user.store;sel.disabled=true;ST.store=user.store;
+  }
+  updBtn();
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function showAllScr(active){['sel','cl','ok','hist','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
+function goTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+t)?.classList.add('on');
+  if(t==='sel'){showAllScr('sel');}
+  else if(t==='hist'){showAllScr('hist');loadHist();}
+  else if(t==='admin'){showAllScr('admin');renderAdmin();}
+}
+function goBack(){goTab('sel');}
+function newCL(){ST.editingId=null;goTab('sel');}
+
+// ═══════════════════════════════════════════════
+//  CARDS
+// ═══════════════════════════════════════════════
+function buildCards(){
+  Object.values(CATS).forEach(id=>{const g=document.getElementById(id);if(g)g.innerHTML='';});
+  Object.entries(CL).forEach(([k,d])=>{
+    const g=document.getElementById(CATS[d.cat]);if(!g)return;
+    const tot=d.sections.reduce((a,s)=>a+s.items.length,0);
+    const div=document.createElement('div');
+    div.className='card';div.id='card-'+k;div.onclick=()=>pick(k);
+    div.innerHTML=`<div class="cbar" style="background:${d.color}"></div><div class="cicon">${d.icon}</div><div class="cname">${d.name}</div><div class="ccnt">${tot} itens</div>`;
+    g.appendChild(div);
+  });
+}
+
+function pick(k){ST.type=k;document.querySelectorAll('.card').forEach(c=>c.classList.remove('sel'));document.getElementById('card-'+k).classList.add('sel');updBtn();}
+function updBtn(){ST.store=document.getElementById('s-store').value;document.getElementById('btn-start').disabled=!(ST.store&&ST.type);}
+
+// ═══════════════════════════════════════════════
+//  CHECKLIST
+// ═══════════════════════════════════════════════
+function startCL(){
+  const def=CL[ST.type];ST.items=[];
+  def.sections.forEach(s=>s.items.forEach(it=>ST.items.push({...it,done:false,photos:[],show:false,obs:'',qty:''})));
+  document.getElementById('cl-hdr').style.background=def.color;
+  document.getElementById('cl-title').textContent=def.icon+' '+def.name;
+  document.getElementById('cl-sub').textContent=STORES[ST.store]+' · '+ST.user.name;
+  renderItems();updProg();showAllScr('cl');window.scrollTo(0,0);
+}
+
+function renderItems(){
+  const def=CL[ST.type];const body=document.getElementById('ibody');body.innerHTML='';
+  let idx=0;
+  def.sections.forEach(s=>{
+    const h=document.createElement('div');h.className='stitle';h.textContent=s.title;body.appendChild(h);
+    s.items.forEach(()=>{body.appendChild(buildItem(idx));idx++;});
+  });
+}
+
+function buildItem(idx){
+  const it=ST.items[idx];
+  const div=document.createElement('div');
+  div.className='item'+(it.done?' done':'');div.id='it-'+idx;
+  const alrt=/(PROIBIDO|OBRIGATÓRIO|RESPONSABILIDADE|IMEDIATAMENTE|DESLIGAR O GÁS|NENHUM|OBRIGAÇÃO|LIGAR IMEDIATAMENTE)/.test(it.t);
+
+  // Item com contagem ou só foto (sacola média/grande)
+  if(it.count !== undefined){
+    const qty = it.qty||'';
+    const below = it.count && qty!==''&&parseInt(qty)<(it.min||20);
+    div.innerHTML=`
+      <div class="item-top" onclick="toggleCount(${idx})">
+        <div class="ichk">${it.done?'✓':''}</div>
+        <div class="itxt">${it.t}</div>
+        ${it.p?`<span class="pbadge">${it.done&&it.photos&&it.photos.length>0?'📸 OK':'📸 foto'}</span>`:''}
+      </div>
+      <div class="item-extras show" id="ex-${idx}">
+        ${it.count?`
+        <div class="count-row">
+          <span class="count-label">📦 Quantidade contada:</span>
+          <input class="count-input" type="number" min="0" placeholder="0" value="${qty}"
+            oninput="saveQty(${idx},this.value)" onblur="checkQty(${idx})">
+          <span class="count-unit">un.</span>
+        </div>
+        <div class="count-alert${below?' show':''}" id="alert-${idx}">
+          ⚠️ Abaixo do mínimo (${it.min||20} unidades)! Reabastecer.
+        </div>`:''}
+        ${it.p?`
+        <div style="margin-top:${it.count?'10':'0'}px;">
+          <div class="ex-lbl">📷 Foto obrigatória do estoque</div>
+          ${!it.photos||it.photos.length===0?`<div class="uarea"><input type="file" accept="image/*" capture="environment" multiple onchange="addPh(event,${idx})"><div class="uicon">📷</div><div class="utxt"><strong>Tirar foto</strong> do estoque</div></div>`:''}
+          <div class="tgrid">${(it.photos||[]).map((p,pi)=>`<div class="thumb"><img src="${p}" onclick="openZoom('${p}')"><button class="thrm" onclick="rmPh(${idx},${pi});event.stopPropagation()">×</button></div>`).join('')}</div>
+          ${it.photos&&it.photos.length>0&&it.photos.length<3?`<div class="uarea" style="margin-top:6px;"><input type="file" accept="image/*" capture="environment" multiple onchange="addPh(event,${idx})"><div class="utxt" style="font-size:.68rem;">+ Mais fotos</div></div>`:''}
+        </div>`:''}
+        <div class="ex-lbl" style="margin-top:8px;">📝 Observação (opcional)</div>
+        <textarea class="obs-input" placeholder="Ex: faltando, pedido feito..." oninput="saveObs(${idx},this.value)" style="min-height:44px;">${it.obs||''}</textarea>
+      </div>`;
+    return div;
+  }
+
+  div.innerHTML=`
+    <div class="item-top" onclick="toggle(${idx})">
+      <div class="ichk">${it.done?'✓':''}</div>
+      <div class="itxt${alrt?' alrt':''}">${it.t}</div>
+      ${it.p?`<span class="pbadge">${it.done?'📸 OK':'📸 foto'}</span>`:''}
+    </div>
+    <div class="item-extras${(it.show||it.done)?' show':''}" id="ex-${idx}">
+      <div class="ex-lbl">📝 Observação (opcional)</div>
+      <textarea class="obs-input" placeholder="Adicione uma observação sobre este item..." oninput="saveObs(${idx},this.value)">${it.obs||''}</textarea>
+      ${it.p?`
+      <div style="margin-top:10px;">
+        <div class="ex-lbl">📷 Foto obrigatória</div>
+        ${it.photos.length===0?`<div class="uarea"><input type="file" accept="image/*" capture="environment" multiple onchange="addPh(event,${idx})"><div class="uicon">📷</div><div class="utxt"><strong>Tirar foto</strong> ou selecionar da galeria</div></div>`:''}
+        <div class="tgrid">${it.photos.map((p,pi)=>`<div class="thumb"><img src="${p}" onclick="openZoom('${p}')"><button class="thrm" onclick="rmPh(${idx},${pi});event.stopPropagation()">×</button></div>`).join('')}</div>
+        ${it.photos.length>0&&it.photos.length<3?`<div class="uarea" style="margin-top:6px;"><input type="file" accept="image/*" capture="environment" multiple onchange="addPh(event,${idx})"><div class="utxt" style="font-size:.68rem;">+ Mais fotos</div></div>`:''}
+      </div>`:''}
+    </div>`;
+  return div;
+}
+
+function rerender(idx){const el=document.getElementById('it-'+idx);if(el)el.replaceWith(buildItem(idx));}
+function saveObs(idx,v){ST.items[idx].obs=v;}
+function saveQty(idx,v){
+  ST.items[idx].qty=v;
+  const it=ST.items[idx];
+  // Marcado como feito só quando tem quantidade E foto (se foto obrigatória)
+  const hasQty = v!==''&&parseInt(v)>=0;
+  const hasPhoto = !it.p || (it.photos&&it.photos.length>0);
+  ST.items[idx].done = hasQty && hasPhoto;
+  rerender(idx);
+  updProg();
+  checkQty(idx);
+}
+function checkQty(idx){
+  const it=ST.items[idx];
+  const alert=document.getElementById('alert-'+idx);
+  if(!alert)return;
+  const qty=parseInt(it.qty||0);
+  const below=it.qty!==''&&qty<(it.min||20);
+  alert.classList.toggle('show',below);
+  document.getElementById('it-'+idx).style.borderColor=below?'var(--or)':it.done?'var(--gn)':'#EDE4D8';
+}
+function toggle(idx){
+  const it=ST.items[idx];
+  if(it.count)return;
+  it.show=true;
+  if(it.p&&!it.done&&it.photos.length===0){rerender(idx);return;}
+  if(it.p&&it.photos.length===0){toast('📸 Foto obrigatória!');return;}
+  it.done=!it.done;rerender(idx);updProg();
+}
+function toggleCount(idx){
+  // Count items always show — just focus the input
+  const input=document.querySelector(`#ex-${idx} .count-input`);
+  if(input)input.focus();
+}
+function addPh(ev,idx){
+  Array.from(ev.target.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      ST.items[idx].photos.push(e.target.result);
+      if(ST.items[idx].count===true){
+        // count:true — precisa qty + foto
+        const hasQty=ST.items[idx].qty!==''&&parseInt(ST.items[idx].qty||0)>=0;
+        ST.items[idx].done=hasQty&&ST.items[idx].photos.length>0;
+      } else if(ST.items[idx].count===false){
+        // count:false — só foto já basta
+        ST.items[idx].done=ST.items[idx].photos.length>0;
+      } else {
+        ST.items[idx].done=true;
+      }
+      ST.items[idx].show=true;
+      rerender(idx);updProg();
+    };
+    r.readAsDataURL(f);
+  });
+}
+function addPh_old(){} // replaced above
+function rmPh(idx,pi){ST.items[idx].photos.splice(pi,1);if(ST.items[idx].photos.length===0&&ST.items[idx].p)ST.items[idx].done=false;rerender(idx);updProg();}
+function updProg(){
+  const done=ST.items.filter(i=>i.done).length,total=ST.items.length;
+  document.getElementById('prog-txt').textContent=`${done} / ${total}`;
+  document.getElementById('prog-fill').style.width=(total?Math.round(done/total*100):0)+'%';
+  const btn=document.getElementById('btn-send');
+  btn.textContent=done===total?'✓ Enviar Completo':`Enviar (${done}/${total})`;
+  btn.style.opacity=done>0?'1':'0.5';
+}
+
+// ═══════════════════════════════════════════════
+//  ENVIO → FIREBASE
+// ═══════════════════════════════════════════════
+async function sendCL(){
+  const done=ST.items.filter(i=>i.done).length,total=ST.items.length;
+  if(done===0){toast('Preencha ao menos 1 item!');return;}
+  if(ST.items.filter(i=>i.p&&i.done&&i.photos.length===0).length>0){toast('📸 Envie todas as fotos obrigatórias!');return;}
+
+  setOv(true,'Salvando no Firebase...');
+  const now=new Date();
+  const rec={
+    store:ST.store,storeName:STORES[ST.store],
+    type:ST.type,typeName:CL[ST.type].name,
+    operator:ST.user.name,userLogin:ST.user.login,
+    done,total,pct:Math.round(done/total*100),
+    totalPhotos:ST.items.reduce((a,i)=>a+i.photos.length,0),
+    itensList:ST.items.map(i=>({text:i.t,done:i.done,photo:i.p,photoCount:i.photos.length,obs:i.obs||'',photos:i.photos||[],count:i.count||false,qty:i.qty||'',min:i.min||0})),
+    timeStr:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    dateStr:now.toLocaleDateString('pt-BR'),
+    ts:now.toISOString(),
+    createdAt:new Date()
+  };
+
+  // Salva localmente como backup
+  const localHist = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+  localHist.unshift({...rec, id: rec.id||Date.now()});
+  localStorage.setItem('cb_hist', JSON.stringify(localHist.slice(0,100)));
+
+  let fbId=null;
+  try{
+    if(ST.editingId){
+      await updateDoc(doc(db,'checklists',ST.editingId),rec);
+      fbId=ST.editingId;
+      ST.editingId=null;
+    } else {
+      const docRef=await addDoc(collection(db,'checklists'),rec);
+      fbId=docRef.id;
+    }
+  }catch(e){console.warn('Firebase err:',e);}
+
+  // Sheets
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:fbId||rec.id,data:rec.dateStr,hora:rec.timeStr,loja:rec.storeName,responsavel:rec.operator,checklist:rec.typeName,itens_concluidos:rec.done,total_itens:rec.total,conformidade_pct:rec.pct,total_fotos:rec.totalPhotos,status:rec.pct===100?'COMPLETO':'PARCIAL',itens_detalhes:rec.itensList.map(i=>`${i.done?'✓':'✗'} ${i.text}${i.photo?` [📸${i.photoCount}]`:''}${i.obs?` — ${i.obs}`:''}`).join('\n')})
+    });
+  }catch(e){}
+
+  // WhatsApp
+  enviarWpp(rec);
+  setOv(false);
+
+  document.getElementById('okd').innerHTML=`
+    <div class="ok-row"><span>Loja</span><span>${rec.storeName}</span></div>
+    <div class="ok-row"><span>Checklist</span><span>${CL[rec.type].icon} ${rec.typeName}</span></div>
+    <div class="ok-row"><span>Responsável</span><span>${rec.operator}</span></div>
+    <div class="ok-row"><span>Conformidade</span><span>${rec.done}/${rec.total} (${rec.pct}%)</span></div>
+    <div class="ok-row"><span>Fotos</span><span>${rec.totalPhotos}</span></div>
+    <div class="ok-row"><span>Horário</span><span>${rec.timeStr} · ${rec.dateStr}</span></div>
+    <div class="ok-row"><span>Firebase</span><span style="color:${fbId?'var(--gn)':'var(--or)'}">${fbId?'✅ Salvo na nuvem':'⚠️ Salvo localmente'}</span></div>`;
+  showAllScr('ok');
+}
+
+// ═══════════════════════════════════════════════
+//  WHATSAPP
+// ═══════════════════════════════════════════════
+async function enviarWpp(rec){
+  if(!WPP_NUM||!WPP_KEY)return;
+  const feitos=rec.itensList.filter(i=>i.done);
+  const naoFeitos=rec.itensList.filter(i=>!i.done);
+  let msg=`📋 *CHECKLIST CASA DE BOLOS*\n📅 ${rec.dateStr} às ${rec.timeStr}\n🏪 *${rec.storeName}* — ${CL[rec.type].icon} ${rec.typeName}\n👤 ${rec.operator}\n📊 Conformidade: *${rec.pct}%* (${rec.done}/${rec.total})\n\n`;
+  if(naoFeitos.length>0){msg+=`❌ *NÃO REALIZADOS (${naoFeitos.length}):*\n`;naoFeitos.forEach(i=>{msg+=`• ${i.text}\n`;if(i.obs)msg+=`  💬 ${i.obs}\n`;});msg+='\n';}
+  if(feitos.length>0){msg+=`✅ *REALIZADOS (${feitos.length}):*\n`;feitos.slice(0,8).forEach(i=>{msg+=`• ${i.text}${i.obs?` — ${i.obs}`:''}\n`;});if(feitos.length>8)msg+=`• _...e mais ${feitos.length-8} itens_\n`;}
+  try{await fetch(`https://api.callmebot.com/whatsapp.php?phone=${WPP_NUM}&text=${encodeURIComponent(msg)}&apikey=${WPP_KEY}`);}catch(e){}
+}
+
+// ═══════════════════════════════════════════════
+//  HISTÓRICO ← FIREBASE
+// ═══════════════════════════════════════════════
+async function loadHist(){
+  const listEl = document.getElementById('hist-list');
+  const subEl  = document.getElementById('hist-sub');
+  listEl.innerHTML='<div class="loading-hist">⏳ Carregando registros...</div>';
+  subEl.textContent='Carregando...';
+
+  // Tenta Firebase até 3 vezes
+  let snap = null;
+  let lastErr = null;
+  for(let attempt=1; attempt<=3; attempt++){
+    try{
+      if(ST.user.role==='admin'||ST.user.store==='todas'){
+        snap = await getDocs(collection(db,'checklists'));
+      } else {
+        const q = query(collection(db,'checklists'),where('store','==',ST.user.store));
+        snap = await getDocs(q);
+      }
+      break; // sucesso
+    }catch(e){
+      lastErr = e;
+      console.warn(`Firebase tentativa ${attempt} falhou:`, e.message);
+      await new Promise(r=>setTimeout(r,1000*attempt));
+    }
+  }
+
+  if(snap){
+    historyCache = snap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+    console.log('Registros carregados:', historyCache.length);
+    renderHist();
+  } else {
+    // Fallback: mostra registros locais se Firebase falhar
+    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+    if(local.length>0){
+      historyCache = local;
+      renderHist();
+      listEl.insertAdjacentHTML('afterbegin',`
+        <div style="background:#FEF9E7;border:1px solid var(--or);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--or);">
+          ⚠️ Modo offline — mostrando apenas registros deste dispositivo.<br>
+          <small>${lastErr?.message||''}</small>
+        </div>`);
+    } else {
+      listEl.innerHTML=`
+        <div class="empty-hist">
+          ❌ Não foi possível conectar ao Firebase.<br>
+          <small style="color:var(--rd);display:block;margin-top:6px;">${lastErr?.message||'Erro desconhecido'}</small><br>
+          <button onclick="loadHist()" style="margin-top:10px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button>
+        </div>`;
+      subEl.textContent='Erro de conexão';
+    }
+  }
+}
+
+function renderHist(){
+  const all=historyCache;
+  const stores=[...new Set(all.map(r=>r.storeName))];
+  const fEl=document.getElementById('hist-filters');
+  fEl.innerHTML=`<button class="hf${ST.histFilter==='todos'?' on':''}" onclick="setHistFilter('todos')">Todos</button>`
+    +stores.map(s=>`<button class="hf${ST.histFilter===s?' on':''}" onclick="setHistFilter('${s}')">${s}</button>`).join('');
+  const filtered=ST.histFilter==='todos'?all:all.filter(r=>r.storeName===ST.histFilter);
+  document.getElementById('hist-sub').textContent=`${filtered.length} registro(s)`;
+  const list=document.getElementById('hist-list');
+  if(filtered.length===0){list.innerHTML='<div class="empty-hist">Nenhum checklist encontrado.</div>';return;}
+  list.innerHTML=filtered.map((r,i)=>{
+    const pctClass=r.pct>=80?'g':r.pct>=50?'y':'r';
+    const dotColor=r.pct>=80?'var(--gn)':r.pct>=50?'var(--or)':'var(--rd)';
+    const itensHtml=(r.itensList||[]).map(it=>`
+      <div class="hid-row">
+        <span class="hid-status">${it.done?'✅':'❌'}</span>
+        <div style="flex:1">
+          <div class="hid-text">${it.text}${it.count&&it.qty!==''?` <strong style="color:var(--br)">[${it.qty} un.]${parseInt(it.qty)<(it.min||20)?' ⚠️':''}</strong>`:''}</div>
+          ${it.obs?`<div class="hid-obs">💬 ${it.obs}</div>`:''}
+          ${it.photos&&it.photos.length>0?`<div class="hid-photos">${it.photos.map(p=>`<img class="hid-photo" src="${p}" onclick="openZoom('${p}')">`).join('')}</div>`:''}
+        </div>
+      </div>`).join('');
+    const isOwner=ST.user?.role==='admin'||r.userLogin===ST.user?.login;
+    return`
+    <div class="hist-item">
+      <div class="hi-top" onclick="toggleHist(${i})">
+        <div class="hi-dot" style="background:${dotColor}"></div>
+        <div class="hi-info">
+          <div class="hi-title">${CL[r.type]?CL[r.type].icon:''} ${r.typeName} — ${r.storeName}</div>
+          <div class="hi-meta">${r.operator} · ${r.timeStr} · ${r.dateStr}</div>
+        </div>
+        <div class="hi-pct ${pctClass}">${r.pct}%</div>
+        <div class="hi-chevron" id="chev-${i}">▾</div>
+      </div>
+      <div class="hi-detail" id="hdet-${i}">
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+          <span class="badge-green">✅ ${r.done} feitos</span>
+          ${r.total-r.done>0?`<span class="badge-red">❌ ${r.total-r.done} não feitos</span>`:''}
+          ${r.totalPhotos>0?`<span style="font-size:.7rem;color:var(--md);">📸 ${r.totalPhotos} fotos</span>`:''}
+          ${isOwner?`<button onclick="editarChecklist('${r.id}',${i})" style="margin-left:auto;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:5px 12px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Editar</button>`:''}
+        </div>
+        ${itensHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setHistFilter(f){ST.histFilter=f;renderHist();}
+function toggleHist(i){const det=document.getElementById('hdet-'+i);const chev=document.getElementById('chev-'+i);const isOpen=det.classList.contains('show');det.classList.toggle('show',!isOpen);chev.classList.toggle('open',!isOpen);}
+
+function editarChecklist(fbId,i){
+  const rec=historyCache[i];
+  if(!rec)return;
+  ST.type=rec.type;ST.store=rec.store;ST.editingId=fbId;
+  const def=CL[ST.type];ST.items=[];
+  let idx=0;
+  def.sections.forEach(s=>s.items.forEach(it=>{
+    const salvo=rec.itensList[idx]||{};
+    ST.items.push({...it,done:salvo.done||false,photos:salvo.photos||[],obs:salvo.obs||'',show:salvo.done||false});
+    idx++;
+  }));
+  document.getElementById('cl-hdr').style.background=def.color;
+  document.getElementById('cl-title').textContent='✏️ Editando: '+def.icon+' '+def.name;
+  document.getElementById('cl-sub').textContent=STORES[rec.store]+' · '+rec.operator;
+  renderItems();updProg();showAllScr('cl');window.scrollTo(0,0);
+  toast('✏️ Modo edição — faça as alterações e reenvie');
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN
+// ═══════════════════════════════════════════════
+function renderAdmin(){
+  const users=getUsers();
+  document.getElementById('users-list').innerHTML=users.map((u,i)=>`
+    <div class="user-row">
+      <div class="user-avatar" style="background:${u.role==='admin'?'#D4A843':'#27AE60'}">${u.name.charAt(0)}</div>
+      <div class="user-info"><div class="user-name">${u.name}</div><div class="user-meta">Login: ${u.login} · ${u.store==='todas'?'Todas':STORES[u.store]||u.store}</div></div>
+      <span class="user-role ${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'Admin':'Usuário'}</span>
+      ${u.role!=='admin'?`<button class="user-del" onclick="delUser(${i})">🗑</button>`:''}
+    </div>`).join('');
+  // Stats
+  document.getElementById('admin-stats').innerHTML='⏳ Carregando...';
+  getDocs(collection(db,'checklists')).then(snap=>{
+    const total=snap.size;
+    const hoje=new Date().toLocaleDateString('pt-BR');
+    const hoje_count=snap.docs.filter(d=>d.data().dateStr===hoje).length;
+    document.getElementById('admin-stats').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
+        <div style="background:var(--cr);border-radius:10px;padding:12px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:1.8rem;">${total}</div><div style="font-size:.7rem;color:var(--lt);">Total de registros</div></div>
+        <div style="background:var(--cr);border-radius:10px;padding:12px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:1.8rem;">${hoje_count}</div><div style="font-size:.7rem;color:var(--lt);">Hoje</div></div>
+      </div>`;
+  }).catch(()=>{document.getElementById('admin-stats').innerHTML='Erro ao carregar stats.';});
+}
+
+function addUser(){
+  const login=document.getElementById('nu-login').value.trim().toLowerCase();
+  const pass=document.getElementById('nu-pass').value;
+  const name=document.getElementById('nu-name').value.trim();
+  const store=document.getElementById('nu-store').value;
+  if(!login||!pass||!name){toast('Preencha todos os campos!');return;}
+  if(pass.length<4){toast('Senha mínimo 4 caracteres!');return;}
+  const users=getUsers();
+  if(users.find(u=>u.login===login)){toast('Login já existe!');return;}
+  const local=JSON.parse(localStorage.getItem('cb_users')||'[]');
+  local.push({login,pass,name,store,role:'user'});
+  localStorage.setItem('cb_users',JSON.stringify(local));
+  document.getElementById('nu-login').value='';document.getElementById('nu-pass').value='';document.getElementById('nu-name').value='';
+  renderAdmin();toast('✅ Usuário cadastrado!');
+}
+
+function delUser(i){
+  const users=getUsers();
+  if(users[i].role==='admin'){toast('Não é possível remover o admin!');return;}
+  const local=JSON.parse(localStorage.getItem('cb_users')||'[]');
+  const idx=local.findIndex(u=>u.login===users[i].login);
+  if(idx>=0)local.splice(idx,1);
+  localStorage.setItem('cb_users',JSON.stringify(local));
+  renderAdmin();toast('Usuário removido.');
+}
+
+// ═══════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════
+function openZoom(src){document.getElementById('zoom-img').src=src;document.getElementById('zoom-modal').classList.add('show');}
+function closeZoom(){document.getElementById('zoom-modal').classList.remove('show');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2800);}
+function setOv(v,txt=''){document.getElementById('overlay').classList.toggle('on',v);if(txt)document.getElementById('ov-txt').textContent=txt;}
+
+// Expor funções globalmente
+window.doLogin=doLogin;window.doLogout=doLogout;window.goTab=goTab;window.goBack=goBack;window.newCL=newCL;
+window.pick=pick;window.updBtn=updBtn;window.startCL=startCL;window.toggle=toggle;window.toggleCount=toggleCount;
+window.addPh=addPh;window.rmPh=rmPh;window.saveObs=saveObs;window.saveQty=saveQty;window.checkQty=checkQty;window.sendCL=sendCL;
+window.setHistFilter=setHistFilter;window.toggleHist=toggleHist;window.editarChecklist=editarChecklist;
+window.loadHist=loadHist;window.addUser=addUser;window.delUser=delUser;
+window.openZoom=openZoom;window.closeZoom=closeZoom;
+</script>
+</body>
+</html>
