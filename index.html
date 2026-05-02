@@ -794,21 +794,39 @@ function toggle(idx){
   it.done=!it.done;rerender(idx);updProg();
 }
 function toggleCount(idx){
-  // Count items always show — just focus the input
   const input=document.querySelector(`#ex-${idx} .count-input`);
   if(input)input.focus();
 }
+
+// Comprime foto para máximo 400px e qualidade 50% — reduz de ~2MB para ~50KB
+function compressPhoto(dataUrl, maxSize=400, quality=0.5){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      if(w>h){ if(w>maxSize){h=Math.round(h*maxSize/w);w=maxSize;} }
+      else { if(h>maxSize){w=Math.round(w*maxSize/h);h=maxSize;} }
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>resolve(dataUrl);
+    img.src=dataUrl;
+  });
+}
+
 function addPh(ev,idx){
   Array.from(ev.target.files).forEach(f=>{
     const r=new FileReader();
-    r.onload=e=>{
-      ST.items[idx].photos.push(e.target.result);
+    r.onload=async e=>{
+      // Comprime antes de salvar
+      const compressed = await compressPhoto(e.target.result);
+      ST.items[idx].photos.push(compressed);
       if(ST.items[idx].count===true){
-        // count:true — precisa qty + foto
         const hasQty=ST.items[idx].qty!==''&&parseInt(ST.items[idx].qty||0)>=0;
         ST.items[idx].done=hasQty&&ST.items[idx].photos.length>0;
       } else if(ST.items[idx].count===false){
-        // count:false — só foto já basta
         ST.items[idx].done=ST.items[idx].photos.length>0;
       } else {
         ST.items[idx].done=true;
@@ -819,7 +837,7 @@ function addPh(ev,idx){
     r.readAsDataURL(f);
   });
 }
-function addPh_old(){} // replaced above
+function addPh_old(){}
 function rmPh(idx,pi){ST.items[idx].photos.splice(pi,1);if(ST.items[idx].photos.length===0&&ST.items[idx].p)ST.items[idx].done=false;rerender(idx);updProg();}
 function updProg(){
   const done=ST.items.filter(i=>i.done).length,total=ST.items.length;
@@ -838,7 +856,7 @@ async function sendCL(){
   if(done===0){toast('Preencha ao menos 1 item!');return;}
   if(ST.items.filter(i=>i.p&&i.done&&i.photos.length===0).length>0){toast('📸 Envie todas as fotos obrigatórias!');return;}
 
-  setOv(true,'Salvando no Firebase...');
+  setOv(true,'Salvando...');
   const now=new Date();
   const rec={
     store:ST.store,storeName:STORES[ST.store],
@@ -853,33 +871,28 @@ async function sendCL(){
     createdAt:new Date()
   };
 
-  // Salva localmente como backup
+  // Salva localmente como backup imediato
   const localHist = JSON.parse(localStorage.getItem('cb_hist')||'[]');
-  localHist.unshift({...rec, id: rec.id||Date.now()});
+  localHist.unshift({...rec, id: Date.now()});
   localStorage.setItem('cb_hist', JSON.stringify(localHist.slice(0,100)));
 
+  // Firebase com timeout de 8 segundos
   let fbId=null;
   try{
-    if(ST.editingId){
-      await updateDoc(doc(db,'checklists',ST.editingId),rec);
-      fbId=ST.editingId;
-      ST.editingId=null;
-    } else {
-      const docRef=await addDoc(collection(db,'checklists'),rec);
-      fbId=docRef.id;
-    }
-  }catch(e){console.warn('Firebase err:',e);}
+    const fbPromise = ST.editingId
+      ? updateDoc(doc(db,'checklists',ST.editingId),rec).then(()=>ST.editingId)
+      : addDoc(collection(db,'checklists'),rec).then(r=>r.id);
+    const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000));
+    fbId = await Promise.race([fbPromise, timeoutPromise]);
+    if(ST.editingId) ST.editingId=null;
+  }catch(e){console.warn('Firebase:',e.message);}
 
-  // Sheets
-  try{
-    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({id:fbId||rec.id,data:rec.dateStr,hora:rec.timeStr,loja:rec.storeName,responsavel:rec.operator,checklist:rec.typeName,itens_concluidos:rec.done,total_itens:rec.total,conformidade_pct:rec.pct,total_fotos:rec.totalPhotos,status:rec.pct===100?'COMPLETO':'PARCIAL',itens_detalhes:rec.itensList.map(i=>`${i.done?'✓':'✗'} ${i.text}${i.photo?` [📸${i.photoCount}]`:''}${i.obs?` — ${i.obs}`:''}`).join('\n')})
-    });
-  }catch(e){}
-
-  // WhatsApp
-  enviarWpp(rec);
   setOv(false);
+
+  // Sheets e WhatsApp em background — não bloqueiam a tela
+  const payload={id:fbId||Date.now(),data:rec.dateStr,hora:rec.timeStr,loja:rec.storeName,responsavel:rec.operator,checklist:rec.typeName,itens_concluidos:rec.done,total_itens:rec.total,conformidade_pct:rec.pct,total_fotos:rec.totalPhotos,status:rec.pct===100?'COMPLETO':'PARCIAL',itens_detalhes:rec.itensList.map(i=>`${i.done?'✓':'✗'} ${i.text}${i.photo?` [📸${i.photoCount}]`:''}${i.obs?` — ${i.obs}`:''}`).join('\n')};
+  fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
+  enviarWpp(rec);
 
   document.getElementById('okd').innerHTML=`
     <div class="ok-row"><span>Loja</span><span>${rec.storeName}</span></div>
@@ -1093,7 +1106,7 @@ function setOv(v,txt=''){document.getElementById('overlay').classList.toggle('on
 // Expor funções globalmente
 window.doLogin=doLogin;window.doLogout=doLogout;window.goTab=goTab;window.goBack=goBack;window.newCL=newCL;
 window.pick=pick;window.updBtn=updBtn;window.startCL=startCL;window.toggle=toggle;window.toggleCount=toggleCount;
-window.addPh=addPh;window.rmPh=rmPh;window.saveObs=saveObs;window.saveQty=saveQty;window.checkQty=checkQty;window.sendCL=sendCL;
+window.addPh=addPh;window.rmPh=rmPh;window.saveObs=saveObs;window.saveQty=saveQty;window.checkQty=checkQty;window.sendCL=sendCL;window.compressPhoto=compressPhoto;
 window.setHistFilter=setHistFilter;window.toggleHist=toggleHist;window.editarChecklist=editarChecklist;
 window.loadHist=loadHist;window.addUser=addUser;window.delUser=delUser;
 window.openZoom=openZoom;window.closeZoom=closeZoom;
