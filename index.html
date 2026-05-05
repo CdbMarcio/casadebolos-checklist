@@ -187,6 +187,8 @@ select:focus,input:focus{border-color:var(--gd);}
 @keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--br);color:var(--gd);padding:9px 18px;border-radius:99px;font-size:.76rem;font-weight:600;opacity:0;transition:all .3s;white-space:nowrap;z-index:9999;}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 </style>
 </head>
 <body>
@@ -230,6 +232,9 @@ select:focus,input:focus{border-color:var(--gd);}
   <div class="tabs" id="main-tabs">
     <button class="tab on" onclick="goTab('sel')" id="tab-sel">📋 Checklist</button>
     <button class="tab" onclick="goTab('hist')" id="tab-hist">📂 Histórico</button>
+    <button class="tab" onclick="goTab('painel')" id="tab-painel" style="display:none">🏠 Painel</button>
+    <button class="tab" onclick="goTab('score')" id="tab-score" style="display:none">🏆 Score</button>
+    <button class="tab" onclick="goTab('ia')" id="tab-ia" style="display:none">🤖 IA</button>
     <button class="tab" onclick="goTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
   </div>
 
@@ -299,8 +304,167 @@ select:focus,input:focus{border-color:var(--gd);}
   </div>
   </div>
 
+  <!-- PAINEL DO DONO -->
+  <div style="display:none" id="scr-painel">
+  <div class="body-wrap">
+    <h1 class="pg-title">Painel do Dono</h1>
+    <p class="pg-sub" id="painel-data">Hoje</p>
+
+    <!-- STATUS LOJAS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;" id="painel-lojas"></div>
+
+    <!-- ALERTAS CRÍTICOS -->
+    <div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:14px;margin-bottom:14px;display:none;" id="painel-alertas-box">
+      <div style="font-size:.75rem;font-weight:700;color:var(--rd);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;">🚨 Pendências Críticas</div>
+      <div id="painel-alertas"></div>
+    </div>
+
+    <!-- RANKING -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">🏆 Ranking das Lojas</div>
+      <div id="painel-ranking"></div>
+    </div>
+
+    <!-- REINCIDÊNCIAS -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">🔁 Falhas Recorrentes</div>
+      <div id="painel-reincidencias"><div style="font-size:.8rem;color:var(--lt);">Calculando...</div></div>
+    </div>
+
+    <!-- COBRAR AGORA -->
+    <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--or);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">⚡ O que cobrar agora</div>
+      <div id="painel-cobrar"></div>
+    </div>
+
+    <button class="btn" onclick="loadPainel()">🔄 Atualizar painel</button>
+  </div>
+  </div>
+
+  <!-- SCORE OPERACIONAL -->
+  <div style="display:none" id="scr-score">
+  <div class="body-wrap">
+    <h1 class="pg-title">Score Operacional</h1>
+    <p class="pg-sub">Conformidade por loja, gerente e turno</p>
+
+    <!-- SCORE GERAL -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;text-align:center;">
+        <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:var(--gn);" id="score-rede">—</div>
+        <div style="font-size:.65rem;color:var(--lt);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;">Score Rede</div>
+      </div>
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;text-align:center;">
+        <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:var(--or);" id="score-pendencias">—</div>
+        <div style="font-size:.65rem;color:var(--lt);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;">Pendências</div>
+      </div>
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;text-align:center;">
+        <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:var(--rd);" id="score-criticos">—</div>
+        <div style="font-size:.65rem;color:var(--lt);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;">Críticos</div>
+      </div>
+    </div>
+
+    <!-- SCORE POR LOJA -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Score por Loja</div>
+      <div id="score-lojas"></div>
+    </div>
+
+    <!-- REINCIDÊNCIAS DETALHADAS -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">🔁 Reincidências 30 dias</div>
+      <div id="score-reincidencias"><div style="font-size:.8rem;color:var(--lt);">Calculando...</div></div>
+    </div>
+
+    <!-- PLANOS DE AÇÃO ABERTOS -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">📋 Planos de Ação Abertos</div>
+      <div id="score-acoes"><div style="font-size:.8rem;color:var(--lt);">Nenhum plano de ação aberto.</div></div>
+    </div>
+
+    <button class="btn" onclick="loadScore()">🔄 Atualizar score</button>
+  </div>
+  </div>
+
+  <!-- IA -->
+  <div style="display:none" id="scr-ia">
+  <div class="body-wrap">
+    <h1 class="pg-title">Inteligência IA</h1>
+    <p class="pg-sub">Análise automática da sua operação com Claude AI</p>
+
+    <!-- CHAT IA -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);overflow:hidden;margin-bottom:14px;">
+      <div style="background:var(--br);padding:12px 16px;display:flex;align-items:center;gap:8px;">
+        <div style="width:8px;height:8px;background:var(--gn);border-radius:50%;animation:pulse 2s infinite;"></div>
+        <span style="color:var(--gd);font-size:.85rem;font-weight:600;">Assistente IA — Online</span>
+        <span style="color:rgba(255,255,255,.3);font-size:.65rem;margin-left:auto;">Claude</span>
+      </div>
+      <div style="padding:14px;min-height:220px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;" id="ia-messages">
+        <div style="background:#F0E8DC;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:.82rem;line-height:1.5;max-width:88%;color:var(--br);">
+          Olá! Sou a IA do sistema Casa de Bolos. Posso analisar conformidade, identificar padrões de risco e gerar relatórios inteligentes.<br><br>Como posso ajudar?
+        </div>
+      </div>
+      <!-- Quick prompts -->
+      <div style="padding:8px 14px;border-top:1px solid #E8D8C8;display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="iaQuick('Qual loja está com pior desempenho?')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🏪 Pior loja</button>
+        <button onclick="iaQuick('Quais itens são mais esquecidos nos checklists?')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">⚠️ Mais esquecidos</button>
+        <button onclick="iaQuick('Gere recomendações para melhorar a operação')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">💡 Recomendações</button>
+        <button onclick="iaQuick('Analise as reincidências de falhas')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔁 Reincidências</button>
+      </div>
+      <div style="padding:10px 14px;border-top:1px solid #E8D8C8;display:flex;gap:8px;">
+        <input id="ia-input" style="flex:1;padding:9px 14px;border-radius:99px;border:2px solid #E8D8C8;font-family:inherit;font-size:.83rem;color:var(--br);outline:none;" placeholder="Pergunte sobre a operação..." onkeydown="if(event.key==='Enter')iaEnviar()">
+        <button onclick="iaEnviar()" style="background:var(--br);color:var(--gd);border:none;border-radius:50%;width:38px;height:38px;font-size:1rem;cursor:pointer;flex-shrink:0;">→</button>
+      </div>
+    </div>
+
+    <!-- GERAR RELATÓRIO IA -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">📊 Relatório Automático</div>
+      <select id="ia-rel-periodo" style="width:100%;margin-bottom:8px;" class="gen-sel">
+        <option>Hoje</option><option>Esta semana</option><option>Este mês</option>
+      </select>
+      <button class="btn" onclick="iaRelatorio()">Gerar relatório com IA</button>
+      <div id="ia-relatorio-result" style="margin-top:12px;font-size:.82rem;line-height:1.6;color:var(--br);display:none;"></div>
+    </div>
+  </div>
+  </div>
+</div><!-- fim pg-app -->
+
   <!-- ADMIN -->
   <div style="display:none" id="scr-admin">
+  <div class="body-wrap">
+    <h1 class="pg-title">Admin</h1>
+    <p class="pg-sub">Gerencie usuários e configurações</p>
+    <div class="admin-section">
+      <div class="admin-section-title">👥 Usuários Cadastrados</div>
+      <div id="users-list"></div>
+      <div class="add-user-form">
+        <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">+ Novo Usuário</div>
+        <div class="form-row">
+          <div><span class="fl">Login</span><input type="text" id="nu-login" placeholder="ex: joao.silva"></div>
+          <div><span class="fl">Senha</span><input type="password" id="nu-pass" placeholder="mínimo 4 dígitos"></div>
+        </div>
+        <div class="form-row">
+          <div><span class="fl">Nome completo</span><input type="text" id="nu-name" placeholder="João Silva"></div>
+          <div><span class="fl">Loja</span>
+            <div class="sw"><select id="nu-store">
+              <option value="todas">Todas as lojas</option>
+              <option value="meier">Méier</option>
+              <option value="tijuca">Tijuca</option>
+              <option value="copacabana">Copacabana</option>
+              <option value="botafogo">Botafogo</option>
+              <option value="ilha">Ilha do Governador</option>
+            </select></div>
+          </div>
+        </div>
+        <button class="btn" onclick="addUser()">Cadastrar Usuário</button>
+      </div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-title">📊 Estatísticas Firebase</div>
+      <div id="admin-stats" style="font-size:.83rem;color:var(--md);">Carregando...</div>
+    </div>
+  </div>
+  </div>
   <div class="body-wrap">
     <h1 class="pg-title">Admin</h1>
     <p class="pg-sub">Gerencie usuários e configurações</p>
@@ -342,7 +506,7 @@ select:focus,input:focus{border-color:var(--gd);}
 //  FIREBASE CONFIG
 // ═══════════════════════════════════════════════
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDWrPl9XrcFGQB_X13Pa1RC3nwqUz2Oj-g",
@@ -607,6 +771,32 @@ const CL={
       {t:'Sanitizante',p:false,count:true,min:2},
     ]},
   ]},
+  sanitario:{cat:'geral',name:'Checklist Sanitário',icon:'🧼',color:'#1A5276',sections:[
+    {title:'Temperatura e Armazenamento',items:[
+      {t:'Temperatura da câmara fria (registrar °C)',p:true,count:true,min:-18},
+      {t:'Temperatura das geladeiras (registrar °C)',p:true,count:true,min:0},
+      {t:'Produtos identificados com etiqueta',p:true},
+      {t:'Data de produção registrada em todos os itens',p:true},
+      {t:'Data de validade registrada e dentro do prazo',p:true},
+      {t:'Lote registrado',p:false},
+      {t:'Armazenamento correto por tipo de produto',p:true},
+      {t:'Produtos fora do chão (prateleiras/paletes)',p:true},
+      {t:'Separação cru/cozido quando aplicável',p:true},
+    ]},
+    {title:'Higiene e Limpeza',items:[
+      {t:'Bancadas higienizadas antes da produção',p:true},
+      {t:'Utensílios higienizados e armazenados corretamente',p:true},
+      {t:'Lixeiras limpas e com tampa',p:true},
+      {t:'Piso, ralo e parede em bom estado e limpos',p:true},
+      {t:'Controle de pragas — verificar armadilhas e registros',p:true},
+    ]},
+    {title:'Apresentação Pessoal',items:[
+      {t:'Uso de touca por todos os manipuladores',p:true},
+      {t:'Ausência de adornos (brincos, anéis, relógio)',p:true},
+      {t:'Uniforme limpo e completo',p:true},
+      {t:'Lavagem das mãos registrada',p:true},
+    ]},
+  ]},
   custo_agua:{cat:'geral',name:'Marcação Água',icon:'💧',color:'#1ABC9C',sections:[{title:'Marcação de Água — Toda Segunda',items:[
     {t:'Registrar leitura atual do hidrômetro com foto',p:true},
     {t:'Comparar com leitura da semana anterior e registrar consumo',p:false},
@@ -660,6 +850,9 @@ function doLogin(){
   ST.user=user;
   document.getElementById('hdr-user-name').textContent=user.name;
   document.getElementById('tab-admin').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-painel').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-score').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-ia').style.display=user.role==='admin'?'':'none';
   buildStoreSelect(user);
   showPage('pg-app');
   goTab('sel');
@@ -684,12 +877,15 @@ function buildStoreSelect(user){
 //  NAVIGATION
 // ═══════════════════════════════════════════════
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
-function showAllScr(active){['sel','cl','ok','hist','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
+function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
 function goTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+t)?.classList.add('on');
   if(t==='sel'){showAllScr('sel');}
   else if(t==='hist'){showAllScr('hist');loadHist();}
+  else if(t==='painel'){showAllScr('painel');loadPainel();}
+  else if(t==='score'){showAllScr('score');loadScore();}
+  else if(t==='ia'){showAllScr('ia');}
   else if(t==='admin'){showAllScr('admin');renderAdmin();}
 }
 function goBack(){goTab('sel');}
@@ -1075,8 +1271,322 @@ function editarChecklist(fbId,i){
 }
 
 // ═══════════════════════════════════════════════
-//  ADMIN
+//  PAINEL DO DONO
 // ═══════════════════════════════════════════════
+async function loadPainel(){
+  document.getElementById('painel-data').textContent='Hoje — '+new Date().toLocaleDateString('pt-BR');
+  if(!historyCache.length) await loadHistSilent();
+
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const stores = Object.entries(STORES);
+  const painelLojas = document.getElementById('painel-lojas');
+  const lojasFeitas=[], lojasFaltando=[], lojasRisco=[];
+
+  painelLojas.innerHTML = stores.map(([k,nome])=>{
+    const recsHoje = historyCache.filter(r=>r.store===k&&r.dateStr===hoje);
+    const feito = recsHoje.length>0;
+    const pct = feito?Math.round(recsHoje.reduce((a,r)=>a+r.pct,0)/recsHoje.length):0;
+    const cor = !feito?'var(--rd)':pct>=80?'var(--gn)':pct>=60?'var(--or)':'var(--rd)';
+    const status = !feito?'Sem checklist hoje':pct>=80?'✅ Ok':pct>=60?'⚠️ Atenção':'🚨 Risco';
+    if(!feito) lojasFaltando.push(nome);
+    else if(pct<60) lojasRisco.push(nome);
+    else lojasFeitas.push(nome);
+    return `<div style="background:var(--wm);border:2px solid ${cor}20;border-radius:var(--r);padding:12px;">
+      <div style="font-size:.8rem;font-weight:700;color:var(--br);">${nome}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:${cor};margin:4px 0;">${feito?pct+'%':'—'}</div>
+      <div style="font-size:.68rem;color:var(--lt);">${status}</div>
+      <div style="font-size:.65rem;color:var(--lt);margin-top:2px;">${recsHoje.length} checklist(s) hoje</div>
+    </div>`;
+  }).join('');
+
+  // Alertas críticos
+  const alertasBox = document.getElementById('painel-alertas-box');
+  const alertasEl = document.getElementById('painel-alertas');
+  if(lojasFaltando.length||lojasRisco.length){
+    alertasBox.style.display='block';
+    let html='';
+    lojasFaltando.forEach(l=>{html+=`<div style="font-size:.8rem;color:var(--rd);padding:3px 0;">🚨 ${l} — Sem checklist hoje</div>`;});
+    lojasRisco.forEach(l=>{html+=`<div style="font-size:.8rem;color:var(--rd);padding:3px 0;">⚠️ ${l} — Conformidade crítica</div>`;});
+    alertasEl.innerHTML=html;
+  } else { alertasBox.style.display='none'; }
+
+  // Ranking
+  const rankData = stores.map(([k,nome])=>{
+    const recs = historyCache.filter(r=>r.store===k);
+    const pct = recs.length?Math.round(recs.reduce((a,r)=>a+r.pct,0)/recs.length):0;
+    return {nome,pct,total:recs.length};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  document.getElementById('painel-ranking').innerHTML = rankData.map((l,i)=>{
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const cor = l.pct>=80?'var(--gn)':l.pct>=60?'var(--or)':'var(--rd)';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #F0E8DC;">
+      <span style="font-size:.85rem;width:20px;">${medal||'#'+(i+1)}</span>
+      <span style="flex:1;font-size:.82rem;font-weight:600;">${l.nome}</span>
+      <div style="width:80px;height:5px;background:#EEE;border-radius:99px;overflow:hidden;">
+        <div style="width:${l.pct}%;height:100%;background:${cor};border-radius:99px;"></div>
+      </div>
+      <span style="font-size:.82rem;font-weight:700;color:${cor};min-width:36px;text-align:right;">${l.pct}%</span>
+    </div>`;
+  }).join('');
+
+  // Reincidências
+  calcReincidencias('painel-reincidencias');
+
+  // O que cobrar agora
+  let cobrar='';
+  lojasFaltando.forEach(l=>{cobrar+=`<div style="font-size:.82rem;padding:5px 0;border-bottom:1px solid #F5E9C0;color:var(--br);">→ Cobrar <strong>${l}</strong> para fazer o checklist de hoje</div>`;});
+  lojasRisco.forEach(l=>{cobrar+=`<div style="font-size:.82rem;padding:5px 0;border-bottom:1px solid #F5E9C0;color:var(--br);">→ Verificar não conformidades em <strong>${l}</strong></div>`;});
+  if(!cobrar) cobrar='<div style="font-size:.82rem;color:var(--gn);">✅ Tudo em dia! Nada a cobrar agora.</div>';
+  document.getElementById('painel-cobrar').innerHTML=cobrar;
+}
+
+// ═══════════════════════════════════════════════
+//  SCORE OPERACIONAL
+// ═══════════════════════════════════════════════
+async function loadScore(){
+  if(!historyCache.length) await loadHistSilent();
+  const stores = Object.entries(STORES);
+
+  // Score geral da rede
+  const pctGeral = historyCache.length
+    ? Math.round(historyCache.reduce((a,r)=>a+r.pct,0)/historyCache.length)
+    : 0;
+  const cor = pctGeral>=80?'var(--gn)':pctGeral>=60?'var(--or)':'var(--rd)';
+  document.getElementById('score-rede').textContent=pctGeral+'%';
+  document.getElementById('score-rede').style.color=cor;
+
+  // Pendências e críticos (simulados por % baixo)
+  const criticos = historyCache.filter(r=>r.pct<50).length;
+  const pendencias = historyCache.filter(r=>r.pct<80&&r.pct>=50).length;
+  document.getElementById('score-pendencias').textContent=pendencias;
+  document.getElementById('score-criticos').textContent=criticos;
+
+  // Score por loja
+  const scoreLojas = stores.map(([k,nome])=>{
+    const recs = historyCache.filter(r=>r.store===k);
+    const pct = recs.length?Math.round(recs.reduce((a,r)=>a+r.pct,0)/recs.length):0;
+    return {nome,pct,total:recs.length,k};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  document.getElementById('score-lojas').innerHTML = scoreLojas.map(l=>{
+    const c = l.pct>=80?'var(--gn)':l.pct>=60?'var(--or)':'var(--rd)';
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:.82rem;font-weight:600;">${l.nome}</span>
+        <span style="font-size:.82rem;font-weight:700;color:${c};">${l.pct}%</span>
+      </div>
+      <div style="height:6px;background:#EEE;border-radius:99px;overflow:hidden;">
+        <div style="width:${l.pct}%;height:100%;background:${c};border-radius:99px;transition:width 1s;"></div>
+      </div>
+      <div style="font-size:.65rem;color:var(--lt);margin-top:2px;">${l.total} registros</div>
+    </div>`;
+  }).join('');
+
+  // Reincidências detalhadas
+  calcReincidencias('score-reincidencias');
+
+  // Planos de ação
+  const acoes = JSON.parse(localStorage.getItem('cb_acoes')||'[]');
+  const abertas = acoes.filter(a=>a.status!=='resolvido');
+  document.getElementById('score-acoes').innerHTML = abertas.length
+    ? abertas.map(a=>{
+        const riskColor = a.risco==='critico'?'var(--rd)':a.risco==='alto'?'var(--rd)':a.risco==='medio'?'var(--or)':'var(--gd)';
+        return `<div style="background:#FDF6EC;border-left:3px solid ${riskColor};border-radius:0 var(--rs) var(--rs) 0;padding:10px 12px;margin-bottom:8px;">
+          <div style="font-size:.78rem;font-weight:700;color:var(--br);">${a.item}</div>
+          <div style="font-size:.7rem;color:var(--lt);">Loja: ${STORES[a.store]||a.store} · Resp: ${a.responsavel} · Prazo: ${a.prazo}</div>
+          <div style="font-size:.65rem;font-weight:700;color:${riskColor};margin-top:3px;text-transform:uppercase;">Risco: ${a.risco}</div>
+          <button onclick="resolverAcao('${a.id}')" style="margin-top:6px;font-size:.65rem;padding:3px 10px;border-radius:99px;border:1px solid var(--gn);color:var(--gn);background:transparent;cursor:pointer;font-family:inherit;">Marcar resolvido</button>
+        </div>`;
+      }).join('')
+    : '<div style="font-size:.8rem;color:var(--lt);">Nenhum plano de ação aberto.</div>';
+}
+
+function calcReincidencias(targetId){
+  const el = document.getElementById(targetId);
+  if(!el) return;
+  const agora = new Date();
+  const reinci = {};
+  historyCache.forEach(r=>{
+    const dataRec = new Date(r.ts||r.dateStr);
+    const diffDias = Math.floor((agora-dataRec)/(1000*60*60*24));
+    (r.itensList||[]).forEach(it=>{
+      if(!it.done){
+        const key = `${r.store}|${it.text}`;
+        if(!reinci[key]) reinci[key]={store:r.store,item:it.text,d7:0,d15:0,d30:0};
+        if(diffDias<=7) reinci[key].d7++;
+        if(diffDias<=15) reinci[key].d15++;
+        if(diffDias<=30) reinci[key].d30++;
+      }
+    });
+  });
+  const lista = Object.values(reinci).filter(r=>r.d30>=2).sort((a,b)=>b.d30-a.d30).slice(0,8);
+  if(!lista.length){el.innerHTML='<div style="font-size:.8rem;color:var(--lt);">Nenhuma reincidência identificada.</div>';return;}
+  el.innerHTML = lista.map(r=>{
+    const cor = r.d7>=3?'var(--rd)':r.d15>=3?'var(--or)':'var(--gd)';
+    return `<div style="border-left:3px solid ${cor};padding:8px 10px;margin-bottom:8px;background:var(--cr);border-radius:0 var(--rs) var(--rs) 0;">
+      <div style="font-size:.78rem;font-weight:700;color:var(--br);">${STORES[r.store]||r.store}: ${r.item.substring(0,50)}${r.item.length>50?'...':''}</div>
+      <div style="font-size:.68rem;color:var(--lt);margin-top:3px;">
+        Últimos 7d: <strong style="color:${r.d7>=3?'var(--rd)':''}">${r.d7}x</strong> · 
+        15d: <strong>${r.d15}x</strong> · 
+        30d: <strong>${r.d30}x</strong>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadHistSilent(){
+  try{
+    const snap = ST.user?.role==='admin'||ST.user?.store==='todas'
+      ? await getDocs(collection(db,'checklists'))
+      : await getDocs(query(collection(db,'checklists'),where('store','==',ST.user.store)));
+    historyCache = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+  }catch(e){console.warn('loadHistSilent:',e);}
+}
+
+// ═══════════════════════════════════════════════
+//  PLANO DE AÇÃO
+// ═══════════════════════════════════════════════
+function abrirPlanoAcao(item, store, pct){
+  const risco = pct===0?'critico':pct<30?'alto':pct<60?'medio':'baixo';
+  const id = Date.now().toString();
+  const prazo = risco==='critico'?'Hoje':risco==='alto'?'Amanhã':'Esta semana';
+  const acao = {
+    id, item, store,
+    risco, prazo,
+    responsavel:'Gerente',
+    status:'aberto',
+    criadoEm: new Date().toLocaleDateString('pt-BR'),
+    obs:'', fotoCorrecao:''
+  };
+  const acoes = JSON.parse(localStorage.getItem('cb_acoes')||'[]');
+  acoes.unshift(acao);
+  localStorage.setItem('cb_acoes',JSON.stringify(acoes.slice(0,100)));
+  toast(`📋 Plano de ação criado! Risco: ${risco.toUpperCase()}`);
+}
+
+function resolverAcao(id){
+  const acoes = JSON.parse(localStorage.getItem('cb_acoes')||'[]');
+  const idx = acoes.findIndex(a=>a.id===id);
+  if(idx>=0){ acoes[idx].status='resolvido'; localStorage.setItem('cb_acoes',JSON.stringify(acoes)); }
+  loadScore();
+  toast('✅ Plano de ação resolvido!');
+}
+
+// ═══════════════════════════════════════════════
+//  IA CHAT
+// ═══════════════════════════════════════════════
+let iaChatHistory = [];
+
+async function iaEnviar(){
+  const input = document.getElementById('ia-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value='';
+  iaAddMsg(msg,'user');
+  iaChatHistory.push({role:'user',content:msg});
+  await iaCallClaude();
+}
+
+async function iaQuick(msg){
+  iaAddMsg(msg,'user');
+  iaChatHistory.push({role:'user',content:msg});
+  await iaCallClaude();
+}
+
+function iaAddMsg(text, role){
+  const msgs = document.getElementById('ia-messages');
+  const div = document.createElement('div');
+  const isUser = role==='user';
+  div.style.cssText=`background:${isUser?'var(--br)':'#F0E8DC'};color:${isUser?'var(--gd)':'var(--br)'};border-radius:${isUser?'12px 12px 4px 12px':'12px 12px 12px 4px'};padding:10px 14px;font-size:.82rem;line-height:1.5;max-width:88%;${isUser?'align-self:flex-end;margin-left:auto;':''}`;
+  div.innerHTML=text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function iaAddTyping(){
+  const msgs = document.getElementById('ia-messages');
+  const div = document.createElement('div');
+  div.id='ia-typing';
+  div.style.cssText='background:#F0E8DC;border-radius:12px 12px 12px 4px;padding:10px 14px;max-width:80px;';
+  div.innerHTML='<span style="display:inline-flex;gap:4px;"><span style="width:6px;height:6px;background:var(--lt);border-radius:50%;animation:bounce .8s infinite;display:inline-block;"></span><span style="width:6px;height:6px;background:var(--lt);border-radius:50%;animation:bounce .8s .1s infinite;display:inline-block;"></span><span style="width:6px;height:6px;background:var(--lt);border-radius:50%;animation:bounce .8s .2s infinite;display:inline-block;"></span></span>';
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+async function iaCallClaude(){
+  const btn = document.querySelector('#scr-ia button[onclick="iaEnviar()"]');
+  if(btn) btn.disabled=true;
+  iaAddTyping();
+
+  // Contexto operacional real
+  const totalRecs = historyCache.length;
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const recsHoje = historyCache.filter(r=>r.dateStr===hoje).length;
+  const pctMedio = totalRecs?Math.round(historyCache.reduce((a,r)=>a+r.pct,0)/totalRecs):0;
+
+  const systemPrompt = `Você é o assistente de inteligência operacional do sistema Casa de Bolos.
+Dados reais disponíveis:
+- Total de registros: ${totalRecs}
+- Registros hoje: ${recsHoje}
+- Conformidade média da rede: ${pctMedio}%
+- Lojas: Méier, Tijuca, Copacabana, Botafogo, Ilha do Governador
+Responda em português, de forma objetiva e acionável. Use dados reais quando disponíveis.`;
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        system:systemPrompt,
+        messages:iaChatHistory.slice(-10)
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text||'Erro ao processar.';
+    document.getElementById('ia-typing')?.remove();
+    iaAddMsg(reply,'ai');
+    iaChatHistory.push({role:'assistant',content:reply});
+  }catch(e){
+    document.getElementById('ia-typing')?.remove();
+    iaAddMsg('Erro de conexão. Verifique sua internet.','ai');
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
+async function iaRelatorio(){
+  const periodo = document.getElementById('ia-rel-periodo').value;
+  const result = document.getElementById('ia-relatorio-result');
+  result.style.display='block';
+  result.innerHTML='⏳ Gerando relatório...';
+
+  const pctMedio = historyCache.length?Math.round(historyCache.reduce((a,r)=>a+r.pct,0)/historyCache.length):0;
+  const prompt = `Gere um relatório executivo de conformidade operacional para o período: ${periodo}.
+Dados: ${historyCache.length} registros, conformidade média ${pctMedio}%.
+Lojas: Méier, Tijuca, Copacabana, Botafogo, Ilha do Governador.
+Formato: resumo executivo, principais problemas, recomendações prioritárias. Seja objetivo e acionável.`;
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text||'Erro.';
+    result.innerHTML=reply.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  }catch(e){
+    result.innerHTML='Erro ao gerar relatório.';
+  }
+}
 function renderAdmin(){
   const users=getUsers();
   document.getElementById('users-list').innerHTML=users.map((u,i)=>`
@@ -1139,7 +1649,9 @@ window.doLogin=doLogin;window.doLogout=doLogout;window.goTab=goTab;window.goBack
 window.pick=pick;window.updBtn=updBtn;window.startCL=startCL;window.toggle=toggle;window.toggleCount=toggleCount;
 window.addPh=addPh;window.rmPh=rmPh;window.saveObs=saveObs;window.saveQty=saveQty;window.checkQty=checkQty;window.sendCL=sendCL;window.compressPhoto=compressPhoto;
 window.setHistFilter=setHistFilter;window.toggleHist=toggleHist;window.editarChecklist=editarChecklist;
-window.loadHist=loadHist;window.addUser=addUser;window.delUser=delUser;
+window.loadHist=loadHist;window.loadPainel=loadPainel;window.loadScore=loadScore;
+window.resolverAcao=resolverAcao;window.iaEnviar=iaEnviar;window.iaQuick=iaQuick;window.iaRelatorio=iaRelatorio;
+window.addUser=addUser;window.delUser=delUser;
 window.openZoom=openZoom;window.closeZoom=closeZoom;
 </script>
 </body>
