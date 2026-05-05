@@ -815,8 +815,6 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
   </div>
   </div>
-</div><!-- fim pg-app -->
-
   <!-- ADMIN -->
   <div style="display:none" id="scr-admin">
   <div class="body-wrap">
@@ -853,41 +851,8 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
   </div>
   </div>
-  <div class="body-wrap">
-    <h1 class="pg-title">Admin</h1>
-    <p class="pg-sub">Gerencie usuários e configurações</p>
-    <div class="admin-section">
-      <div class="admin-section-title">👥 Usuários Cadastrados</div>
-      <div id="users-list"></div>
-      <div class="add-user-form">
-        <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">+ Novo Usuário</div>
-        <div class="form-row">
-          <div><span class="fl">Login</span><input type="text" id="nu-login" placeholder="ex: joao.silva"></div>
-          <div><span class="fl">Senha</span><input type="password" id="nu-pass" placeholder="mínimo 4 dígitos"></div>
-        </div>
-        <div class="form-row">
-          <div><span class="fl">Nome completo</span><input type="text" id="nu-name" placeholder="João Silva"></div>
-          <div><span class="fl">Loja</span>
-            <div class="sw"><select id="nu-store">
-              <option value="todas">Todas as lojas</option>
-              <option value="meier">Méier</option>
-              <option value="tijuca">Tijuca</option>
-              <option value="copacabana">Copacabana</option>
-              <option value="botafogo">Botafogo</option>
-              <option value="ilha">Ilha do Governador</option>
-            </select></div>
-          </div>
-        </div>
-        <button class="btn" onclick="addUser()">Cadastrar Usuário</button>
-      </div>
-    </div>
-    <div class="admin-section">
-      <div class="admin-section-title">📊 Estatísticas Firebase</div>
-      <div id="admin-stats" style="font-size:.83rem;color:var(--md);">Carregando...</div>
-    </div>
-  </div>
-  </div>
-</div>
+
+</div><!-- fim pg-app -->
 
 <script type="module">
 // ═══════════════════════════════════════════════
