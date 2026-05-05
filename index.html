@@ -1888,7 +1888,7 @@ Gere um relatório executivo com:
 Seja específico, use os nomes reais das lojas e dos itens. Escreva como um relatório executivo direto ao dono do negócio.`;
 
   try{
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch('https://casadebolos-proxy.vercel.app/api/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -2020,7 +2020,7 @@ Retorne APENAS um JSON válido:
 Se não conseguir contar com precisão, estime e indique confiança baixa.`;
 
   try{
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch('https://casadebolos-proxy.vercel.app/api/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -2333,7 +2333,7 @@ Dados reais disponíveis:
 Responda em português, de forma objetiva e acionável. Use dados reais quando disponíveis.`;
 
   try{
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch('https://casadebolos-proxy.vercel.app/api/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -2369,7 +2369,7 @@ Lojas: Méier, Tijuca, Copacabana, Botafogo, Ilha do Governador.
 Formato: resumo executivo, principais problemas, recomendações prioritárias. Seja objetivo e acionável.`;
 
   try{
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch('https://casadebolos-proxy.vercel.app/api/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -2808,7 +2808,7 @@ Analise comparativamente e retorne APENAS um JSON válido:
   ];
 
   try{
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch('https://casadebolos-proxy.vercel.app/api/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
