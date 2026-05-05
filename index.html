@@ -1561,69 +1561,77 @@ async function loadHist(){
   listEl.innerHTML='<div class="loading-hist">⏳ Carregando registros...</div>';
   subEl.textContent='Carregando...';
 
-  // Aguarda Firebase estar pronto (máx 8 segundos)
+  // Aguarda Firebase estar pronto (máx 12 segundos)
   if(!fbReady && !fbError){
     listEl.innerHTML='<div class="loading-hist">⏳ Conectando ao Firebase...</div>';
     let waited = 0;
-    while(!fbReady && !fbError && waited < 8000){
-      await new Promise(r=>setTimeout(r,500));
-      waited += 500;
+    while(!fbReady && !fbError && waited < 12000){
+      await new Promise(r=>setTimeout(r,300));
+      waited += 300;
     }
   }
 
-  // Se Firebase não conectou, usa local
-  if(!fbReady || fbError || !db){
-    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
-    historyCache = local;
-    if(local.length>0){
+  // Tenta Firebase mesmo que tenha dado fbError antes (pode ser erro temporário)
+  if(fbReady && db){
+    let snap = null;
+    try{
+      if(ST.user.role==='admin'||ST.user.store==='todas'){
+        snap = await getDocs(collection(db,'checklists'));
+      } else {
+        const q = query(collection(db,'checklists'),where('store','==',ST.user.store));
+        snap = await getDocs(q);
+      }
+    }catch(e){
+      console.warn('Firebase loadHist erro:', e.message);
+    }
+
+    if(snap && snap.size > 0){
+      historyCache = snap.docs
+        .map(d=>({id:d.id,...d.data()}))
+        .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
       renderHist();
-      listEl.insertAdjacentHTML('afterbegin',`
-        <div style="background:#FEF9E7;border:1px solid var(--or);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--or);">
-          ⚠️ Modo offline — mostrando registros deste dispositivo.
-          <button onclick="loadHist()" style="display:block;margin-top:6px;background:transparent;border:1px solid var(--or);border-radius:99px;padding:3px 10px;font-size:.7rem;color:var(--or);cursor:pointer;font-family:inherit;">🔄 Tentar novamente</button>
-        </div>`);
-    } else {
-      listEl.innerHTML='<div class="empty-hist">📶 Sem conexão com Firebase.<br><button onclick="loadHist()" style="margin-top:10px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button></div>';
-      subEl.textContent='Offline';
+      return;
     }
-    return;
+
+    if(snap && snap.size === 0){
+      // Firebase conectou mas não tem dados ainda
+      listEl.innerHTML='<div class="empty-hist">Nenhum checklist encontrado no Firebase.<br><button onclick="loadHist()" style="margin-top:10px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button></div>';
+      subEl.textContent='0 registros';
+      return;
+    }
   }
 
-  // Firebase está pronto — busca dados
-  let snap = null;
-  let lastErr = null;
-  try{
-    if(ST.user.role==='admin'||ST.user.store==='todas'){
-      snap = await getDocs(collection(db,'checklists'));
-    } else {
-      const q = query(collection(db,'checklists'),where('store','==',ST.user.store));
-      snap = await getDocs(q);
-    }
-  }catch(e){
-    lastErr = e;
-    console.warn('Firebase loadHist erro:', e.message);
-  }
+  // Firebase não disponível — usa localStorage como fallback
+  const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+  historyCache = local;
 
-  if(snap){
-    historyCache = snap.docs
-      .map(d=>({id:d.id,...d.data()}))
-      .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+  if(local.length > 0){
     renderHist();
+    listEl.insertAdjacentHTML('afterbegin',`
+      <div style="background:#FEF9E7;border:1px solid var(--or);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--or);">
+        ⚠️ Firebase offline — mostrando registros deste dispositivo.
+        <button onclick="loadHist()" style="display:block;margin-top:6px;background:var(--br);color:var(--gd);border:none;border-radius:99px;padding:5px 14px;font-size:.7rem;cursor:pointer;font-family:inherit;">🔄 Tentar Firebase novamente</button>
+      </div>`);
   } else {
-    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
-    historyCache = local;
-    if(local.length>0){
-      renderHist();
-      listEl.insertAdjacentHTML('afterbegin',`
-        <div style="background:#FEF9E7;border:1px solid var(--or);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--or);">
-          ⚠️ Erro Firebase — mostrando dados locais.<br>
-          <small>${lastErr?.message||''}</small>
-        </div>`);
-    } else {
-      listEl.innerHTML=`<div class="empty-hist">❌ Erro ao carregar.<br><small style="color:var(--rd)">${lastErr?.message||''}</small><br><button onclick="loadHist()" style="margin-top:10px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button></div>`;
-      subEl.textContent='Erro';
-    }
+    listEl.innerHTML=`
+      <div class="empty-hist">
+        📶 Firebase não conectado e sem dados locais.<br>
+        <small style="color:var(--lt);display:block;margin-top:4px;">Verifique sua conexão com a internet.</small>
+        <button onclick="reconectarFirebase()" style="margin-top:12px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:10px 18px;font-size:.82rem;cursor:pointer;font-family:inherit;">🔄 Reconectar e tentar novamente</button>
+      </div>`;
+    subEl.textContent='Offline';
   }
+}
+
+async function reconectarFirebase(){
+  // Reinicia a conexão com Firebase e tenta de novo
+  fbReady = false;
+  fbError = false;
+  db = null;
+  document.getElementById('hist-list').innerHTML='<div class="loading-hist">⏳ Reconectando ao Firebase...</div>';
+  await initFirebase();
+  await new Promise(r=>setTimeout(r,2000));
+  loadHist();
 }
 
 function renderHist(){
@@ -2987,6 +2995,7 @@ window.setHistFilter=setHistFilter;
 window.toggleHist=toggleHist;
 window.editarChecklist=editarChecklist;
 window.loadHist=loadHist;
+window.reconectarFirebase=reconectarFirebase;
 window.loadPainel=loadPainel;
 window.loadScore=loadScore;
 window.gerarRelatorioIA=gerarRelatorioIA;
