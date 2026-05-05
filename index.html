@@ -235,6 +235,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <button class="tab" onclick="goTab('painel')" id="tab-painel" style="display:none">🏠 Painel</button>
     <button class="tab" onclick="goTab('score')" id="tab-score" style="display:none">🏆 Score</button>
     <button class="tab" onclick="goTab('ia')" id="tab-ia" style="display:none">🤖 IA</button>
+    <button class="tab" onclick="goTab('auditoria')" id="tab-auditoria" style="display:none">🔍 Auditoria</button>
     <button class="tab" onclick="goTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
   </div>
 
@@ -382,6 +383,61 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
 
     <button class="btn" onclick="loadScore()">🔄 Atualizar score</button>
+
+    <!-- EXPORTAÇÃO -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">📤 Exportar Relatórios</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <select id="exp-tipo" style="font-size:.8rem;padding:8px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;">
+          <option value="diario">Relatório Diário</option>
+          <option value="semanal">Relatório Semanal</option>
+          <option value="mensal">Relatório Mensal</option>
+          <option value="sanitario">Relatório Sanitário</option>
+          <option value="nao_conformidades">Não Conformidades</option>
+          <option value="plano_acao">Plano de Ação</option>
+        </select>
+        <select id="exp-loja" style="font-size:.8rem;padding:8px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;">
+          <option value="todas">Todas as lojas</option>
+          <option value="meier">Méier</option>
+          <option value="tijuca">Tijuca</option>
+          <option value="copacabana">Copacabana</option>
+          <option value="botafogo">Botafogo</option>
+          <option value="ilha">Ilha do Governador</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn" style="flex:1;background:var(--rd);" onclick="exportarPDF()">📄 Exportar PDF</button>
+        <button class="btn" style="flex:1;background:var(--gn);" onclick="exportarExcel()">📊 Exportar Excel</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- MODO AUDITORIA -->
+  <div style="display:none" id="scr-auditoria">
+  <div class="body-wrap">
+    <h1 class="pg-title">Modo Auditoria</h1>
+    <p class="pg-sub">Auditoria surpresa — compare com o que a loja reportou</p>
+
+    <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--or);margin-bottom:6px;">⚡ Auditoria Surpresa</div>
+      <p style="font-size:.82rem;color:var(--br);line-height:1.5;">Você está em modo auditor. Os dados do checklist da equipe serão comparados com o que você encontrar agora.</p>
+    </div>
+
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <span class="fl">Loja a auditar</span>
+      <div class="sw"><select id="aud-loja">
+        <option value="meier">Méier</option>
+        <option value="tijuca">Tijuca</option>
+        <option value="copacabana">Copacabana</option>
+        <option value="botafogo">Botafogo</option>
+        <option value="ilha">Ilha do Governador</option>
+      </select></div>
+    </div>
+
+    <div id="aud-resultado" style="margin-bottom:14px;"></div>
+
+    <button class="btn" onclick="iniciarAuditoria()">🔍 Iniciar Auditoria Surpresa</button>
   </div>
   </div>
 
@@ -418,12 +474,57 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- GERAR RELATÓRIO IA -->
     <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
-      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">📊 Relatório Automático</div>
-      <select id="ia-rel-periodo" style="width:100%;margin-bottom:8px;" class="gen-sel">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">📊 Relatório Automático com IA</div>
+      <select id="ia-rel-periodo" style="width:100%;margin-bottom:8px;padding:9px 12px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
         <option>Hoje</option><option>Esta semana</option><option>Este mês</option>
       </select>
-      <button class="btn" onclick="iaRelatorio()">Gerar relatório com IA</button>
+      <select id="ia-rel-tipo" style="width:100%;margin-bottom:8px;padding:9px 12px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        <option value="geral">Relatório geral</option>
+        <option value="sanitario">Relatório sanitário</option>
+        <option value="nao_conformidades">Não conformidades</option>
+        <option value="gerente">Score por gerente</option>
+        <option value="reincidencias">Reincidências</option>
+      </select>
+      <button class="btn" onclick="iaRelatorio()" style="margin-bottom:8px;">Gerar relatório com IA</button>
       <div id="ia-relatorio-result" style="margin-top:12px;font-size:.82rem;line-height:1.6;color:var(--br);display:none;"></div>
+    </div>
+
+    <!-- ALERTAS AUTOMÁTICOS -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">🔔 Configurar Alertas</div>
+      <div style="font-size:.8rem;color:var(--md);margin-bottom:10px;">Alertas automáticos por WhatsApp e Email</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;">
+          <input type="checkbox" id="alerta-checklist" checked> Checklist não feito
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;">
+          <input type="checkbox" id="alerta-critico" checked> Item crítico reprovado
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;">
+          <input type="checkbox" id="alerta-temperatura"> Temperatura fora do padrão
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;">
+          <input type="checkbox" id="alerta-validade" checked> Validade vencida
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;">
+          <input type="checkbox" id="alerta-reincidencia" checked> Falha recorrente
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;">
+          <input type="checkbox" id="alerta-score"> Queda de score
+        </label>
+      </div>
+      <div style="margin-top:10px;">
+        <span class="fl">Email para alertas</span>
+        <input type="email" id="alerta-email" placeholder="gerente@casadebolos.com.br" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+      </div>
+      <button class="btn" style="margin-top:10px;" onclick="salvarAlertas()">💾 Salvar configurações</button>
+    </div>
+
+    <!-- APROVAÇÃO DE PLANOS DE AÇÃO -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">✅ Aprovar Planos de Ação</div>
+      <div id="aprovacao-lista"><div style="font-size:.8rem;color:var(--lt);">Nenhum plano aguardando aprovação.</div></div>
+      <button class="btn" style="margin-top:10px;" onclick="carregarAprovacoes()">🔄 Atualizar</button>
     </div>
   </div>
   </div>
@@ -852,7 +953,7 @@ function doLogin(){
   document.getElementById('tab-admin').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-painel').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-score').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-ia').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-auditoria').style.display=user.role==='admin'?'':'none';
   buildStoreSelect(user);
   showPage('pg-app');
   goTab('sel');
@@ -877,7 +978,7 @@ function buildStoreSelect(user){
 //  NAVIGATION
 // ═══════════════════════════════════════════════
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
-function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
+function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','auditoria','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
 function goTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+t)?.classList.add('on');
@@ -885,7 +986,8 @@ function goTab(t){
   else if(t==='hist'){showAllScr('hist');loadHist();}
   else if(t==='painel'){showAllScr('painel');loadPainel();}
   else if(t==='score'){showAllScr('score');loadScore();}
-  else if(t==='ia'){showAllScr('ia');}
+  else if(t==='ia'){showAllScr('ia');carregarConfigAlertas();carregarAprovacoes();}
+  else if(t==='auditoria'){showAllScr('auditoria');}
   else if(t==='admin'){showAllScr('admin');renderAdmin();}
 }
 function goBack(){goTab('sel');}
@@ -1083,6 +1185,20 @@ async function sendCL(){
   if(done===0){toast('Preencha ao menos 1 item!');return;}
   if(ST.items.filter(i=>i.p&&i.done&&i.photos.length===0).length>0){toast('📸 Envie todas as fotos obrigatórias!');return;}
 
+  // Captura GPS
+  let gps = null;
+  try {
+    if(navigator.geolocation){
+      gps = await new Promise((res)=>{
+        navigator.geolocation.getCurrentPosition(
+          p=>res({lat:p.coords.latitude.toFixed(6),lng:p.coords.longitude.toFixed(6)}),
+          ()=>res(null),
+          {timeout:5000}
+        );
+      });
+    }
+  }catch(e){}
+
   setOv(true,'Salvando...');
   const now=new Date();
   const rec={
@@ -1095,6 +1211,7 @@ async function sendCL(){
     timeStr:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
     dateStr:now.toLocaleDateString('pt-BR'),
     ts:now.toISOString(),
+    gps: gps,
     createdAt:new Date()
   };
 
@@ -1587,6 +1704,129 @@ Formato: resumo executivo, principais problemas, recomendações prioritárias. 
     result.innerHTML='Erro ao gerar relatório.';
   }
 }
+// ═══════════════════════════════════════════════
+//  EXPORTAÇÃO PDF
+// ═══════════════════════════════════════════════
+async function exportarPDF(){
+  const tipo=document.getElementById('exp-tipo').value;
+  const loja=document.getElementById('exp-loja').value;
+  setOv(true,'Gerando PDF...');
+  if(!historyCache.length) await loadHistSilent();
+  const filtrado=loja==='todas'?historyCache:historyCache.filter(r=>r.store===loja);
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const tiposNome={diario:'Diário',semanal:'Semanal',mensal:'Mensal',sanitario:'Sanitário',nao_conformidades:'Não Conformidades',plano_acao:'Plano de Ação'};
+  const pctMedio=filtrado.length?Math.round(filtrado.reduce((a,r)=>a+r.pct,0)/filtrado.length):0;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório ${tiposNome[tipo]} — Casa de Bolos</title>
+  <style>body{font-family:Arial,sans-serif;margin:20px;color:#333;}h1{color:#2C1810;border-bottom:2px solid #D4A843;padding-bottom:8px;}h2{color:#6B3D2E;font-size:1rem;margin-top:16px;}.item{padding:6px 0;border-bottom:1px solid #EEE;font-size:.88rem;}.ok{color:#27AE60;}.fail{color:#C0392B;}.meta{color:#999;font-size:.75rem;}.score{font-size:1.5rem;font-weight:bold;color:#2C1810;}@media print{body{margin:0;}}</style></head><body>
+  <h1>🎂 Casa de Bolos — Relatório ${tiposNome[tipo]||tipo}</h1>
+  <p class="meta">Gerado em: ${hoje} | Loja: ${loja==='todas'?'Todas as lojas':STORES[loja]}</p>
+  <p>Total de registros: <strong>${filtrado.length}</strong> | Conformidade média: <span class="score">${pctMedio}%</span></p>
+  <h2>Registros</h2>
+  ${filtrado.slice(0,50).map(r=>`<div class="item"><strong>${r.storeName}</strong> — ${r.typeName} — ${r.operator}<br><span class="meta">${r.dateStr} ${r.timeStr}</span>${r.gps?`<span class="meta"> 📍${r.gps.lat},${r.gps.lng}</span>`:''}<span class="${r.pct>=80?'ok':'fail'}"> ${r.pct}%</span>${(r.itensList||[]).filter(i=>!i.done).length>0?`<br><span class="fail">❌ ${(r.itensList||[]).filter(i=>!i.done).map(i=>i.text.substring(0,50)).join(' · ')}</span>`:''}</div>`).join('')}
+  <script>window.onload=()=>window.print();<\/script></body></html>`);
+  win.document.close();
+  setOv(false);
+}
+
+async function exportarExcel(){
+  const tipo=document.getElementById('exp-tipo').value;
+  const loja=document.getElementById('exp-loja').value;
+  if(!historyCache.length) await loadHistSilent();
+  const filtrado=loja==='todas'?historyCache:historyCache.filter(r=>r.store===loja);
+  const hoje=new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  let csv='Data,Hora,Loja,Checklist,Responsável,Conformidade(%),Feitos,Total,Fotos,GPS\n';
+  filtrado.forEach(r=>{
+    const gpsStr=r.gps?`${r.gps.lat};${r.gps.lng}`:'';
+    csv+=`"${r.dateStr}","${r.timeStr}","${r.storeName}","${r.typeName}","${r.operator}",${r.pct},${r.done},${r.total},${r.totalPhotos},"${gpsStr}"\n`;
+  });
+  csv+='\n\nNÃO CONFORMIDADES\nData,Hora,Loja,Checklist,Item,Observação\n';
+  filtrado.forEach(r=>{
+    (r.itensList||[]).filter(i=>!i.done).forEach(it=>{
+      csv+=`"${r.dateStr}","${r.timeStr}","${r.storeName}","${r.typeName}","${it.text.replace(/"/g,"'")}","${it.obs||''}"\n`;
+    });
+  });
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`relatorio_casadebolos_${tipo}_${hoje}.csv`;
+  a.click();URL.revokeObjectURL(url);
+  toast('✅ Excel exportado!');
+}
+
+// ═══════════════════════════════════════════════
+//  MODO AUDITORIA
+// ═══════════════════════════════════════════════
+async function iniciarAuditoria(){
+  const loja=document.getElementById('aud-loja').value;
+  if(!historyCache.length) await loadHistSilent();
+  const ultimosCL=historyCache.filter(r=>r.store===loja).slice(0,3);
+  if(!ultimosCL.length){document.getElementById('aud-resultado').innerHTML=`<div style="font-size:.82rem;color:var(--rd);">Nenhum checklist encontrado para ${STORES[loja]}.</div>`;return;}
+  let html=`<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;margin-bottom:10px;"><div style="font-size:.75rem;font-weight:700;color:var(--or);margin-bottom:8px;">📋 Últimos checklists de ${STORES[loja]}</div>`;
+  ultimosCL.forEach(r=>{
+    const naoFeitos=(r.itensList||[]).filter(i=>!i.done);
+    html+=`<div style="border-bottom:1px solid #F5E9C0;padding:8px 0;"><div style="font-size:.82rem;font-weight:600;">${r.typeName} — ${r.dateStr} ${r.timeStr}</div><div style="font-size:.75rem;color:var(--md);">Operador: ${r.operator} | Score: ${r.pct}%</div>${r.gps?`<div style="font-size:.7rem;color:var(--lt);">📍 ${r.gps.lat}, ${r.gps.lng}</div>`:''} ${naoFeitos.length?`<div style="font-size:.75rem;color:var(--rd);margin-top:4px;">❌ ${naoFeitos.map(i=>i.text.substring(0,40)).join(', ')}</div>`:'<div style="font-size:.75rem;color:var(--gn);">✅ Todos feitos</div>'}</div>`;
+  });
+  html+=`</div><div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;"><div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:8px;">🔍 Sua avaliação como auditor</div><textarea id="aud-obs" placeholder="Descreva o que encontrou..." style="width:100%;padding:10px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:80px;resize:vertical;"></textarea><div style="margin-top:8px;"><span class="fl">Nota da auditoria (0-100)</span><input type="number" id="aud-nota" min="0" max="100" placeholder="85" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.88rem;"></div><div class="uarea" style="margin-top:10px;"><input type="file" accept="image/*" capture="environment" onchange="audFotoUp(event)"><div class="uicon">📷</div><div class="utxt">Foto obrigatória</div></div><div id="aud-fotos" style="margin-top:8px;"></div><button class="btn" style="margin-top:10px;" onclick="salvarAuditoria('${loja}')">📤 Salvar auditoria</button></div>`;
+  document.getElementById('aud-resultado').innerHTML=html;
+}
+
+let _audFotos=[];
+function audFotoUp(ev){
+  Array.from(ev.target.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=async e=>{const c=await compressPhoto(e.target.result);_audFotos.push(c);document.getElementById('aud-fotos').innerHTML=_audFotos.map(p=>`<img src="${p}" style="width:70px;height:70px;object-fit:cover;border-radius:6px;margin:3px;">`).join('');};
+    r.readAsDataURL(f);
+  });
+}
+
+async function salvarAuditoria(loja){
+  const obs=document.getElementById('aud-obs')?.value||'';
+  const nota=document.getElementById('aud-nota')?.value;
+  if(!nota){toast('Informe a nota!');return;}
+  const aud={id:Date.now().toString(),loja,lojaName:STORES[loja],obs,nota:parseInt(nota),fotos:[..._audFotos],data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),auditor:ST.user.name};
+  const audits=JSON.parse(localStorage.getItem('cb_audits')||'[]');
+  audits.unshift(aud);localStorage.setItem('cb_audits',JSON.stringify(audits.slice(0,50)));
+  _audFotos=[];
+  toast('✅ Auditoria salva!');
+  document.getElementById('aud-resultado').innerHTML=`<div style="background:var(--gnb);border:1px solid #B8EFD0;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--gn);">✅ Auditoria registrada! Nota: ${nota}/100</div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  ALERTAS E EMAIL
+// ═══════════════════════════════════════════════
+function salvarAlertas(){
+  const config={checklist:document.getElementById('alerta-checklist').checked,critico:document.getElementById('alerta-critico').checked,temperatura:document.getElementById('alerta-temperatura').checked,validade:document.getElementById('alerta-validade').checked,reincidencia:document.getElementById('alerta-reincidencia').checked,score:document.getElementById('alerta-score').checked,email:document.getElementById('alerta-email').value};
+  localStorage.setItem('cb_alertas',JSON.stringify(config));
+  toast('✅ Alertas salvos!');
+}
+
+// ═══════════════════════════════════════════════
+//  APROVAÇÃO DE PLANOS DE AÇÃO
+// ═══════════════════════════════════════════════
+function carregarAprovacoes(){
+  const acoes=JSON.parse(localStorage.getItem('cb_acoes')||'[]');
+  const pendentes=acoes.filter(a=>a.status==='aberto');
+  const el=document.getElementById('aprovacao-lista');
+  if(!el) return;
+  if(!pendentes.length){el.innerHTML='<div style="font-size:.8rem;color:var(--lt);">Nenhum plano aguardando aprovação.</div>';return;}
+  el.innerHTML=pendentes.map(a=>{
+    const rc=a.risco==='critico'||a.risco==='alto'?'var(--rd)':a.risco==='medio'?'var(--or)':'var(--gd)';
+    return`<div style="background:var(--cr);border-left:3px solid ${rc};border-radius:0 var(--rs) var(--rs) 0;padding:10px 12px;margin-bottom:8px;"><div style="font-size:.78rem;font-weight:700;color:var(--br);">${a.item}</div><div style="font-size:.7rem;color:var(--lt);">${STORES[a.store]||a.store} · Resp: ${a.responsavel} · Prazo: ${a.prazo}</div><div style="font-size:.65rem;font-weight:700;color:${rc};text-transform:uppercase;margin:4px 0;">Risco: ${a.risco}</div><textarea placeholder="Observação..." style="width:100%;font-size:.75rem;padding:6px;border-radius:6px;border:1px solid #E8D8C8;font-family:inherit;min-height:40px;resize:none;margin-bottom:6px;" id="ap-obs-${a.id}"></textarea><div style="display:flex;gap:6px;"><button onclick="aprovarAcao('${a.id}','aprovado')" style="flex:1;font-size:.7rem;padding:5px;border-radius:99px;border:none;background:var(--gn);color:white;cursor:pointer;font-family:inherit;">✅ Aprovar</button><button onclick="aprovarAcao('${a.id}','reprovado')" style="flex:1;font-size:.7rem;padding:5px;border-radius:99px;border:none;background:var(--rd);color:white;cursor:pointer;font-family:inherit;">❌ Reprovar</button></div></div>`;
+  }).join('');
+}
+
+function aprovarAcao(id,decisao){
+  const acoes=JSON.parse(localStorage.getItem('cb_acoes')||'[]');
+  const idx=acoes.findIndex(a=>a.id===id);
+  if(idx>=0){const obs=document.getElementById(`ap-obs-${id}`)?.value||'';acoes[idx].status=decisao;acoes[idx].aprovadoPor=ST.user.name;acoes[idx].obsAprovacao=obs;acoes[idx].dataAprovacao=new Date().toLocaleDateString('pt-BR');localStorage.setItem('cb_acoes',JSON.stringify(acoes));}
+  toast(`${decisao==='aprovado'?'✅ Aprovado':'❌ Reprovado'}!`);
+  carregarAprovacoes();
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN
+// ═══════════════════════════════════════════════
 function renderAdmin(){
   const users=getUsers();
   document.getElementById('users-list').innerHTML=users.map((u,i)=>`
@@ -1650,6 +1890,9 @@ window.pick=pick;window.updBtn=updBtn;window.startCL=startCL;window.toggle=toggl
 window.addPh=addPh;window.rmPh=rmPh;window.saveObs=saveObs;window.saveQty=saveQty;window.checkQty=checkQty;window.sendCL=sendCL;window.compressPhoto=compressPhoto;
 window.setHistFilter=setHistFilter;window.toggleHist=toggleHist;window.editarChecklist=editarChecklist;
 window.loadHist=loadHist;window.loadPainel=loadPainel;window.loadScore=loadScore;
+window.exportarPDF=exportarPDF;window.exportarExcel=exportarExcel;
+window.iniciarAuditoria=iniciarAuditoria;window.audFotoUp=audFotoUp;window.salvarAuditoria=salvarAuditoria;
+window.salvarAlertas=salvarAlertas;window.carregarAprovacoes=carregarAprovacoes;window.aprovarAcao=aprovarAcao;
 window.resolverAcao=resolverAcao;window.iaEnviar=iaEnviar;window.iaQuick=iaQuick;window.iaRelatorio=iaRelatorio;
 window.addUser=addUser;window.delUser=delUser;
 window.openZoom=openZoom;window.closeZoom=closeZoom;
