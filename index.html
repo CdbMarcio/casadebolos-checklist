@@ -891,11 +891,8 @@ select:focus,input:focus{border-color:var(--gd);}
 
 <script type="module">
 // ═══════════════════════════════════════════════
-//  FIREBASE CONFIG
+//  FIREBASE — CARREGAMENTO DINÂMICO (não bloqueia o app)
 // ═══════════════════════════════════════════════
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
 const firebaseConfig = {
   apiKey: "AIzaSyDWrPl9XrcFGQB_X13Pa1RC3nwqUz2Oj-g",
   authDomain: "casa-de-bolos-checklist.firebaseapp.com",
@@ -905,8 +902,42 @@ const firebaseConfig = {
   appId: "1:912637980142:web:6c10825f5ac055e75f32ff"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+// Firebase carrega em background — app funciona mesmo sem ele
+let db = null;
+let collection, addDoc, getDocs, query, where, doc, updateDoc;
+let fbReady = false;
+let fbError = false;
+
+async function initFirebase(){
+  try{
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+    const fs = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    collection = fs.collection;
+    addDoc = fs.addDoc;
+    getDocs = fs.getDocs;
+    query = fs.query;
+    where = fs.where;
+    doc = fs.doc;
+    updateDoc = fs.updateDoc;
+    const app = initializeApp(firebaseConfig);
+    db = fs.getFirestore(app);
+    fbReady = true;
+    console.log('✅ Firebase conectado');
+    // Atualiza indicador de status
+    const bar = document.querySelector('.stext');
+    if(bar) bar.textContent = 'Firebase conectado ✅';
+  }catch(e){
+    fbError = true;
+    console.warn('⚠️ Firebase não disponível — modo offline:', e.message);
+    const bar = document.querySelector('.stext');
+    if(bar){ bar.textContent = '⚠️ Modo offline — dados salvos localmente'; bar.style.color='var(--or)';}
+    const dot = document.querySelector('.sdot');
+    if(dot) dot.style.background='var(--or)';
+  }
+}
+
+// Inicia Firebase em background sem bloquear
+initFirebase();
 
 // ═══════════════════════════════════════════════
 //  CONSTANTES
@@ -1511,16 +1542,18 @@ async function sendCL(){
   localHist.unshift({...rec, id: Date.now()});
   localStorage.setItem('cb_hist', JSON.stringify(localHist.slice(0,100)));
 
-  // Firebase com timeout de 8 segundos
+  // Firebase — só tenta se estiver pronto
   let fbId=null;
-  try{
-    const fbPromise = ST.editingId
-      ? updateDoc(doc(db,'checklists',ST.editingId),rec).then(()=>ST.editingId)
-      : addDoc(collection(db,'checklists'),rec).then(r=>r.id);
-    const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000));
-    fbId = await Promise.race([fbPromise, timeoutPromise]);
-    if(ST.editingId) ST.editingId=null;
-  }catch(e){console.warn('Firebase:',e.message);}
+  if(fbReady && db){
+    try{
+      const fbPromise = ST.editingId
+        ? updateDoc(doc(db,'checklists',ST.editingId),rec).then(()=>ST.editingId)
+        : addDoc(collection(db,'checklists'),rec).then(r=>r.id);
+      const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000));
+      fbId = await Promise.race([fbPromise, timeoutPromise]);
+      if(ST.editingId) ST.editingId=null;
+    }catch(e){console.warn('Firebase sendCL:',e.message);}
+  }
 
   setOv(false);
 
@@ -1562,50 +1595,67 @@ async function loadHist(){
   listEl.innerHTML='<div class="loading-hist">⏳ Carregando registros...</div>';
   subEl.textContent='Carregando...';
 
-  // Tenta Firebase até 3 vezes
+  // Aguarda Firebase estar pronto (máx 8 segundos)
+  if(!fbReady && !fbError){
+    listEl.innerHTML='<div class="loading-hist">⏳ Conectando ao Firebase...</div>';
+    let waited = 0;
+    while(!fbReady && !fbError && waited < 8000){
+      await new Promise(r=>setTimeout(r,500));
+      waited += 500;
+    }
+  }
+
+  // Se Firebase não conectou, usa local
+  if(!fbReady || fbError || !db){
+    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+    historyCache = local;
+    if(local.length>0){
+      renderHist();
+      listEl.insertAdjacentHTML('afterbegin',`
+        <div style="background:#FEF9E7;border:1px solid var(--or);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--or);">
+          ⚠️ Modo offline — mostrando registros deste dispositivo.
+          <button onclick="loadHist()" style="display:block;margin-top:6px;background:transparent;border:1px solid var(--or);border-radius:99px;padding:3px 10px;font-size:.7rem;color:var(--or);cursor:pointer;font-family:inherit;">🔄 Tentar novamente</button>
+        </div>`);
+    } else {
+      listEl.innerHTML='<div class="empty-hist">📶 Sem conexão com Firebase.<br><button onclick="loadHist()" style="margin-top:10px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button></div>';
+      subEl.textContent='Offline';
+    }
+    return;
+  }
+
+  // Firebase está pronto — busca dados
   let snap = null;
   let lastErr = null;
-  for(let attempt=1; attempt<=3; attempt++){
-    try{
-      if(ST.user.role==='admin'||ST.user.store==='todas'){
-        snap = await getDocs(collection(db,'checklists'));
-      } else {
-        const q = query(collection(db,'checklists'),where('store','==',ST.user.store));
-        snap = await getDocs(q);
-      }
-      break; // sucesso
-    }catch(e){
-      lastErr = e;
-      console.warn(`Firebase tentativa ${attempt} falhou:`, e.message);
-      await new Promise(r=>setTimeout(r,1000*attempt));
+  try{
+    if(ST.user.role==='admin'||ST.user.store==='todas'){
+      snap = await getDocs(collection(db,'checklists'));
+    } else {
+      const q = query(collection(db,'checklists'),where('store','==',ST.user.store));
+      snap = await getDocs(q);
     }
+  }catch(e){
+    lastErr = e;
+    console.warn('Firebase loadHist erro:', e.message);
   }
 
   if(snap){
     historyCache = snap.docs
       .map(d=>({id:d.id,...d.data()}))
       .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
-    console.log('Registros carregados:', historyCache.length);
     renderHist();
   } else {
-    // Fallback: mostra registros locais se Firebase falhar
     const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+    historyCache = local;
     if(local.length>0){
-      historyCache = local;
       renderHist();
       listEl.insertAdjacentHTML('afterbegin',`
         <div style="background:#FEF9E7;border:1px solid var(--or);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--or);">
-          ⚠️ Modo offline — mostrando apenas registros deste dispositivo.<br>
+          ⚠️ Erro Firebase — mostrando dados locais.<br>
           <small>${lastErr?.message||''}</small>
         </div>`);
     } else {
-      listEl.innerHTML=`
-        <div class="empty-hist">
-          ❌ Não foi possível conectar ao Firebase.<br>
-          <small style="color:var(--rd);display:block;margin-top:6px;">${lastErr?.message||'Erro desconhecido'}</small><br>
-          <button onclick="loadHist()" style="margin-top:10px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button>
-        </div>`;
-      subEl.textContent='Erro de conexão';
+      listEl.innerHTML=`<div class="empty-hist">❌ Erro ao carregar.<br><small style="color:var(--rd)">${lastErr?.message||''}</small><br><button onclick="loadHist()" style="margin-top:10px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button></div>`;
+      subEl.textContent='Erro';
     }
   }
 }
@@ -2201,13 +2251,22 @@ function calcReincidencias(targetId){
 }
 
 async function loadHistSilent(){
+  if(!fbReady || !db){
+    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+    if(local.length) historyCache = local;
+    return;
+  }
   try{
     const snap = ST.user?.role==='admin'||ST.user?.store==='todas'
       ? await getDocs(collection(db,'checklists'))
       : await getDocs(query(collection(db,'checklists'),where('store','==',ST.user.store)));
     historyCache = snap.docs.map(d=>({id:d.id,...d.data()}))
       .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
-  }catch(e){console.warn('loadHistSilent:',e);}
+  }catch(e){
+    console.warn('loadHistSilent:',e.message);
+    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+    if(local.length) historyCache = local;
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -2486,16 +2545,24 @@ function renderAdmin(){
     </div>`).join('');
   // Stats
   document.getElementById('admin-stats').innerHTML='⏳ Carregando...';
-  getDocs(collection(db,'checklists')).then(snap=>{
-    const total=snap.size;
+  if(fbReady && db){
+    getDocs(collection(db,'checklists')).then(snap=>{
+      const total=snap.size;
+      const hoje=new Date().toLocaleDateString('pt-BR');
+      const hoje_count=snap.docs.filter(d=>d.data().dateStr===hoje).length;
+      document.getElementById('admin-stats').innerHTML=`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
+          <div style="background:var(--cr);border-radius:10px;padding:12px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:1.8rem;">${total}</div><div style="font-size:.7rem;color:var(--lt);">Total de registros</div></div>
+          <div style="background:var(--cr);border-radius:10px;padding:12px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:1.8rem;">${hoje_count}</div><div style="font-size:.7rem;color:var(--lt);">Hoje</div></div>
+        </div>`;
+    }).catch(()=>{document.getElementById('admin-stats').innerHTML='Erro ao carregar stats.';});
+  } else {
+    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
     const hoje=new Date().toLocaleDateString('pt-BR');
-    const hoje_count=snap.docs.filter(d=>d.data().dateStr===hoje).length;
     document.getElementById('admin-stats').innerHTML=`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
-        <div style="background:var(--cr);border-radius:10px;padding:12px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:1.8rem;">${total}</div><div style="font-size:.7rem;color:var(--lt);">Total de registros</div></div>
-        <div style="background:var(--cr);border-radius:10px;padding:12px;text-align:center;"><div style="font-family:'DM Serif Display',serif;font-size:1.8rem;">${hoje_count}</div><div style="font-size:.7rem;color:var(--lt);">Hoje</div></div>
-      </div>`;
-  }).catch(()=>{document.getElementById('admin-stats').innerHTML='Erro ao carregar stats.';});
+      <div style="font-size:.78rem;color:var(--or);">⚠️ Modo offline</div>
+      <div style="font-size:.82rem;color:var(--md);margin-top:4px;">${local.length} registros locais · ${local.filter(r=>r.dateStr===hoje).length} hoje</div>`;
+  }
 }
 
 function addUser(){
