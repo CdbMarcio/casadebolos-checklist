@@ -237,7 +237,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <button class="tab" onclick="goTab('ia')" id="tab-ia" style="display:none">🤖 IA</button>
     <button class="tab" onclick="goTab('auditoria')" id="tab-auditoria" style="display:none">🔍 Auditoria</button>
     <button class="tab" onclick="goTab('padrao')" id="tab-padrao" style="display:none">📸 Padrão IA</button>
-    <button class="tab" onclick="goTab('estoque-ia')" id="tab-estoque-ia" style="display:none">🔢 Estoque IA</button>
+    <button class="tab" onclick="goTab('estoque-ia')" id="tab-estoque-ia">🔢 Estoque IA</button>
     <button class="tab" onclick="goTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
   </div>
 
@@ -1239,7 +1239,7 @@ function doLogin(){
   document.getElementById('tab-ia').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-auditoria').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-padrao').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-estoque-ia').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-estoque-ia').style.display='';
   buildStoreSelect(user);
   showPage('pg-app');
   goTab('sel');
