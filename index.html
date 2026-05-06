@@ -343,29 +343,6 @@ select:focus,input:focus{border-color:var(--gd);}
       <div style="font-size:.75rem;font-weight:700;color:var(--or);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">⚡ O que cobrar agora</div>
       <div id="painel-cobrar"></div>
     </div>
-
-    <!-- RELATÓRIO INTELIGENTE IA -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
-      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px;">🤖 Relatório inteligente IA</div>
-      <p style="font-size:.78rem;color:var(--lt);margin-bottom:10px;line-height:1.5;">A IA analisa padrões ao longo do tempo e gera insights como: "Loja Botafogo falha consistentemente às sextas-feiras."</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <select id="rel-ia-periodo" style="padding:8px 10px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;">
-          <option value="7">Últimos 7 dias</option>
-          <option value="15">Últimos 15 dias</option>
-          <option value="30">Últimos 30 dias</option>
-        </select>
-        <select id="rel-ia-loja" style="padding:8px 10px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;">
-          <option value="todas">Todas as lojas</option>
-          <option value="meier">Méier</option>
-          <option value="tijuca">Tijuca</option>
-          <option value="copacabana">Copacabana</option>
-          <option value="botafogo">Botafogo</option>
-          <option value="ilha">Ilha do Governador</option>
-        </select>
-      </div>
-      <button class="btn" onclick="gerarRelatorioIA()" id="btn-rel-ia">🤖 Gerar relatório com IA</button>
-      <div id="rel-ia-resultado" style="display:none;margin-top:12px;"></div>
-    </div>
   </div>
   </div>
 
@@ -1892,7 +1869,7 @@ Seja específico, use os nomes reais das lojas e dos itens. Escreva como um rela
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-5',
         max_tokens:1500,
         messages:[{role:'user',content:prompt}]
       })
@@ -2024,7 +2001,7 @@ Se não conseguir contar com precisão, estime e indique confiança baixa.`;
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-5',
         max_tokens:600,
         messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:'image/jpeg',data:estFotoBase64}},
@@ -2337,7 +2314,7 @@ Responda em português, de forma objetiva e acionável. Use dados reais quando d
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-5',
         max_tokens:800,
         system:systemPrompt,
         messages:iaChatHistory.slice(-10)
@@ -2373,7 +2350,7 @@ Formato: resumo executivo, principais problemas, recomendações prioritárias. 
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-5',
         max_tokens:1000,
         messages:[{role:'user',content:prompt}]
       })
@@ -2812,7 +2789,7 @@ Analise comparativamente e retorne APENAS um JSON válido:
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-5',
         max_tokens:1200,
         messages:[{role:'user',content}]
       })
