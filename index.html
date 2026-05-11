@@ -1633,7 +1633,7 @@ function renderHist(){
           ${it.photos&&it.photos.length>0?`<div class="hid-photos">${it.photos.map(p=>`<img class="hid-photo" src="${p}" onclick="openZoom('${p}')">`).join('')}</div>`:''}
         </div>
       </div>`).join('');
-    const isOwner=ST.user?.role==='admin'||ST.user?.store==='todas'||r.userLogin===ST.user?.login||r.operator===ST.user?.name;
+    const isOwner=ST.user?.role==='admin'||ST.user?.store==='todas'||r.userLogin===ST.user?.login||r.operator===ST.user?.name||['ab_coz','fe_coz','estoque_sab'].includes(r.type);
     return`
     <div class="hist-item">
       <div class="hi-top" onclick="toggleHist(${i})">
