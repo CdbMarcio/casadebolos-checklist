@@ -223,7 +223,7 @@ select:focus,input:focus{border-color:var(--gd);}
 <!-- ════ APP ════ -->
 <div class="page" id="pg-app">
   <div class="hdr">
-    <div class="logo">Casa de Bolos<small>CONTROLE OPERACIONAL</small></div>
+    <div class="logo" id="app-logo">Casa de Bolos<small>CONTROLE OPERACIONAL</small></div>
     <div class="hdr-right">
       <span class="hdr-user" id="hdr-user-name"></span>
       <button class="hdr-logout" onclick="doLogout()">Sair</button>
@@ -238,6 +238,10 @@ select:focus,input:focus{border-color:var(--gd);}
     <button class="tab" onclick="goTab('auditoria')" id="tab-auditoria" style="display:none">🔍 Auditoria</button>
     <button class="tab" onclick="goTab('padrao')" id="tab-padrao" style="display:none">📸 Padrão IA</button>
     <button class="tab" onclick="goTab('estoque-ia')" id="tab-estoque-ia">🔢 Estoque IA</button>
+    <button class="tab" onclick="goTab('ponto')" id="tab-ponto">⏰ Meu Ponto</button>
+    <button class="tab" onclick="goTab('ponto-eq')" id="tab-ponto-eq" style="display:none">👥 Ponto Equipe</button>
+    <button class="tab" onclick="goTab('financeiro')" id="tab-financeiro" style="display:none">💰 Financeiro</button>
+    <button class="tab" onclick="goTab('segmento')" id="tab-segmento" style="display:none">🎯 Segmento</button>
     <button class="tab" onclick="goTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
   </div>
 
@@ -792,6 +796,233 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
   </div>
   </div>
+  <!-- FINANCEIRO -->
+  <div style="display:none" id="scr-financeiro">
+  <div class="body-wrap">
+    <h1 class="pg-title">Financeiro</h1>
+    <p class="pg-sub" id="fin-periodo-label">Acompanhamento de receitas, despesas e lucro</p>
+
+    <!-- SELETOR DE PERÍODO -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:12px;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <input type="month" id="fin-mes" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;" onchange="loadFinanceiro()">
+        <select id="fin-loja" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;" onchange="loadFinanceiro()">
+          <option value="todas">Todas as lojas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ABAS INTERNAS -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid #E8D8C8;overflow-x:auto;">
+      <button onclick="finTab('resumo')" id="ft-resumo" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:700;color:var(--gd);border-bottom:2px solid var(--gd);margin-bottom:-2px;cursor:pointer;white-space:nowrap;">📊 Resumo</button>
+      <button onclick="finTab('lancar')" id="ft-lancar" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;white-space:nowrap;">➕ Lançar</button>
+      <button onclick="finTab('dre')" id="ft-dre" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;white-space:nowrap;">📋 DRE</button>
+      <button onclick="finTab('historico')" id="ft-historico" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;white-space:nowrap;">📜 Histórico</button>
+      <button onclick="finTab('metas')" id="ft-metas" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;white-space:nowrap;">🎯 Metas</button>
+    </div>
+
+    <!-- ABA RESUMO -->
+    <div id="fin-resumo">
+      <!-- CARDS DE TOTAIS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div style="background:#EAFAF1;border:1px solid #B8EFD0;border-radius:var(--r);padding:12px;">
+          <div style="font-size:.65rem;color:var(--gn);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">💰 Receita</div>
+          <div id="fin-receita" style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--gn);line-height:1.1;margin-top:4px;">R$ 0</div>
+        </div>
+        <div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:12px;">
+          <div style="font-size:.65rem;color:var(--rd);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">💸 Despesa</div>
+          <div id="fin-despesa" style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--rd);line-height:1.1;margin-top:4px;">R$ 0</div>
+        </div>
+        <div style="background:#EAF2F8;border:1px solid #AED6F1;border-radius:var(--r);padding:12px;">
+          <div style="font-size:.65rem;color:#1A5276;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">📦 CMV</div>
+          <div id="fin-cmv" style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1A5276;line-height:1.1;margin-top:4px;">0%</div>
+        </div>
+        <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:12px;">
+          <div style="font-size:.65rem;color:var(--or);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">🎯 Lucro</div>
+          <div id="fin-lucro" style="font-family:'DM Serif Display',serif;font-size:1.6rem;line-height:1.1;margin-top:4px;">R$ 0</div>
+        </div>
+      </div>
+
+      <!-- COMPARATIVO ENTRE LOJAS -->
+      <div id="fin-comparativo-lojas" style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🏆 Performance por loja</div>
+        <div id="fin-lojas-rank"></div>
+      </div>
+
+      <!-- TOP DESPESAS -->
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📊 Despesas por categoria</div>
+        <div id="fin-cat-despesas"></div>
+      </div>
+
+      <!-- ALERTAS FINANCEIROS -->
+      <div id="fin-alertas-box" style="background:#FEF9E7;border:1.5px solid #F9E79F;border-radius:var(--r);padding:14px;display:none;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">⚠️ Alertas</div>
+        <div id="fin-alertas"></div>
+      </div>
+    </div>
+
+    <!-- ABA LANÇAR -->
+    <div id="fin-lancar" style="display:none;">
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">➕ Novo lançamento</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <span class="fl">Tipo</span>
+            <div class="sw"><select id="lc-tipo">
+              <option value="receita">💰 Receita</option>
+              <option value="despesa">💸 Despesa</option>
+            </select></div>
+          </div>
+          <div>
+            <span class="fl">Data</span>
+            <input type="date" id="lc-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <span class="fl">Categoria</span>
+          <div class="sw"><select id="lc-cat">
+            <optgroup label="💰 Receitas" id="lc-cat-rec">
+              <option value="venda_balcao">Venda no balcão</option>
+              <option value="venda_delivery">Venda delivery</option>
+              <option value="venda_ifood">Venda iFood</option>
+              <option value="venda_atacado">Venda atacado</option>
+              <option value="outras_receitas">Outras receitas</option>
+            </optgroup>
+            <optgroup label="💸 Despesas" id="lc-cat-desp">
+              <option value="mercadoria">📦 Mercadoria (CMV)</option>
+              <option value="folha">👥 Folha de pagamento</option>
+              <option value="aluguel">🏪 Aluguel</option>
+              <option value="energia">⚡ Energia / Água / Gás</option>
+              <option value="marketing">📣 Marketing</option>
+              <option value="manutencao">🔧 Manutenção</option>
+              <option value="impostos">📋 Impostos</option>
+              <option value="taxa_cartao">💳 Taxas de cartão</option>
+              <option value="taxa_ifood">🛵 Taxa iFood</option>
+              <option value="material_limpeza">🧴 Material de limpeza</option>
+              <option value="embalagens">📦 Embalagens</option>
+              <option value="outras">📝 Outras despesas</option>
+            </optgroup>
+          </select></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <span class="fl">Valor (R$)</span>
+            <input type="number" id="lc-valor" step="0.01" placeholder="0,00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          </div>
+          <div>
+            <span class="fl">Loja</span>
+            <div class="sw"><select id="lc-loja"></select></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <span class="fl">Descrição (opcional)</span>
+          <input type="text" id="lc-desc" placeholder="Ex: Pagamento fornecedor ABC" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        </div>
+
+        <button onclick="salvarLancamento()" class="btn">💾 Salvar lançamento</button>
+      </div>
+
+      <!-- ATALHOS DE LANÇAMENTO RÁPIDO -->
+      <div style="background:#EAF5EE;border:1px solid #B8EFD0;border-radius:var(--r);padding:12px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--gn);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">⚡ Lançamentos rápidos</div>
+        <p style="font-size:.75rem;color:var(--md);margin-bottom:10px;line-height:1.5;">Cadastre seus lançamentos recorrentes (aluguel, energia, internet) e use com 1 toque.</p>
+        <div id="lc-rapidos"></div>
+        <button onclick="abrirNovoRapido()" style="width:100%;background:transparent;border:1px dashed var(--gn);color:var(--gn);border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;margin-top:8px;">+ Cadastrar lançamento rápido</button>
+      </div>
+    </div>
+
+    <!-- ABA DRE -->
+    <div id="fin-dre" style="display:none;">
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">📋 Demonstração do Resultado (DRE)</div>
+        <div id="dre-content"></div>
+        <button onclick="exportarDRE()" style="width:100%;margin-top:14px;padding:11px;border-radius:99px;border:1px solid var(--gn);background:transparent;color:var(--gn);font-family:inherit;font-size:.82rem;cursor:pointer;font-weight:600;">📊 Exportar CSV</button>
+      </div>
+    </div>
+
+    <!-- ABA HISTÓRICO -->
+    <div id="fin-historico" style="display:none;">
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;">📜 Lançamentos do período</div>
+          <select id="fin-hist-filter" onchange="loadHistoricoFin()" style="padding:5px 10px;border-radius:99px;border:1px solid #E8D8C8;font-family:inherit;font-size:.7rem;">
+            <option value="todos">Todos</option>
+            <option value="receita">Só receitas</option>
+            <option value="despesa">Só despesas</option>
+          </select>
+        </div>
+        <div id="fin-hist-list"></div>
+      </div>
+    </div>
+
+    <!-- ABA METAS -->
+    <div id="fin-metas" style="display:none;">
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🎯 Metas mensais</div>
+        <p style="font-size:.75rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">Defina sua meta de faturamento e o app calcula automaticamente quanto falta atingir.</p>
+
+        <div style="margin-bottom:10px;">
+          <span class="fl">Meta de faturamento mensal (R$)</span>
+          <input type="number" id="meta-receita" placeholder="50000" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <span class="fl">CMV máximo desejado (%)</span>
+          <input type="number" id="meta-cmv" placeholder="35" min="0" max="100" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <span class="fl">Margem de lucro desejada (%)</span>
+          <input type="number" id="meta-margem" placeholder="20" min="0" max="100" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        </div>
+
+        <button onclick="salvarMetas()" class="btn">💾 Salvar metas</button>
+      </div>
+
+      <div id="metas-progresso"></div>
+    </div>
+
+  </div>
+  </div>
+
+  <!-- SEGMENTO -->
+  <div style="display:none" id="scr-segmento">
+  <div class="body-wrap">
+    <h1 class="pg-title">Segmento do Negócio</h1>
+    <p class="pg-sub">Escolha o tipo de estabelecimento — os checklists serão adaptados</p>
+
+    <!-- INFO ATUAL -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.7rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">📌 Segmento atual</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="seg-atual-icone" style="font-size:1.8rem;">🍰</div>
+        <div>
+          <div id="seg-atual-nome" style="font-size:.95rem;font-weight:700;color:var(--br);">Confeitaria / Padaria</div>
+          <div id="seg-atual-desc" style="font-size:.75rem;color:var(--lt);">Doces, bolos, pães e embalagens</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOME DA EMPRESA -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <span class="fl">Nome da empresa</span>
+      <input type="text" id="seg-empresa-nome" placeholder="Casa de Bolos" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.88rem;outline:none;">
+      <button class="btn" style="margin-top:8px;" onclick="salvarNomeEmpresa()">💾 Salvar nome</button>
+    </div>
+
+    <!-- ESCOLHER NOVO SEGMENTO -->
+    <div style="font-size:.75rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🔄 Trocar segmento</div>
+    <p style="font-size:.78rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">⚠️ Trocar o segmento substitui os checklists prontos pelos do novo segmento. Os checklists já enviados ficam no histórico.</p>
+
+    <div id="seg-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+  </div>
+  </div>
+
   <!-- ADMIN -->
   <div style="display:none" id="scr-admin">
   <div class="body-wrap">
@@ -825,6 +1056,179 @@ select:focus,input:focus{border-color:var(--gd);}
     <div class="admin-section">
       <div class="admin-section-title">📊 Estatísticas Firebase</div>
       <div id="admin-stats" style="font-size:.83rem;color:var(--md);">Carregando...</div>
+    </div>
+  </div>
+  </div>
+
+  <!-- MEU PONTO -->
+  <div style="display:none" id="scr-ponto">
+  <div class="body-wrap">
+    <h1 class="pg-title">Meu Ponto</h1>
+    <p class="pg-sub" id="ponto-data">Hoje</p>
+
+    <!-- STATUS HOJE -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.7rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📅 Batidas de hoje</div>
+      <div id="ponto-batidas-hoje"></div>
+    </div>
+
+    <!-- BOTÃO BATER PONTO -->
+    <button id="btn-bater-ponto" onclick="baterPonto()" style="width:100%;padding:22px;border-radius:var(--r);border:none;background:var(--br);color:var(--gd);font-family:'DM Serif Display',serif;font-size:1.4rem;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .2s;">
+      ⏰ Bater Ponto
+    </button>
+
+    <!-- SALDO BANCO DE HORAS -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:.7rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">💰 Banco de Horas</div>
+      <div id="ponto-saldo" style="font-family:'DM Serif Display',serif;font-size:2.4rem;line-height:1;">--:--</div>
+      <div id="ponto-saldo-label" style="font-size:.78rem;color:var(--lt);margin-top:4px;">Saldo do mês</div>
+    </div>
+
+    <!-- HISTÓRICO PESSOAL -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:.7rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;">📜 Histórico do mês</div>
+        <button onclick="loadPonto()" style="font-size:.65rem;padding:3px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔄</button>
+      </div>
+      <div id="ponto-historico"></div>
+    </div>
+
+    <!-- SOLICITAR AJUSTE -->
+    <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;">
+      <div style="font-size:.7rem;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">⚠️ Errou o ponto?</div>
+      <p style="font-size:.8rem;color:var(--br);line-height:1.5;margin-bottom:10px;">Solicite ajuste com justificativa. O admin vai analisar e aprovar.</p>
+      <button onclick="abrirAjustePonto()" style="background:var(--or);color:white;border:none;border-radius:99px;padding:9px 18px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Solicitar ajuste</button>
+    </div>
+
+    <!-- MODAL AJUSTE (escondido por padrão) -->
+    <div id="modal-ajuste" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:white;border-radius:var(--r);padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;">
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:14px;">Solicitar Ajuste de Ponto</div>
+
+        <div style="margin-bottom:10px;">
+          <span class="fl">Data</span>
+          <input type="date" id="aj-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <span class="fl">Tipo de ajuste</span>
+          <div class="sw"><select id="aj-tipo">
+            <option value="entrada">Entrada — Adicionar</option>
+            <option value="saida_almoco">Saída Almoço — Adicionar</option>
+            <option value="retorno_almoco">Retorno Almoço — Adicionar</option>
+            <option value="saida">Saída — Adicionar</option>
+            <option value="corrigir">Corrigir horário existente</option>
+            <option value="remover">Remover batida</option>
+          </select></div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <span class="fl">Horário correto</span>
+          <input type="time" id="aj-hora" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <span class="fl">Justificativa</span>
+          <textarea id="aj-just" placeholder="Explique o motivo (ex: esqueci de bater, celular sem bateria...)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:80px;resize:vertical;"></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button onclick="fecharAjuste()" style="flex:1;padding:11px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">Cancelar</button>
+          <button onclick="enviarAjuste()" style="flex:2;padding:11px;border-radius:99px;border:none;background:var(--br);color:var(--gd);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Enviar solicitação</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- PONTO EQUIPE (Admin) -->
+  <div style="display:none" id="scr-ponto-eq">
+  <div class="body-wrap">
+    <h1 class="pg-title">Ponto da Equipe</h1>
+    <p class="pg-sub">Controle e aprovações de ponto</p>
+
+    <!-- ABAS INTERNAS -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid #E8D8C8;">
+      <button onclick="pontoEqTab('hoje')" id="pet-hoje" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:700;color:var(--gd);border-bottom:2px solid var(--gd);margin-bottom:-2px;cursor:pointer;">📅 Hoje</button>
+      <button onclick="pontoEqTab('ajustes')" id="pet-ajustes" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;">⚠️ Ajustes <span id="badge-ajustes" style="background:var(--rd);color:white;font-size:.6rem;padding:1px 5px;border-radius:99px;margin-left:4px;display:none;">0</span></button>
+      <button onclick="pontoEqTab('relatorio')" id="pet-relatorio" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;">📊 Relatório</button>
+      <button onclick="pontoEqTab('config')" id="pet-config" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;">⚙️ Config</button>
+    </div>
+
+    <!-- ABA HOJE -->
+    <div id="peq-hoje">
+      <div id="peq-hoje-content"></div>
+    </div>
+
+    <!-- ABA AJUSTES -->
+    <div id="peq-ajustes" style="display:none;">
+      <div id="peq-ajustes-content"></div>
+    </div>
+
+    <!-- ABA RELATÓRIO -->
+    <div id="peq-relatorio" style="display:none;">
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <input type="month" id="rep-mes" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <select id="rep-loja" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+            <option value="todas">Todas as lojas</option>
+            <option value="meier">Méier</option>
+            <option value="tijuca">Tijuca</option>
+            <option value="copacabana">Copacabana</option>
+            <option value="botafogo">Botafogo</option>
+            <option value="ilha">Ilha do Governador</option>
+          </select>
+        </div>
+        <button onclick="gerarRelatorioPonto()" class="btn">📊 Gerar relatório</button>
+        <button onclick="exportarPontoExcel()" style="width:100%;margin-top:6px;padding:11px;border-radius:99px;border:1px solid var(--gn);background:transparent;color:var(--gn);font-family:inherit;font-size:.82rem;cursor:pointer;font-weight:600;">📊 Exportar CSV</button>
+      </div>
+      <div id="peq-relatorio-content"></div>
+    </div>
+
+    <!-- ABA CONFIG -->
+    <div id="peq-config" style="display:none;">
+      <!-- HORÁRIO DE TRABALHO -->
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">⏱️ Jornada Padrão</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div><span class="fl">Entrada</span><input type="time" id="jor-entrada" value="08:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Saída almoço</span><input type="time" id="jor-saida-almoco" value="12:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Retorno almoço</span><input type="time" id="jor-retorno-almoco" value="13:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Saída</span><input type="time" id="jor-saida" value="17:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
+        </div>
+        <div style="font-size:.7rem;color:var(--lt);margin-bottom:8px;">Total: <strong id="jor-total">8h/dia</strong></div>
+        <button onclick="salvarJornada()" class="btn">💾 Salvar jornada</button>
+      </div>
+
+      <!-- CERCAS VIRTUAIS -->
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📍 Cercas Virtuais (GPS das lojas)</div>
+        <p style="font-size:.75rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">Cadastre as coordenadas de cada loja. O ponto só será aceito dentro do raio definido.</p>
+
+        <div style="margin-bottom:10px;">
+          <span class="fl">Loja</span>
+          <div class="sw"><select id="cv-loja" onchange="carregarCerca()">
+            <option value="meier">Méier</option>
+            <option value="tijuca">Tijuca</option>
+            <option value="copacabana">Copacabana</option>
+            <option value="botafogo">Botafogo</option>
+            <option value="ilha">Ilha do Governador</option>
+          </select></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div><span class="fl">Latitude</span><input type="text" id="cv-lat" placeholder="-22.9068" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Longitude</span><input type="text" id="cv-lng" placeholder="-43.1729" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <span class="fl">Raio (metros)</span>
+          <input type="number" id="cv-raio" value="100" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        </div>
+
+        <button onclick="capturarLocalLoja()" style="width:100%;background:transparent;border:1px dashed var(--gd);color:var(--gd);border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;margin-bottom:8px;">📍 Capturar GPS atual (estou na loja)</button>
+        <button onclick="salvarCerca()" class="btn">💾 Salvar cerca virtual</button>
+      </div>
     </div>
   </div>
   </div>
@@ -915,8 +1319,304 @@ function saveUsers(u){
 }
 
 // ═══════════════════════════════════════════════
-//  CHECKLISTS
+//  SEGMENTOS DE MERCADO — CheckPro Multi-Segmento
 // ═══════════════════════════════════════════════
+const SEGMENTOS = {
+  confeitaria: {
+    nome: 'Confeitaria / Padaria', icone: '🍰', cor: '#D4A843',
+    descricao: 'Doces, bolos, pães e embalagens',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#D4A843', sections:[
+        {title:'Apresentação Pessoal', items:[
+          {t:'Uniforme limpo e completo', p:true},
+          {t:'Touca e luvas disponíveis', p:true},
+          {t:'Ausência de adornos (anéis, brincos)', p:true}
+        ]},
+        {title:'Loja e Vitrine', items:[
+          {t:'Vitrine organizada e limpa', p:true},
+          {t:'Iluminação funcionando', p:false},
+          {t:'Cardápio/preços visíveis', p:false},
+          {t:'Temperatura da geladeira/câmara fria registrada', p:true}
+        ]},
+        {title:'Produção', items:[
+          {t:'Ingredientes do dia separados', p:true},
+          {t:'Validade dos produtos verificada', p:true},
+          {t:'Embalagens disponíveis', p:true}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Limpeza', items:[
+          {t:'Bancadas higienizadas', p:true},
+          {t:'Equipamentos desligados', p:true},
+          {t:'Lixo retirado', p:true}
+        ]},
+        {title:'Caixa', items:[
+          {t:'Fechamento de caixa conferido', p:true},
+          {t:'Sangria realizada', p:false}
+        ]}
+      ]}
+    }
+  },
+
+  hamburgueria: {
+    nome: 'Hamburgueria', icone: '🍔', cor: '#C0392B',
+    descricao: 'Burgers, chapa e batatas',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#C0392B', sections:[
+        {title:'Cozinha', items:[
+          {t:'Chapa aquecida (180°C)', p:true},
+          {t:'Fritadeiras com óleo limpo', p:true},
+          {t:'Temperatura do freezer registrada', p:true},
+          {t:'Pães conferidos (validade)', p:true}
+        ]},
+        {title:'Mise en place', items:[
+          {t:'Cebolas, alfaces, tomates higienizados', p:true},
+          {t:'Hambúrgueres porcionados', p:true},
+          {t:'Queijos cortados', p:false},
+          {t:'Molhos abastecidos', p:false}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Limpeza', items:[
+          {t:'Chapa raspada e limpa', p:true},
+          {t:'Óleo das fritadeiras filtrado', p:true},
+          {t:'Pisos e bancadas higienizados', p:true}
+        ]}
+      ]}
+    }
+  },
+
+  pizzaria: {
+    nome: 'Pizzaria', icone: '🍕', cor: '#E67E22',
+    descricao: 'Pizzas, fornos e delivery',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#E67E22', sections:[
+        {title:'Forno', items:[
+          {t:'Forno aquecido (300°C+)', p:true},
+          {t:'Lenha/gás suficiente', p:false},
+          {t:'Pá e utensílios limpos', p:false}
+        ]},
+        {title:'Ingredientes', items:[
+          {t:'Massa fermentada e disponível', p:true},
+          {t:'Molho de tomate preparado', p:true},
+          {t:'Queijos ralados/picados', p:true},
+          {t:'Toppings organizados', p:true}
+        ]}
+      ]},
+      delivery: {name:'Delivery', icon:'🛵', color:'#3498DB', sections:[
+        {title:'Veículos e Embalagens', items:[
+          {t:'Caixas térmicas higienizadas', p:true},
+          {t:'Embalagens (caixas de pizza)', p:true},
+          {t:'Motoboys uniformizados', p:false}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Limpeza', items:[
+          {t:'Forno limpo', p:true},
+          {t:'Bancadas e ingredientes guardados', p:true}
+        ]}
+      ]}
+    }
+  },
+
+  cafeteria: {
+    nome: 'Cafeteria', icone: '☕', cor: '#6E2C00',
+    descricao: 'Cafés especiais, doces e bebidas',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#6E2C00', sections:[
+        {title:'Máquina de Café', items:[
+          {t:'Máquina ligada e aquecida', p:true},
+          {t:'Moedor funcionando e regulado', p:true},
+          {t:'Filtros limpos', p:false}
+        ]},
+        {title:'Insumos', items:[
+          {t:'Grãos suficientes para o dia', p:true},
+          {t:'Leite na geladeira (temperatura ok)', p:true},
+          {t:'Açúcar, adoçantes, canela abastecidos', p:false},
+          {t:'Copos descartáveis disponíveis', p:false}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Máquina', items:[
+          {t:'Backflush da máquina realizado', p:true},
+          {t:'Vaporizador limpo', p:true},
+          {t:'Moedor desligado', p:false}
+        ]}
+      ]}
+    }
+  },
+
+  restaurante: {
+    nome: 'Restaurante', icone: '🍽️', cor: '#7D3C98',
+    descricao: 'Restaurante completo com salão',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#7D3C98', sections:[
+        {title:'Cozinha', items:[
+          {t:'Pratos do dia preparados', p:true},
+          {t:'Temperaturas da câmara fria registradas', p:true},
+          {t:'Mise en place pronto', p:true}
+        ]},
+        {title:'Salão', items:[
+          {t:'Mesas montadas (toalhas, talheres)', p:true},
+          {t:'Saleiros e galheteiros abastecidos', p:false},
+          {t:'Cardápios limpos', p:false}
+        ]},
+        {title:'Bar', items:[
+          {t:'Bebidas geladas', p:true},
+          {t:'Estoque de gelo', p:false}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Cozinha', items:[
+          {t:'Pratos lavados', p:true},
+          {t:'Sobras armazenadas corretamente', p:true},
+          {t:'Equipamentos desligados', p:true}
+        ]},
+        {title:'Caixa', items:[
+          {t:'Fechamento financeiro conferido', p:true}
+        ]}
+      ]}
+    }
+  },
+
+  lanchonete: {
+    nome: 'Lanchonete', icone: '🥪', cor: '#F39C12',
+    descricao: 'Lanches, chapa, frituras',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#F39C12', sections:[
+        {title:'Cozinha', items:[
+          {t:'Chapa aquecida', p:true},
+          {t:'Fritadeira com óleo limpo', p:true},
+          {t:'Pães conferidos', p:true},
+          {t:'Frios geladeira (validade)', p:true}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Limpeza', items:[
+          {t:'Chapa limpa', p:true},
+          {t:'Bancadas higienizadas', p:true}
+        ]}
+      ]}
+    }
+  },
+
+  japones: {
+    nome: 'Restaurante Japonês', icone: '🍣', cor: '#1A5276',
+    descricao: 'Sushi, sashimi, temaki',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#1A5276', sections:[
+        {title:'Peixaria', items:[
+          {t:'Temperatura do peixe (-2°C a 4°C)', p:true},
+          {t:'Validade dos peixes verificada', p:true},
+          {t:'Facas afiadas e higienizadas', p:true}
+        ]},
+        {title:'Sushi Bar', items:[
+          {t:'Arroz preparado e na temperatura', p:true},
+          {t:'Algas, gengibre, wasabi disponíveis', p:true},
+          {t:'Bancada higienizada', p:true}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Limpeza', items:[
+          {t:'Peixes guardados na câmara', p:true},
+          {t:'Bancadas higienizadas com álcool 70%', p:true}
+        ]}
+      ]}
+    }
+  },
+
+  churrascaria: {
+    nome: 'Churrascaria', icone: '🥩', cor: '#922B21',
+    descricao: 'Espetos, buffet e salão',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#922B21', sections:[
+        {title:'Churrasco', items:[
+          {t:'Carvão/lenha em quantidade', p:true},
+          {t:'Carnes na temperatura correta', p:true},
+          {t:'Sal grosso disponível', p:false},
+          {t:'Espetos higienizados', p:true}
+        ]},
+        {title:'Buffet', items:[
+          {t:'Pratos quentes (banho-maria)', p:true},
+          {t:'Saladas frescas', p:true},
+          {t:'Temperatura do buffet conferida', p:true}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Limpeza', items:[
+          {t:'Grelhas e espetos limpos', p:true},
+          {t:'Buffet recolhido e limpo', p:true}
+        ]}
+      ]}
+    }
+  },
+
+  bar: {
+    nome: 'Bar / Pub', icone: '🍻', cor: '#1F618D',
+    descricao: 'Drinks, chopes e petiscos',
+    checklists: {
+      abertura: {name:'Abertura', icon:'🌅', color:'#1F618D', sections:[
+        {title:'Bar', items:[
+          {t:'Chopeira ligada e gelada', p:true},
+          {t:'Garrafas de destilados conferidas', p:true},
+          {t:'Taças e copos limpos', p:true},
+          {t:'Gelo abastecido', p:false}
+        ]},
+        {title:'Cozinha', items:[
+          {t:'Petiscos preparados', p:true},
+          {t:'Fritadeira com óleo limpo', p:true}
+        ]}
+      ]},
+      fechamento: {name:'Fechamento', icon:'🌙', color:'#2C3E50', sections:[
+        {title:'Fechamento Financeiro', items:[
+          {t:'Caixa fechado e conferido', p:true},
+          {t:'Estoque de bebidas conferido', p:true}
+        ]}
+      ]}
+    }
+  },
+
+  industrial: {
+    nome: 'Cozinha Industrial', icone: '🏭', cor: '#34495E',
+    descricao: 'Refeições coletivas, HACCP',
+    checklists: {
+      recebimento: {name:'Recebimento de Mercadoria', icon:'📦', color:'#34495E', sections:[
+        {title:'Verificação', items:[
+          {t:'Temperatura do veículo conferida', p:true},
+          {t:'Embalagens íntegras', p:true},
+          {t:'Validades verificadas', p:true},
+          {t:'Notas fiscais conferidas', p:true},
+          {t:'Pesagem realizada', p:false}
+        ]}
+      ]},
+      producao: {name:'Produção HACCP', icon:'👨‍🍳', color:'#117A65', sections:[
+        {title:'Manipulação', items:[
+          {t:'Higienização das mãos a cada 30min', p:true},
+          {t:'Uniformes completos (touca, máscara, jaleco)', p:true},
+          {t:'Temperaturas de cocção (mínimo 74°C)', p:true},
+          {t:'Resfriamento rápido (de 60° para 10° em 2h)', p:true}
+        ]}
+      ]},
+      expedicao: {name:'Expedição', icon:'🚚', color:'#7D6608', sections:[
+        {title:'Distribuição', items:[
+          {t:'Temperatura dos hot boxes (mínimo 60°C)', p:true},
+          {t:'Caixas térmicas higienizadas', p:true},
+          {t:'Etiquetas com hora de produção', p:true}
+        ]}
+      ]}
+    }
+  }
+};
+
+// Carrega segmento configurado do localStorage
+function getSegmentoAtivo(){
+  return localStorage.getItem('cb_segmento')||'confeitaria';
+}
+
+function getNomeEmpresa(){
+  return localStorage.getItem('cb_empresa_nome')||'Casa de Bolos';
+}
+
 const CL={
   ab_atend:{cat:'atend',name:'Abertura Atendimento',icon:'🌅',color:'#D4A843',sections:[
     {title:'Apresentação Pessoal',items:[
@@ -1193,6 +1893,13 @@ let historyCache=[];
 //  INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
+  // Aplica segmento ativo aos checklists
+  aplicarSegmento();
+  // Aplica nome da empresa no header
+  const empresaNome = getNomeEmpresa();
+  const headerLogo = document.getElementById('app-logo');
+  if(headerLogo) headerLogo.innerHTML = empresaNome + '<small>CONTROLE OPERACIONAL</small>';
+
   buildCards();
   document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
   document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus();});
@@ -1217,6 +1924,9 @@ function doLogin(){
   document.getElementById('tab-auditoria').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-padrao').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-estoque-ia').style.display='';
+  document.getElementById('tab-ponto-eq').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-segmento').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-financeiro').style.display=user.role==='admin'?'':'none';
   buildStoreSelect(user);
   showPage('pg-app');
   goTab('sel');
@@ -1241,7 +1951,7 @@ function buildStoreSelect(user){
 //  NAVIGATION
 // ═══════════════════════════════════════════════
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
-function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','auditoria','padrao','estoque-ia','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
+function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','auditoria','padrao','estoque-ia','ponto','ponto-eq','financeiro','segmento','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
 function goTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+t)?.classList.add('on');
@@ -1253,6 +1963,10 @@ function goTab(t){
   else if(t==='auditoria'){showAllScr('auditoria');}
   else if(t==='padrao'){showAllScr('padrao');renderPadLista();updCompSelect();}
   else if(t==='estoque-ia'){showAllScr('estoque-ia');loadEstHist();}
+  else if(t==='ponto'){showAllScr('ponto');loadPonto();}
+  else if(t==='ponto-eq'){showAllScr('ponto-eq');loadPontoEquipe();}
+  else if(t==='segmento'){showAllScr('segmento');loadSegmento();}
+  else if(t==='financeiro'){showAllScr('financeiro');initFinanceiro();}
   else if(t==='admin'){showAllScr('admin');renderAdmin();}
 }
 function goBack(){goTab('sel');}
@@ -1523,10 +2237,36 @@ async function enviarWpp(rec){
   if(!WPP_NUM||!WPP_KEY)return;
   const feitos=rec.itensList.filter(i=>i.done);
   const naoFeitos=rec.itensList.filter(i=>!i.done);
-  let msg=`📋 *CHECKLIST CASA DE BOLOS*\n📅 ${rec.dateStr} às ${rec.timeStr}\n🏪 *${rec.storeName}* — ${CL[rec.type].icon} ${rec.typeName}\n👤 ${rec.operator}\n📊 Conformidade: *${rec.pct}%* (${rec.done}/${rec.total})\n\n`;
-  if(naoFeitos.length>0){msg+=`❌ *NÃO REALIZADOS (${naoFeitos.length}):*\n`;naoFeitos.forEach(i=>{msg+=`• ${i.text}\n`;if(i.obs)msg+=`  💬 ${i.obs}\n`;});msg+='\n';}
-  if(feitos.length>0){msg+=`✅ *REALIZADOS (${feitos.length}):*\n`;feitos.slice(0,8).forEach(i=>{msg+=`• ${i.text}${i.obs?` — ${i.obs}`:''}\n`;});if(feitos.length>8)msg+=`• _...e mais ${feitos.length-8} itens_\n`;}
-  try{await fetch(`https://api.callmebot.com/whatsapp.php?phone=${WPP_NUM}&text=${encodeURIComponent(msg)}&apikey=${WPP_KEY}`);}catch(e){}
+
+  // Monta mensagem (mais curta para evitar erro 414 - URL muito longa)
+  let msg=`📋 *CASA DE BOLOS*\n📅 ${rec.dateStr} ${rec.timeStr}\n🏪 *${rec.storeName}* — ${rec.typeName}\n👤 ${rec.operator}\n📊 *${rec.pct}%* (${rec.done}/${rec.total})\n`;
+
+  if(naoFeitos.length>0){
+    msg+=`\n❌ *NÃO FEITOS (${naoFeitos.length}):*\n`;
+    naoFeitos.slice(0,15).forEach(i=>{
+      msg+=`• ${i.text.substring(0,80)}\n`;
+      if(i.obs) msg+=`  💬 ${i.obs.substring(0,60)}\n`;
+    });
+    if(naoFeitos.length>15) msg+=`_...e mais ${naoFeitos.length-15}_\n`;
+  }
+
+  // Limita tamanho da mensagem (CallMeBot tem limite de URL)
+  if(msg.length>1500) msg=msg.substring(0,1500)+'\n...';
+
+  const url=`https://api.callmebot.com/whatsapp.php?phone=${WPP_NUM}&text=${encodeURIComponent(msg)}&apikey=${WPP_KEY}`;
+
+  try{
+    // no-cors permite enviar mesmo sem resposta visível
+    await fetch(url,{method:'GET',mode:'no-cors'});
+    console.log('✅ WhatsApp enviado');
+  }catch(e){
+    console.warn('⚠️ Erro WhatsApp:',e.message);
+    // Fallback: tenta abrir em nova aba (último recurso)
+    try{
+      const img=new Image();
+      img.src=url;
+    }catch(e2){}
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -2363,8 +3103,1032 @@ Formato: resumo executivo, principais problemas, recomendações prioritárias. 
   }
 }
 // ═══════════════════════════════════════════════
-//  EXPORTAÇÃO PDF
+//  FINANCEIRO — DRE, Lançamentos, Metas
 // ═══════════════════════════════════════════════
+const CAT_NOMES = {
+  venda_balcao:'💵 Venda balcão', venda_delivery:'🛵 Venda delivery',
+  venda_ifood:'🍔 Venda iFood', venda_atacado:'📦 Venda atacado',
+  outras_receitas:'➕ Outras receitas',
+  mercadoria:'📦 Mercadoria (CMV)', folha:'👥 Folha pagamento',
+  aluguel:'🏪 Aluguel', energia:'⚡ Energia/Água/Gás',
+  marketing:'📣 Marketing', manutencao:'🔧 Manutenção',
+  impostos:'📋 Impostos', taxa_cartao:'💳 Taxas cartão',
+  taxa_ifood:'🛵 Taxa iFood', material_limpeza:'🧴 Material limpeza',
+  embalagens:'📦 Embalagens', outras:'📝 Outras despesas'
+};
+
+const CATS_RECEITA = ['venda_balcao','venda_delivery','venda_ifood','venda_atacado','outras_receitas'];
+const CATS_DESPESA = ['mercadoria','folha','aluguel','energia','marketing','manutencao','impostos','taxa_cartao','taxa_ifood','material_limpeza','embalagens','outras'];
+
+function initFinanceiro(){
+  // Popula seletor de loja
+  const selLoja = document.getElementById('fin-loja');
+  const selLcLoja = document.getElementById('lc-loja');
+  if(selLoja.options.length<=1){
+    Object.entries(STORES).forEach(([k,n])=>{
+      selLoja.add(new Option(n,k));
+    });
+  }
+  if(selLcLoja.options.length===0){
+    Object.entries(STORES).forEach(([k,n])=>{
+      selLcLoja.add(new Option(n,k));
+    });
+  }
+
+  // Define mês atual padrão
+  const hoje = new Date();
+  const mesAtual = hoje.toISOString().slice(0,7);
+  if(!document.getElementById('fin-mes').value){
+    document.getElementById('fin-mes').value = mesAtual;
+  }
+  document.getElementById('lc-data').value = hoje.toISOString().split('T')[0];
+
+  loadFinanceiro();
+}
+
+function finTab(tab){
+  ['resumo','lancar','dre','historico','metas'].forEach(t=>{
+    document.getElementById('fin-'+t).style.display = t===tab?'':'none';
+    const btn = document.getElementById('ft-'+t);
+    btn.style.color = t===tab?'var(--gd)':'var(--lt)';
+    btn.style.borderBottom = t===tab?'2px solid var(--gd)':'none';
+    btn.style.fontWeight = t===tab?'700':'600';
+  });
+  if(tab==='resumo') loadFinanceiro();
+  if(tab==='dre') renderDRE();
+  if(tab==='historico') loadHistoricoFin();
+  if(tab==='metas') loadMetas();
+  if(tab==='lancar') loadLancRapidos();
+}
+
+function getLancamentos(){
+  return JSON.parse(localStorage.getItem('cb_financeiro')||'[]');
+}
+
+function getLancFiltrados(){
+  const mes = document.getElementById('fin-mes').value; // YYYY-MM
+  const loja = document.getElementById('fin-loja').value;
+  if(!mes) return [];
+  const [ano,mesNum] = mes.split('-');
+  const mesFmt = `${mesNum}/${ano}`;
+  return getLancamentos().filter(l=>{
+    const dataFmt = l.data.split('-').slice(0,2).reverse().join('/'); // YYYY-MM-DD -> MM/YYYY
+    if(dataFmt !== mesFmt) return false;
+    if(loja!=='todas' && l.loja!==loja) return false;
+    return true;
+  });
+}
+
+function salvarLancamento(){
+  const tipo = document.getElementById('lc-tipo').value;
+  const cat = document.getElementById('lc-cat').value;
+  const data = document.getElementById('lc-data').value;
+  const valor = parseFloat(document.getElementById('lc-valor').value);
+  const loja = document.getElementById('lc-loja').value;
+  const desc = document.getElementById('lc-desc').value.trim();
+
+  if(!data){toast('Informe a data!');return;}
+  if(!valor||valor<=0){toast('Informe um valor válido!');return;}
+
+  // Valida tipo x categoria
+  const ehReceita = CATS_RECEITA.includes(cat);
+  if(tipo==='receita'&&!ehReceita){toast('Categoria não é de receita!');return;}
+  if(tipo==='despesa'&&ehReceita){toast('Categoria não é de despesa!');return;}
+
+  const lancs = getLancamentos();
+  lancs.unshift({
+    id:Date.now().toString(),
+    tipo, cat, data, valor, loja,
+    lojaNome: STORES[loja],
+    catNome: CAT_NOMES[cat],
+    desc, criadoEm: new Date().toISOString(),
+    criadoPor: ST.user.name
+  });
+  localStorage.setItem('cb_financeiro', JSON.stringify(lancs.slice(0,1000)));
+
+  // Salva no Firebase também
+  if(fbReady && db){
+    try{addDoc(collection(db,'financeiro'), lancs[0]);}catch(e){}
+  }
+
+  document.getElementById('lc-valor').value = '';
+  document.getElementById('lc-desc').value = '';
+  toast(`✅ ${tipo==='receita'?'Receita':'Despesa'} de R$ ${valor.toFixed(2).replace('.',',')} salva!`);
+}
+
+function loadFinanceiro(){
+  const lancs = getLancFiltrados();
+  const receitas = lancs.filter(l=>l.tipo==='receita');
+  const despesas = lancs.filter(l=>l.tipo==='despesa');
+
+  const totalRec = receitas.reduce((s,l)=>s+l.valor,0);
+  const totalDesp = despesas.reduce((s,l)=>s+l.valor,0);
+  const cmv = despesas.filter(l=>l.cat==='mercadoria').reduce((s,l)=>s+l.valor,0);
+  const lucro = totalRec - totalDesp;
+  const cmvPct = totalRec>0 ? (cmv/totalRec*100) : 0;
+  const margemPct = totalRec>0 ? (lucro/totalRec*100) : 0;
+
+  // Atualiza cards
+  document.getElementById('fin-receita').textContent = 'R$ ' + fmtMoney(totalRec);
+  document.getElementById('fin-despesa').textContent = 'R$ ' + fmtMoney(totalDesp);
+  document.getElementById('fin-cmv').textContent = cmvPct.toFixed(1) + '%';
+  document.getElementById('fin-lucro').textContent = 'R$ ' + fmtMoney(lucro);
+  document.getElementById('fin-lucro').style.color = lucro>=0?'var(--gn)':'var(--rd)';
+
+  // Atualiza label do período
+  const mes = document.getElementById('fin-mes').value;
+  if(mes){
+    const [ano,mesNum] = mes.split('-');
+    const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    document.getElementById('fin-periodo-label').textContent = `${meses[parseInt(mesNum)-1]} de ${ano}`;
+  }
+
+  // Ranking por loja
+  const porLoja = {};
+  Object.keys(STORES).forEach(k=>porLoja[k]={rec:0,desp:0});
+  lancs.forEach(l=>{
+    if(porLoja[l.loja]){
+      if(l.tipo==='receita') porLoja[l.loja].rec += l.valor;
+      else porLoja[l.loja].desp += l.valor;
+    }
+  });
+  const rankData = Object.entries(porLoja).map(([k,d])=>({
+    nome:STORES[k], rec:d.rec, desp:d.desp, lucro:d.rec-d.desp,
+    margem:d.rec>0?((d.rec-d.desp)/d.rec*100):0
+  })).sort((a,b)=>b.lucro-a.lucro);
+
+  document.getElementById('fin-lojas-rank').innerHTML = rankData.map((l,i)=>{
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}º`;
+    const cor = l.lucro>=0?'var(--gn)':'var(--rd)';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0E8DC;">
+      <span style="font-size:.9rem;min-width:22px;">${medal}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.85rem;font-weight:700;color:var(--br);">${l.nome}</div>
+        <div style="font-size:.68rem;color:var(--lt);">Rec: R$ ${fmtMoney(l.rec)} · Desp: R$ ${fmtMoney(l.desp)}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:.85rem;font-weight:700;color:${cor};">R$ ${fmtMoney(l.lucro)}</div>
+        <div style="font-size:.65rem;color:var(--lt);">${l.margem.toFixed(1)}% margem</div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="font-size:.8rem;color:var(--lt);">Sem dados no período.</div>';
+
+  // Despesas por categoria
+  const porCat = {};
+  despesas.forEach(l=>{porCat[l.cat] = (porCat[l.cat]||0)+l.valor;});
+  const catData = Object.entries(porCat).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const elCat = document.getElementById('fin-cat-despesas');
+  if(catData.length){
+    elCat.innerHTML = catData.map(([cat,val])=>{
+      const pct = totalDesp>0?(val/totalDesp*100):0;
+      return`<div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:3px;">
+          <span style="color:var(--br);">${CAT_NOMES[cat]||cat}</span>
+          <span style="color:var(--md);font-weight:600;">R$ ${fmtMoney(val)} (${pct.toFixed(1)}%)</span>
+        </div>
+        <div style="height:5px;background:#EEE;border-radius:99px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:var(--rd);border-radius:99px;"></div>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    elCat.innerHTML = '<div style="font-size:.8rem;color:var(--lt);">Sem despesas no período.</div>';
+  }
+
+  // Alertas financeiros
+  const metas = JSON.parse(localStorage.getItem('cb_metas')||'{}');
+  const alertas = [];
+  if(metas.cmv && cmvPct > parseFloat(metas.cmv)){
+    alertas.push(`📦 CMV em <strong>${cmvPct.toFixed(1)}%</strong> está acima da meta (${metas.cmv}%)`);
+  }
+  if(metas.margem && margemPct < parseFloat(metas.margem)){
+    alertas.push(`📉 Margem em <strong>${margemPct.toFixed(1)}%</strong> está abaixo da meta (${metas.margem}%)`);
+  }
+  if(lucro<0){
+    alertas.push(`🚨 <strong>Prejuízo de R$ ${fmtMoney(Math.abs(lucro))}</strong> no período!`);
+  }
+  if(alertas.length){
+    document.getElementById('fin-alertas-box').style.display='block';
+    document.getElementById('fin-alertas').innerHTML = alertas.map(a=>`<div style="font-size:.78rem;color:var(--or);padding:4px 0;">${a}</div>`).join('');
+  } else {
+    document.getElementById('fin-alertas-box').style.display='none';
+  }
+}
+
+function fmtMoney(v){
+  return Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function renderDRE(){
+  const lancs = getLancFiltrados();
+  const receitas = lancs.filter(l=>l.tipo==='receita');
+  const despesas = lancs.filter(l=>l.tipo==='despesa');
+  const totalRec = receitas.reduce((s,l)=>s+l.valor,0);
+  const totalDesp = despesas.reduce((s,l)=>s+l.valor,0);
+  const cmv = despesas.filter(l=>l.cat==='mercadoria').reduce((s,l)=>s+l.valor,0);
+  const fixas = despesas.filter(l=>['folha','aluguel','energia','impostos'].includes(l.cat)).reduce((s,l)=>s+l.valor,0);
+  const variaveis = despesas.filter(l=>!['mercadoria','folha','aluguel','energia','impostos'].includes(l.cat)).reduce((s,l)=>s+l.valor,0);
+
+  const lucroBruto = totalRec - cmv;
+  const lucroLiq = totalRec - totalDesp;
+  const margemBruta = totalRec>0?(lucroBruto/totalRec*100):0;
+  const margemLiq = totalRec>0?(lucroLiq/totalRec*100):0;
+
+  const linha=(label,val,pct,bold,cor)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #F0E8DC;${bold?'font-weight:700;':''}${cor?'color:'+cor+';':''}">
+    <span style="font-size:.82rem;">${label}</span>
+    <div style="text-align:right;">
+      <div style="font-size:.85rem;">R$ ${val<0?'(':''}${fmtMoney(val)}${val<0?')':''}</div>
+      ${pct!==undefined?`<div style="font-size:.65rem;color:var(--lt);">${pct.toFixed(1)}%</div>`:''}
+    </div>
+  </div>`;
+
+  document.getElementById('dre-content').innerHTML =
+    linha('(+) RECEITA BRUTA', totalRec, 100, true, 'var(--gn)') +
+    linha('(-) CMV (Mercadorias)', -cmv, totalRec>0?cmv/totalRec*100:0) +
+    linha('= LUCRO BRUTO', lucroBruto, margemBruta, true, 'var(--br)') +
+    linha('(-) Despesas Fixas', -fixas, totalRec>0?fixas/totalRec*100:0) +
+    linha('(-) Despesas Variáveis', -variaveis, totalRec>0?variaveis/totalRec*100:0) +
+    linha('= LUCRO LÍQUIDO', lucroLiq, margemLiq, true, lucroLiq>=0?'var(--gn)':'var(--rd)');
+}
+
+function exportarDRE(){
+  const lancs = getLancFiltrados();
+  let csv = 'Tipo,Data,Categoria,Loja,Valor,Descrição\n';
+  lancs.forEach(l=>{
+    csv += `"${l.tipo}","${l.data}","${l.catNome||l.cat}","${l.lojaNome||l.loja}","${l.valor.toFixed(2)}","${l.desc||''}"\n`;
+  });
+  const blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `DRE_${document.getElementById('fin-mes').value}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ DRE exportado!');
+}
+
+function loadHistoricoFin(){
+  const filtro = document.getElementById('fin-hist-filter').value;
+  let lancs = getLancFiltrados().sort((a,b)=>b.data.localeCompare(a.data));
+  if(filtro!=='todos') lancs = lancs.filter(l=>l.tipo===filtro);
+
+  const el = document.getElementById('fin-hist-list');
+  if(!lancs.length){el.innerHTML='<div style="font-size:.82rem;color:var(--lt);">Nenhum lançamento no período.</div>';return;}
+
+  el.innerHTML = lancs.map(l=>{
+    const cor = l.tipo==='receita'?'var(--gn)':'var(--rd)';
+    const sinal = l.tipo==='receita'?'+':'-';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F0E8DC;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.83rem;font-weight:600;color:var(--br);">${l.catNome||l.cat}</div>
+        <div style="font-size:.68rem;color:var(--lt);">${l.data.split('-').reverse().join('/')} · ${l.lojaNome||l.loja}${l.desc?' · '+l.desc:''}</div>
+      </div>
+      <div style="font-size:.88rem;font-weight:700;color:${cor};white-space:nowrap;">${sinal} R$ ${fmtMoney(l.valor)}</div>
+      <button onclick="excluirLanc('${l.id}')" style="background:transparent;border:none;color:var(--rd);font-size:.9rem;cursor:pointer;padding:4px;">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function excluirLanc(id){
+  if(!confirm('Excluir este lançamento?')) return;
+  const lancs = getLancamentos().filter(l=>l.id!==id);
+  localStorage.setItem('cb_financeiro', JSON.stringify(lancs));
+  toast('🗑 Excluído!');
+  loadHistoricoFin();
+}
+
+function salvarMetas(){
+  const metas = {
+    receita: document.getElementById('meta-receita').value,
+    cmv: document.getElementById('meta-cmv').value,
+    margem: document.getElementById('meta-margem').value
+  };
+  localStorage.setItem('cb_metas', JSON.stringify(metas));
+  toast('✅ Metas salvas!');
+  loadMetas();
+}
+
+function loadMetas(){
+  const metas = JSON.parse(localStorage.getItem('cb_metas')||'{}');
+  document.getElementById('meta-receita').value = metas.receita||'';
+  document.getElementById('meta-cmv').value = metas.cmv||'';
+  document.getElementById('meta-margem').value = metas.margem||'';
+
+  // Calcula progresso
+  const lancs = getLancFiltrados();
+  const totalRec = lancs.filter(l=>l.tipo==='receita').reduce((s,l)=>s+l.valor,0);
+  const totalDesp = lancs.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+l.valor,0);
+  const lucro = totalRec - totalDesp;
+
+  const el = document.getElementById('metas-progresso');
+  let html = '';
+
+  if(metas.receita){
+    const pct = Math.min((totalRec/parseFloat(metas.receita))*100, 100);
+    const cor = pct>=100?'var(--gn)':pct>=70?'var(--or)':'var(--rd)';
+    html += `<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:.8rem;font-weight:700;color:var(--br);">💰 Meta de receita</span>
+        <span style="font-size:.8rem;font-weight:700;color:${cor};">${pct.toFixed(0)}%</span>
+      </div>
+      <div style="height:10px;background:#EEE;border-radius:99px;overflow:hidden;margin-bottom:6px;">
+        <div style="width:${pct}%;height:100%;background:${cor};border-radius:99px;transition:width .5s;"></div>
+      </div>
+      <div style="font-size:.7rem;color:var(--lt);">R$ ${fmtMoney(totalRec)} de R$ ${fmtMoney(parseFloat(metas.receita))}</div>
+    </div>`;
+  }
+
+  if(html) el.innerHTML = html;
+  else el.innerHTML = '<div style="font-size:.82rem;color:var(--lt);text-align:center;padding:20px;">Defina suas metas acima para acompanhar o progresso.</div>';
+}
+
+function loadLancRapidos(){
+  const rapidos = JSON.parse(localStorage.getItem('cb_lanc_rapidos')||'[]');
+  const el = document.getElementById('lc-rapidos');
+  if(!rapidos.length){el.innerHTML='';return;}
+  el.innerHTML = rapidos.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px;background:white;border-radius:8px;margin-bottom:5px;border:1px solid #B8EFD0;">
+    <div style="flex:1;font-size:.78rem;">
+      <strong>${r.nome}</strong>
+      <div style="font-size:.65rem;color:var(--lt);">${CAT_NOMES[r.cat]} · R$ ${fmtMoney(r.valor)}</div>
+    </div>
+    <button onclick="usarRapido(${i})" style="background:var(--gn);color:white;border:none;border-radius:99px;padding:5px 12px;font-size:.7rem;cursor:pointer;font-family:inherit;font-weight:600;">+ Lançar</button>
+    <button onclick="excluirRapido(${i})" style="background:transparent;border:none;color:var(--rd);font-size:.85rem;cursor:pointer;">🗑</button>
+  </div>`).join('');
+}
+
+function abrirNovoRapido(){
+  const nome = prompt('Nome do lançamento rápido (ex: Aluguel mensal):');
+  if(!nome) return;
+  const tipo = confirm('Esse lançamento é uma DESPESA?\n\nOK = Despesa | Cancelar = Receita') ? 'despesa' : 'receita';
+  const opcoes = tipo==='receita' ? CATS_RECEITA : CATS_DESPESA;
+  const catTxt = opcoes.map((c,i)=>`${i+1}. ${CAT_NOMES[c]}`).join('\n');
+  const escolha = prompt(`Categoria:\n${catTxt}\n\nDigite o número:`);
+  const idx = parseInt(escolha)-1;
+  if(isNaN(idx)||idx<0||idx>=opcoes.length){toast('Categoria inválida!');return;}
+  const valor = parseFloat(prompt('Valor padrão (R$):'));
+  if(isNaN(valor)||valor<=0){toast('Valor inválido!');return;}
+
+  const rapidos = JSON.parse(localStorage.getItem('cb_lanc_rapidos')||'[]');
+  rapidos.push({nome, tipo, cat:opcoes[idx], valor});
+  localStorage.setItem('cb_lanc_rapidos', JSON.stringify(rapidos));
+  toast('✅ Lançamento rápido salvo!');
+  loadLancRapidos();
+}
+
+function usarRapido(i){
+  const rapidos = JSON.parse(localStorage.getItem('cb_lanc_rapidos')||'[]');
+  const r = rapidos[i];
+  if(!r) return;
+  document.getElementById('lc-tipo').value = r.tipo;
+  document.getElementById('lc-cat').value = r.cat;
+  document.getElementById('lc-valor').value = r.valor;
+  document.getElementById('lc-desc').value = r.nome;
+  toast('✅ Preenchido! Confirme e salve.');
+  document.getElementById('lc-valor').scrollIntoView({behavior:'smooth'});
+}
+
+function excluirRapido(i){
+  if(!confirm('Excluir?')) return;
+  const rapidos = JSON.parse(localStorage.getItem('cb_lanc_rapidos')||'[]');
+  rapidos.splice(i,1);
+  localStorage.setItem('cb_lanc_rapidos', JSON.stringify(rapidos));
+  loadLancRapidos();
+}
+
+
+function loadSegmento(){
+  const segAtivoKey = getSegmentoAtivo();
+  const seg = SEGMENTOS[segAtivoKey] || SEGMENTOS.confeitaria;
+
+  // Atualiza display do segmento atual
+  document.getElementById('seg-atual-icone').textContent = seg.icone;
+  document.getElementById('seg-atual-nome').textContent = seg.nome;
+  document.getElementById('seg-atual-desc').textContent = seg.descricao;
+  document.getElementById('seg-empresa-nome').value = getNomeEmpresa();
+
+  // Renderiza grid de segmentos
+  const grid = document.getElementById('seg-grid');
+  grid.innerHTML = Object.entries(SEGMENTOS).map(([key, s]) => {
+    const ativo = key === segAtivoKey;
+    return `<div onclick="trocarSegmento('${key}')" style="background:${ativo?s.cor:'var(--wm)'};color:${ativo?'white':'var(--br)'};border:2px solid ${ativo?s.cor:'#E8D8C8'};border-radius:var(--r);padding:14px;cursor:pointer;transition:all .2s;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:6px;">${s.icone}</div>
+      <div style="font-size:.82rem;font-weight:700;line-height:1.2;">${s.nome}</div>
+      <div style="font-size:.65rem;opacity:.8;margin-top:4px;line-height:1.3;">${Object.keys(s.checklists).length} checklists</div>
+      ${ativo?'<div style="font-size:.6rem;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:99px;display:inline-block;margin-top:6px;">✓ ATIVO</div>':''}
+    </div>`;
+  }).join('');
+}
+
+function trocarSegmento(novoKey){
+  if(novoKey === getSegmentoAtivo()){toast('Este segmento já está ativo!');return;}
+  const seg = SEGMENTOS[novoKey];
+  if(!confirm(`Trocar para "${seg.nome}"?\n\nIsso vai substituir os checklists ativos pelos do novo segmento. O histórico de checklists já enviados permanece.\n\nDeseja continuar?`)) return;
+
+  localStorage.setItem('cb_segmento', novoKey);
+  toast(`✅ Segmento alterado para ${seg.nome}!`);
+  loadSegmento();
+
+  // Recarrega checklists na próxima abertura
+  setTimeout(()=>{
+    if(confirm('Recarregar agora para aplicar os novos checklists?')) location.reload();
+  }, 1500);
+}
+
+function salvarNomeEmpresa(){
+  const nome = document.getElementById('seg-empresa-nome').value.trim();
+  if(!nome){toast('Informe o nome da empresa!');return;}
+  localStorage.setItem('cb_empresa_nome', nome);
+
+  // Atualiza header
+  const header = document.getElementById('app-logo');
+  if(header) header.innerHTML = nome + '<small>CONTROLE OPERACIONAL</small>';
+
+  toast('✅ Nome salvo!');
+}
+
+// Aplica segmento ao CL na inicialização (substitui checklists prontos)
+function aplicarSegmento(){
+  const segKey = getSegmentoAtivo();
+  const seg = SEGMENTOS[segKey];
+  if(!seg) return;
+
+  // Adiciona os checklists do segmento ao CL existente
+  Object.entries(seg.checklists).forEach(([clKey, clData]) => {
+    const newKey = `seg_${clKey}`;
+    if(!CL[newKey]){
+      CL[newKey] = {
+        cat: 'segmento',
+        name: clData.name + ' (Segmento)',
+        icon: clData.icon,
+        color: clData.color,
+        sections: clData.sections
+      };
+    }
+  });
+}
+
+
+const TIPOS_BATIDA = ['entrada','saida_almoco','retorno_almoco','saida'];
+const NOMES_BATIDA = {entrada:'Entrada',saida_almoco:'Saída Almoço',retorno_almoco:'Retorno Almoço',saida:'Saída'};
+const ICONES_BATIDA = {entrada:'🚪',saida_almoco:'🍽️',retorno_almoco:'🔙',saida:'🏁'};
+
+// Calcula distância entre 2 coordenadas GPS em metros
+function distanciaGPS(lat1,lng1,lat2,lng2){
+  const R=6371000; // raio Terra em metros
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Salva ponto no localStorage e Firebase
+async function baterPonto(){
+  const btn=document.getElementById('btn-bater-ponto');
+  btn.disabled=true;
+  btn.innerHTML='⏳ Capturando GPS...';
+
+  // 1) GPS
+  let gps=null;
+  try{
+    gps=await new Promise((res,rej)=>{
+      navigator.geolocation.getCurrentPosition(
+        p=>res({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),
+        err=>rej(err),
+        {enableHighAccuracy:true,timeout:10000}
+      );
+    });
+  }catch(e){
+    btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
+    alert('❌ Não foi possível obter sua localização. Verifique se o GPS está ativado.');
+    return;
+  }
+
+  // 2) Verifica cerca virtual
+  const cercas=JSON.parse(localStorage.getItem('cb_cercas')||'{}');
+  const cerca=cercas[ST.user.store];
+  if(cerca&&cerca.lat&&cerca.lng){
+    const dist=distanciaGPS(gps.lat,gps.lng,parseFloat(cerca.lat),parseFloat(cerca.lng));
+    if(dist>parseFloat(cerca.raio||100)){
+      btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
+      alert(`❌ Você está a ${Math.round(dist)}m da loja.\nO ponto só pode ser batido em até ${cerca.raio}m.`);
+      return;
+    }
+  }
+
+  // 3) Captura foto
+  btn.innerHTML='📷 Tirando foto...';
+  const foto=await tirarFotoPonto();
+  if(!foto){
+    btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
+    return;
+  }
+
+  // 4) Determina tipo da batida (entrada/saida_almoco/retorno_almoco/saida)
+  btn.innerHTML='💾 Salvando...';
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const batidasHoje=getBatidasUsuario(ST.user.login,hoje);
+  const proximoTipo=TIPOS_BATIDA[batidasHoje.length];
+
+  if(!proximoTipo){
+    btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
+    alert('✅ Você já bateu as 4 batidas hoje!');
+    return;
+  }
+
+  // 5) Salva
+  const agora=new Date();
+  const batida={
+    id:Date.now().toString(),
+    user:ST.user.login,
+    userName:ST.user.name,
+    store:ST.user.store,
+    storeName:STORES[ST.user.store]||ST.user.store,
+    tipo:proximoTipo,
+    tipoNome:NOMES_BATIDA[proximoTipo],
+    data:hoje,
+    hora:agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    ts:agora.toISOString(),
+    gps:{lat:gps.lat.toFixed(6),lng:gps.lng.toFixed(6),acc:Math.round(gps.acc)},
+    foto:foto,
+    status:'aprovado'
+  };
+
+  // LocalStorage
+  const todas=JSON.parse(localStorage.getItem('cb_ponto')||'[]');
+  todas.unshift(batida);
+  localStorage.setItem('cb_ponto',JSON.stringify(todas.slice(0,500)));
+
+  // Firebase
+  if(fbReady&&db){
+    try{await addDoc(collection(db,'ponto'),batida);}catch(e){console.warn('Firebase ponto:',e.message);}
+  }
+
+  btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
+  toast(`✅ ${NOMES_BATIDA[proximoTipo]} registrada às ${batida.hora}!`);
+  loadPonto();
+}
+
+// Captura foto via camera
+function tirarFotoPonto(){
+  return new Promise(resolve=>{
+    const input=document.createElement('input');
+    input.type='file';
+    input.accept='image/*';
+    input.capture='user';
+    input.onchange=async e=>{
+      const f=e.target.files[0];
+      if(!f){resolve(null);return;}
+      const r=new FileReader();
+      r.onload=async ev=>{
+        const c=await compressPhoto(ev.target.result,400,0.6);
+        resolve(c);
+      };
+      r.readAsDataURL(f);
+    };
+    input.click();
+  });
+}
+
+function getBatidasUsuario(login,data){
+  const todas=JSON.parse(localStorage.getItem('cb_ponto')||'[]');
+  return todas.filter(b=>b.user===login&&b.data===data).sort((a,b)=>a.ts.localeCompare(b.ts));
+}
+
+function getJornada(){
+  return JSON.parse(localStorage.getItem('cb_jornada')||'{"entrada":"08:00","saida_almoco":"12:00","retorno_almoco":"13:00","saida":"17:00"}');
+}
+
+// Calcula horas trabalhadas no dia
+function calcHorasDia(batidas){
+  if(batidas.length<2) return 0;
+  let minutos=0;
+  for(let i=0;i<batidas.length;i+=2){
+    if(batidas[i+1]){
+      const t1=new Date(batidas[i].ts).getTime();
+      const t2=new Date(batidas[i+1].ts).getTime();
+      minutos+=(t2-t1)/60000;
+    }
+  }
+  return minutos;
+}
+
+function formatMinutos(min){
+  const h=Math.floor(Math.abs(min)/60);
+  const m=Math.floor(Math.abs(min)%60);
+  return `${min<0?'-':''}${h}h ${String(m).padStart(2,'0')}m`;
+}
+
+function jornadaPadraoMin(){
+  const j=getJornada();
+  const m1=(parseInt(j.saida_almoco.split(':')[0])*60+parseInt(j.saida_almoco.split(':')[1]))-(parseInt(j.entrada.split(':')[0])*60+parseInt(j.entrada.split(':')[1]));
+  const m2=(parseInt(j.saida.split(':')[0])*60+parseInt(j.saida.split(':')[1]))-(parseInt(j.retorno_almoco.split(':')[0])*60+parseInt(j.retorno_almoco.split(':')[1]));
+  return m1+m2;
+}
+
+async function loadPonto(){
+  document.getElementById('ponto-data').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const batidas=getBatidasUsuario(ST.user.login,hoje);
+
+  // Batidas de hoje
+  const el=document.getElementById('ponto-batidas-hoje');
+  let html='';
+  TIPOS_BATIDA.forEach((tipo,i)=>{
+    const b=batidas[i];
+    if(b){
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0E8DC;">
+        <div style="font-size:1.3rem;">${ICONES_BATIDA[tipo]}</div>
+        <div style="flex:1;">
+          <div style="font-size:.85rem;font-weight:600;color:var(--br);">${NOMES_BATIDA[tipo]}</div>
+          <div style="font-size:.7rem;color:var(--lt);">📍 ${b.gps?.acc||'-'}m precisão</div>
+        </div>
+        ${b.foto?`<img src="${b.foto}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid #DDD;" onclick="openZoom('${b.foto}')">`:''}
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--gn);">${b.hora}</div>
+      </div>`;
+    }else{
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0E8DC;opacity:.4;">
+        <div style="font-size:1.3rem;">${ICONES_BATIDA[tipo]}</div>
+        <div style="flex:1;">
+          <div style="font-size:.85rem;font-weight:600;color:var(--lt);">${NOMES_BATIDA[tipo]}</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--lt);">--:--</div>
+      </div>`;
+    }
+  });
+  el.innerHTML=html;
+
+  // Botão bater ponto
+  const btn=document.getElementById('btn-bater-ponto');
+  if(batidas.length>=4){
+    btn.innerHTML='✅ Todas as batidas concluídas';
+    btn.disabled=true;
+    btn.style.opacity='.5';
+  }else{
+    const prox=NOMES_BATIDA[TIPOS_BATIDA[batidas.length]];
+    btn.innerHTML=`⏰ Bater Ponto — ${prox}`;
+    btn.disabled=false;
+    btn.style.opacity='1';
+  }
+
+  // Saldo banco de horas (mês)
+  const mesAtual=new Date().toLocaleDateString('pt-BR').split('/').slice(1).join('/');
+  const todasMes=JSON.parse(localStorage.getItem('cb_ponto')||'[]')
+    .filter(b=>b.user===ST.user.login&&b.data.endsWith(mesAtual));
+
+  const datasUnicas=[...new Set(todasMes.map(b=>b.data))];
+  let saldoTotal=0;
+  const jornadaMin=jornadaPadraoMin();
+
+  datasUnicas.forEach(data=>{
+    const bs=todasMes.filter(b=>b.data===data).sort((a,b)=>a.ts.localeCompare(b.ts));
+    if(bs.length>=2){
+      const trabalhado=calcHorasDia(bs);
+      saldoTotal+=(trabalhado-jornadaMin);
+    }
+  });
+
+  const saldoEl=document.getElementById('ponto-saldo');
+  saldoEl.textContent=formatMinutos(Math.round(saldoTotal));
+  saldoEl.style.color=saldoTotal>=0?'var(--gn)':'var(--rd)';
+  document.getElementById('ponto-saldo-label').textContent=saldoTotal>=0?'✅ Saldo positivo (horas extras)':'⚠️ Saldo negativo (horas a compensar)';
+
+  // Histórico do mês
+  renderHistoricoPonto(datasUnicas,todasMes);
+}
+
+function renderHistoricoPonto(datas,todasMes){
+  const el=document.getElementById('ponto-historico');
+  if(!datas.length){el.innerHTML='<div style="font-size:.8rem;color:var(--lt);">Nenhuma batida no mês.</div>';return;}
+  const jornadaMin=jornadaPadraoMin();
+
+  el.innerHTML=datas.sort((a,b)=>b.localeCompare(a)).map(data=>{
+    const bs=todasMes.filter(b=>b.data===data).sort((a,b)=>a.ts.localeCompare(b.ts));
+    const trabMin=calcHorasDia(bs);
+    const saldoDia=Math.round(trabMin-jornadaMin);
+    const saldoCor=saldoDia>=0?'var(--gn)':'var(--rd)';
+    return`<div style="border-bottom:1px solid #F0E8DC;padding:8px 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:.82rem;font-weight:600;">${data}</div>
+        <div style="font-size:.72rem;color:${saldoCor};font-weight:700;">${saldoDia>=0?'+':''}${formatMinutos(saldoDia)}</div>
+      </div>
+      <div style="font-size:.7rem;color:var(--lt);margin-top:3px;">
+        ${bs.map(b=>`${ICONES_BATIDA[b.tipo]} ${b.hora}`).join(' · ')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// AJUSTE DE PONTO
+function abrirAjustePonto(){
+  document.getElementById('aj-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('modal-ajuste').style.display='flex';
+}
+
+function fecharAjuste(){
+  document.getElementById('modal-ajuste').style.display='none';
+}
+
+async function enviarAjuste(){
+  const data=document.getElementById('aj-data').value;
+  const tipo=document.getElementById('aj-tipo').value;
+  const hora=document.getElementById('aj-hora').value;
+  const just=document.getElementById('aj-just').value.trim();
+  if(!data||!hora||!just){toast('Preencha todos os campos!');return;}
+
+  const ajuste={
+    id:Date.now().toString(),
+    user:ST.user.login,
+    userName:ST.user.name,
+    store:ST.user.store,
+    storeName:STORES[ST.user.store]||ST.user.store,
+    data:data.split('-').reverse().join('/'),
+    tipo,
+    tipoNome:tipo==='corrigir'?'Correção':tipo==='remover'?'Remoção':NOMES_BATIDA[tipo]||tipo,
+    hora,
+    justificativa:just,
+    status:'pendente',
+    criadoEm:new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
+  };
+
+  const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]');
+  ajustes.unshift(ajuste);
+  localStorage.setItem('cb_ajustes_ponto',JSON.stringify(ajustes.slice(0,200)));
+
+  if(fbReady&&db){
+    try{await addDoc(collection(db,'ajustes_ponto'),ajuste);}catch(e){}
+  }
+
+  fecharAjuste();
+  toast('✅ Solicitação enviada! Aguarde aprovação do admin.');
+}
+
+// ═══════════════════════════════════════════════
+//  PONTO EQUIPE (ADMIN)
+// ═══════════════════════════════════════════════
+function pontoEqTab(tab){
+  ['hoje','ajustes','relatorio','config'].forEach(t=>{
+    document.getElementById('peq-'+t).style.display=t===tab?'':'none';
+    const btn=document.getElementById('pet-'+t);
+    btn.style.color=t===tab?'var(--gd)':'var(--lt)';
+    btn.style.borderBottom=t===tab?'2px solid var(--gd)':'none';
+    btn.style.fontWeight=t===tab?'700':'600';
+  });
+  if(tab==='hoje') renderPontoHoje();
+  if(tab==='ajustes') renderAjustesPendentes();
+  if(tab==='config') carregarJornada();
+}
+
+async function loadPontoEquipe(){
+  // Atualiza badge de ajustes pendentes
+  const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]').filter(a=>a.status==='pendente');
+  const badge=document.getElementById('badge-ajustes');
+  if(ajustes.length>0){badge.textContent=ajustes.length;badge.style.display='inline-block';}
+  else{badge.style.display='none';}
+  renderPontoHoje();
+}
+
+function renderPontoHoje(){
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const todas=JSON.parse(localStorage.getItem('cb_ponto')||'[]').filter(b=>b.data===hoje);
+
+  // Agrupa por usuário
+  const porUser={};
+  todas.forEach(b=>{
+    if(!porUser[b.user]){porUser[b.user]={userName:b.userName,storeName:b.storeName,batidas:[]};}
+    porUser[b.user].batidas.push(b);
+  });
+
+  const el=document.getElementById('peq-hoje-content');
+  const users=Object.entries(porUser);
+  if(!users.length){el.innerHTML='<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhum funcionário bateu ponto hoje.</div>';return;}
+
+  el.innerHTML=users.map(([login,d])=>{
+    const bs=d.batidas.sort((a,b)=>a.ts.localeCompare(b.ts));
+    return`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="font-size:.9rem;font-weight:700;color:var(--br);">${d.userName}</div>
+        <div style="font-size:.7rem;color:var(--lt);">${d.storeName}</div>
+        <div style="margin-left:auto;font-size:.7rem;font-weight:700;color:${bs.length>=4?'var(--gn)':'var(--or)'};">${bs.length}/4</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        ${TIPOS_BATIDA.map((tipo,i)=>{
+          const b=bs[i];
+          return`<div style="background:${b?'#EAFAF1':'#F8F8F8'};border-radius:6px;padding:6px;text-align:center;">
+            <div style="font-size:.9rem;">${ICONES_BATIDA[tipo]}</div>
+            <div style="font-size:.7rem;font-weight:${b?'700':'400'};color:${b?'var(--gn)':'var(--lt)'};">${b?b.hora:'--:--'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAjustesPendentes(){
+  const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]');
+  const el=document.getElementById('peq-ajustes-content');
+
+  if(!ajustes.length){el.innerHTML='<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhuma solicitação de ajuste.</div>';return;}
+
+  el.innerHTML=ajustes.map(a=>{
+    const cor=a.status==='aprovado'?'var(--gn)':a.status==='reprovado'?'var(--rd)':'var(--or)';
+    const bgcor=a.status==='aprovado'?'#EAFAF1':a.status==='reprovado'?'#FDEDEC':'#FEF9E7';
+    return`<div style="background:${bgcor};border-left:3px solid ${cor};border-radius:0 var(--rs) var(--rs) 0;padding:12px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="font-size:.85rem;font-weight:700;color:var(--br);">${a.userName}</div>
+        <div style="font-size:.7rem;color:var(--lt);">${a.storeName}</div>
+        <div style="margin-left:auto;font-size:.65rem;font-weight:700;color:${cor};text-transform:uppercase;">${a.status}</div>
+      </div>
+      <div style="font-size:.78rem;color:var(--br);margin-bottom:4px;"><strong>${a.tipoNome}</strong> — ${a.data} às ${a.hora}</div>
+      <div style="font-size:.75rem;color:var(--md);background:rgba(255,255,255,.6);padding:6px 8px;border-radius:4px;margin-bottom:8px;">${a.justificativa}</div>
+      <div style="font-size:.65rem;color:var(--lt);margin-bottom:8px;">Solicitado em ${a.criadoEm}</div>
+      ${a.status==='pendente'?`<div style="display:flex;gap:6px;">
+        <button onclick="aprovarAjuste('${a.id}','aprovado')" style="flex:1;background:var(--gn);color:white;border:none;border-radius:99px;padding:6px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;">✅ Aprovar</button>
+        <button onclick="aprovarAjuste('${a.id}','reprovado')" style="flex:1;background:var(--rd);color:white;border:none;border-radius:99px;padding:6px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;">❌ Reprovar</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function aprovarAjuste(id,decisao){
+  const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]');
+  const idx=ajustes.findIndex(a=>a.id===id);
+  if(idx<0) return;
+  ajustes[idx].status=decisao;
+  ajustes[idx].aprovadoPor=ST.user.name;
+  ajustes[idx].aprovadoEm=new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  // Se aprovado, aplica a alteração no ponto
+  if(decisao==='aprovado'){
+    const a=ajustes[idx];
+    if(a.tipo!=='remover'&&a.tipo!=='corrigir'){
+      // Adiciona nova batida
+      const ts=new Date(a.data.split('/').reverse().join('-')+'T'+a.hora+':00').toISOString();
+      const novaBatida={
+        id:Date.now().toString(),
+        user:a.user,userName:a.userName,store:a.store,storeName:a.storeName,
+        tipo:a.tipo,tipoNome:NOMES_BATIDA[a.tipo],
+        data:a.data,hora:a.hora,ts:ts,
+        gps:null,foto:null,
+        status:'aprovado',ajustado:true,ajustadoPor:ST.user.name
+      };
+      const todas=JSON.parse(localStorage.getItem('cb_ponto')||'[]');
+      todas.unshift(novaBatida);
+      localStorage.setItem('cb_ponto',JSON.stringify(todas));
+    }
+  }
+
+  localStorage.setItem('cb_ajustes_ponto',JSON.stringify(ajustes));
+  toast(`${decisao==='aprovado'?'✅ Aprovado':'❌ Reprovado'}!`);
+  loadPontoEquipe();
+  renderAjustesPendentes();
+}
+
+// JORNADA E CERCAS
+function carregarJornada(){
+  const j=getJornada();
+  document.getElementById('jor-entrada').value=j.entrada;
+  document.getElementById('jor-saida-almoco').value=j.saida_almoco;
+  document.getElementById('jor-retorno-almoco').value=j.retorno_almoco;
+  document.getElementById('jor-saida').value=j.saida;
+  atualizaJornadaTotal();
+  ['entrada','saida_almoco','retorno_almoco','saida'].forEach(c=>{
+    document.getElementById('jor-'+c.replace('_','-')).addEventListener('change',atualizaJornadaTotal);
+  });
+  carregarCerca();
+}
+
+function atualizaJornadaTotal(){
+  const j={
+    entrada:document.getElementById('jor-entrada').value,
+    saida_almoco:document.getElementById('jor-saida-almoco').value,
+    retorno_almoco:document.getElementById('jor-retorno-almoco').value,
+    saida:document.getElementById('jor-saida').value
+  };
+  const m1=(parseInt(j.saida_almoco.split(':')[0])*60+parseInt(j.saida_almoco.split(':')[1]))-(parseInt(j.entrada.split(':')[0])*60+parseInt(j.entrada.split(':')[1]));
+  const m2=(parseInt(j.saida.split(':')[0])*60+parseInt(j.saida.split(':')[1]))-(parseInt(j.retorno_almoco.split(':')[0])*60+parseInt(j.retorno_almoco.split(':')[1]));
+  const total=m1+m2;
+  document.getElementById('jor-total').textContent=`${Math.floor(total/60)}h ${String(total%60).padStart(2,'0')}min/dia`;
+}
+
+function salvarJornada(){
+  const j={
+    entrada:document.getElementById('jor-entrada').value,
+    saida_almoco:document.getElementById('jor-saida-almoco').value,
+    retorno_almoco:document.getElementById('jor-retorno-almoco').value,
+    saida:document.getElementById('jor-saida').value
+  };
+  localStorage.setItem('cb_jornada',JSON.stringify(j));
+  toast('✅ Jornada salva!');
+}
+
+function carregarCerca(){
+  const loja=document.getElementById('cv-loja').value;
+  const cercas=JSON.parse(localStorage.getItem('cb_cercas')||'{}');
+  const c=cercas[loja]||{};
+  document.getElementById('cv-lat').value=c.lat||'';
+  document.getElementById('cv-lng').value=c.lng||'';
+  document.getElementById('cv-raio').value=c.raio||100;
+}
+
+function capturarLocalLoja(){
+  navigator.geolocation.getCurrentPosition(p=>{
+    document.getElementById('cv-lat').value=p.coords.latitude.toFixed(6);
+    document.getElementById('cv-lng').value=p.coords.longitude.toFixed(6);
+    toast('📍 GPS capturado!');
+  },err=>alert('Erro ao capturar GPS: '+err.message));
+}
+
+function salvarCerca(){
+  const loja=document.getElementById('cv-loja').value;
+  const cercas=JSON.parse(localStorage.getItem('cb_cercas')||'{}');
+  cercas[loja]={
+    lat:document.getElementById('cv-lat').value,
+    lng:document.getElementById('cv-lng').value,
+    raio:document.getElementById('cv-raio').value
+  };
+  localStorage.setItem('cb_cercas',JSON.stringify(cercas));
+  toast('✅ Cerca virtual salva para '+STORES[loja]);
+}
+
+// RELATÓRIO E EXPORTAÇÃO
+function gerarRelatorioPonto(){
+  const mes=document.getElementById('rep-mes').value;
+  const loja=document.getElementById('rep-loja').value;
+  if(!mes){toast('Selecione um mês!');return;}
+
+  const [ano,mesNum]=mes.split('-');
+  const mesFmt=`${mesNum}/${ano}`;
+  const todas=JSON.parse(localStorage.getItem('cb_ponto')||'[]')
+    .filter(b=>b.data.endsWith(mesFmt))
+    .filter(b=>loja==='todas'||b.store===loja);
+
+  // Agrupa por funcionário
+  const porUser={};
+  todas.forEach(b=>{
+    if(!porUser[b.user]){porUser[b.user]={userName:b.userName,storeName:b.storeName,dias:{}};}
+    if(!porUser[b.user].dias[b.data]){porUser[b.user].dias[b.data]=[];}
+    porUser[b.user].dias[b.data].push(b);
+  });
+
+  const jornadaMin=jornadaPadraoMin();
+  const el=document.getElementById('peq-relatorio-content');
+  const users=Object.entries(porUser);
+
+  if(!users.length){el.innerHTML='<div style="font-size:.82rem;color:var(--lt);padding:10px;">Nenhum registro no período.</div>';return;}
+
+  el.innerHTML=users.map(([login,d])=>{
+    let saldoTotal=0;
+    let diasTrab=0;
+    Object.values(d.dias).forEach(bs=>{
+      bs.sort((a,b)=>a.ts.localeCompare(b.ts));
+      if(bs.length>=2){
+        const t=calcHorasDia(bs);
+        saldoTotal+=(t-jornadaMin);
+        diasTrab++;
+      }
+    });
+    const cor=saldoTotal>=0?'var(--gn)':'var(--rd)';
+    return`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:12px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div>
+          <div style="font-size:.85rem;font-weight:700;color:var(--br);">${d.userName}</div>
+          <div style="font-size:.7rem;color:var(--lt);">${d.storeName} · ${diasTrab} dias</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:${cor};">${formatMinutos(Math.round(saldoTotal))}</div>
+          <div style="font-size:.65rem;color:var(--lt);">${saldoTotal>=0?'Positivo':'Negativo'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportarPontoExcel(){
+  const mes=document.getElementById('rep-mes').value;
+  const loja=document.getElementById('rep-loja').value;
+  if(!mes){toast('Selecione um mês!');return;}
+
+  const [ano,mesNum]=mes.split('-');
+  const mesFmt=`${mesNum}/${ano}`;
+  const todas=JSON.parse(localStorage.getItem('cb_ponto')||'[]')
+    .filter(b=>b.data.endsWith(mesFmt))
+    .filter(b=>loja==='todas'||b.store===loja)
+    .sort((a,b)=>(a.user+a.ts).localeCompare(b.user+b.ts));
+
+  let csv='Funcionário,Loja,Data,Tipo,Hora,GPS,Ajustado\n';
+  todas.forEach(b=>{
+    const gps=b.gps?`${b.gps.lat};${b.gps.lng}`:'';
+    csv+=`"${b.userName}","${b.storeName}","${b.data}","${b.tipoNome}","${b.hora}","${gps}","${b.ajustado?'Sim':'Não'}"\n`;
+  });
+
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`ponto_${mesFmt.replace('/','-')}.csv`;
+  a.click();URL.revokeObjectURL(url);
+  toast('✅ Exportado!');
+}
 async function exportarPDF(){
   const tipo=document.getElementById('exp-tipo').value;
   const loja=document.getElementById('exp-loja').value;
@@ -3006,6 +4770,38 @@ window.addUser=addUser;
 window.delUser=delUser;
 window.openZoom=openZoom;
 window.closeZoom=closeZoom;
+window.baterPonto=baterPonto;
+window.loadPonto=loadPonto;
+window.abrirAjustePonto=abrirAjustePonto;
+window.fecharAjuste=fecharAjuste;
+window.enviarAjuste=enviarAjuste;
+window.pontoEqTab=pontoEqTab;
+window.loadPontoEquipe=loadPontoEquipe;
+window.aprovarAjuste=aprovarAjuste;
+window.carregarJornada=carregarJornada;
+window.salvarJornada=salvarJornada;
+window.carregarCerca=carregarCerca;
+window.capturarLocalLoja=capturarLocalLoja;
+window.salvarCerca=salvarCerca;
+window.gerarRelatorioPonto=gerarRelatorioPonto;
+window.exportarPontoExcel=exportarPontoExcel;
+window.loadSegmento=loadSegmento;
+window.trocarSegmento=trocarSegmento;
+window.salvarNomeEmpresa=salvarNomeEmpresa;
+window.initFinanceiro=initFinanceiro;
+window.finTab=finTab;
+window.loadFinanceiro=loadFinanceiro;
+window.salvarLancamento=salvarLancamento;
+window.renderDRE=renderDRE;
+window.exportarDRE=exportarDRE;
+window.loadHistoricoFin=loadHistoricoFin;
+window.excluirLanc=excluirLanc;
+window.salvarMetas=salvarMetas;
+window.loadMetas=loadMetas;
+window.loadLancRapidos=loadLancRapidos;
+window.abrirNovoRapido=abrirNovoRapido;
+window.usarRapido=usarRapido;
+window.excluirRapido=excluirRapido;
 </script>
 </body>
 </html>
