@@ -1057,6 +1057,51 @@ select:focus,input:focus{border-color:var(--gd);}
       <div class="admin-section-title">📊 Estatísticas Firebase</div>
       <div id="admin-stats" style="font-size:.83rem;color:var(--md);">Carregando...</div>
     </div>
+
+    <!-- Z-API WHATSAPP -->
+    <div class="admin-section">
+      <div class="admin-section-title">📱 WhatsApp Z-API</div>
+      <p style="font-size:.78rem;color:var(--lt);line-height:1.5;margin-bottom:12px;">✅ Credenciais protegidas no servidor Vercel. Configure destinatários e tipo de notificações abaixo.</p>
+
+      <div style="margin-bottom:12px;">
+        <span class="fl">Tipo de notificações</span>
+        <div class="sw"><select id="zapi-tipo-notif">
+          <option value="todos">📨 Todos os checklists</option>
+          <option value="criticos" selected>⚠️ Só críticos (pontuação &lt;60% ou itens críticos não feitos)</option>
+        </select></div>
+      </div>
+
+      <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--br);margin-bottom:12px;cursor:pointer;">
+        <input type="checkbox" id="zapi-ativo" checked style="cursor:pointer;width:18px;height:18px;">
+        Envio automático ativo
+      </label>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button onclick="salvarZApiConfig()" class="btn" style="flex:2;">💾 Salvar config</button>
+        <button onclick="testarZApi()" id="btn-testar-zapi" style="flex:1;background:var(--gn);color:white;border:none;border-radius:99px;padding:11px;font-family:inherit;font-size:.78rem;cursor:pointer;font-weight:600;">🧪 Testar</button>
+      </div>
+
+      <!-- DESTINATÁRIOS -->
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-top:18px;margin-bottom:10px;">📬 Destinatários</div>
+
+      <div style="background:#EAF5EE;border:1px solid #B8EFD0;border-radius:var(--rs);padding:10px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+          <div class="sw"><select id="dest-tipo" onchange="updDestTipo()">
+            <option value="numero">📱 Número</option>
+            <option value="grupo">👥 Grupo</option>
+          </select></div>
+          <input type="text" id="dest-nome" placeholder="Nome/Apelido" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.78rem;">
+        </div>
+        <input type="text" id="dest-valor" placeholder="55219... (com DDI e DDD)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.78rem;margin-bottom:6px;">
+        <button onclick="addDestinatarioZApi()" style="width:100%;background:var(--gn);color:white;border:none;border-radius:99px;padding:8px;font-family:inherit;font-size:.75rem;cursor:pointer;font-weight:600;">+ Adicionar destinatário</button>
+      </div>
+
+      <div id="zapi-destinatarios" style="margin-bottom:14px;"></div>
+
+      <!-- LOG -->
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-top:18px;margin-bottom:8px;">📜 Últimos envios</div>
+      <div id="zapi-log"></div>
+    </div>
   </div>
   </div>
 
@@ -1289,6 +1334,13 @@ initFirebase();
 //  CONSTANTES
 // ═══════════════════════════════════════════════
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx5ZdcxpuMSlIB2Jivhai-tKNXUEVjEUUiyI33LYnkumKLxxm0LXSp-9vvPQeqj11P18g/exec';
+// ═══════════════════════════════════════════════
+//  WHATSAPP Z-API — Configuração dinâmica
+// ═══════════════════════════════════════════════
+function getZApiConfig(){
+  return JSON.parse(localStorage.getItem('cb_zapi')||'{}');
+}
+// Fallback antigo CallMeBot (mantém para legado)
 const WPP_NUM   = '5521982792825';
 const WPP_KEY   = '2540368';
 const STORES    = {meier:'Méier',tijuca:'Tijuca',copacabana:'Copacabana',botafogo:'Botafogo',ilha:'Ilha do Governador'};
@@ -1967,7 +2019,7 @@ function goTab(t){
   else if(t==='ponto-eq'){showAllScr('ponto-eq');loadPontoEquipe();}
   else if(t==='segmento'){showAllScr('segmento');loadSegmento();}
   else if(t==='financeiro'){showAllScr('financeiro');initFinanceiro();}
-  else if(t==='admin'){showAllScr('admin');renderAdmin();}
+  else if(t==='admin'){showAllScr('admin');renderAdmin();loadZApiConfig();}
 }
 function goBack(){goTab('sel');}
 function newCL(){ST.editingId=null;goTab('sel');}
@@ -2234,13 +2286,11 @@ async function sendCL(){
 //  WHATSAPP
 // ═══════════════════════════════════════════════
 async function enviarWpp(rec){
-  if(!WPP_NUM||!WPP_KEY)return;
-  const feitos=rec.itensList.filter(i=>i.done);
+  const config = getZApiConfig();
+
+  // Monta mensagem
   const naoFeitos=rec.itensList.filter(i=>!i.done);
-
-  // Monta mensagem (mais curta para evitar erro 414 - URL muito longa)
-  let msg=`📋 *CASA DE BOLOS*\n📅 ${rec.dateStr} ${rec.timeStr}\n🏪 *${rec.storeName}* — ${rec.typeName}\n👤 ${rec.operator}\n📊 *${rec.pct}%* (${rec.done}/${rec.total})\n`;
-
+  let msg=`📋 *${getNomeEmpresa()}*\n📅 ${rec.dateStr} ${rec.timeStr}\n🏪 *${rec.storeName}* — ${rec.typeName}\n👤 ${rec.operator}\n📊 *${rec.pct}%* (${rec.done}/${rec.total})\n`;
   if(naoFeitos.length>0){
     msg+=`\n❌ *NÃO FEITOS (${naoFeitos.length}):*\n`;
     naoFeitos.slice(0,15).forEach(i=>{
@@ -2249,23 +2299,229 @@ async function enviarWpp(rec){
     });
     if(naoFeitos.length>15) msg+=`_...e mais ${naoFeitos.length-15}_\n`;
   }
-
-  // Limita tamanho da mensagem (CallMeBot tem limite de URL)
   if(msg.length>1500) msg=msg.substring(0,1500)+'\n...';
 
-  const url=`https://api.callmebot.com/whatsapp.php?phone=${WPP_NUM}&text=${encodeURIComponent(msg)}&apikey=${WPP_KEY}`;
+  // Z-API ativo? envia via proxy Vercel
+  if(config.ativo !== false && config.destinatarios && config.destinatarios.length > 0){
+    return await enviarZApi(msg, rec);
+  }
 
-  try{
-    // no-cors permite enviar mesmo sem resposta visível
-    await fetch(url,{method:'GET',mode:'no-cors'});
-    console.log('✅ WhatsApp enviado');
-  }catch(e){
-    console.warn('⚠️ Erro WhatsApp:',e.message);
-    // Fallback: tenta abrir em nova aba (último recurso)
+  // Fallback: CallMeBot (legado)
+  if(WPP_NUM && WPP_KEY){
+    const url=`https://api.callmebot.com/whatsapp.php?phone=${WPP_NUM}&text=${encodeURIComponent(msg)}&apikey=${WPP_KEY}`;
+    try{await fetch(url,{method:'GET',mode:'no-cors'});}catch(e){}
+  }
+}
+
+async function enviarZApi(mensagem, contextoRec){
+  const config = getZApiConfig();
+
+  const destinatarios = config.destinatarios || [];
+  if(!destinatarios.length){
+    console.warn('Z-API: nenhum destinatário cadastrado');
+    return;
+  }
+
+  // Verifica filtro de notificações (sucesso/falha)
+  const tipo = config.notificacoes || 'todos';
+  if(contextoRec && tipo === 'criticos'){
+    const critico = contextoRec.pct<60 || contextoRec.itensList.some(i=>i.crit && !i.done);
+    if(!critico) return;
+  }
+
+  const log = JSON.parse(localStorage.getItem('cb_zapi_log')||'[]');
+  const PROXY_URL = 'https://casadebolos-proxy.vercel.app/api/zapi';
+
+  for(const dest of destinatarios){
+    if(!dest.ativo) continue;
+
+    let phone;
+    if(dest.tipo === 'grupo'){
+      // Para grupos: precisa buscar o ID pelo nome primeiro
+      let groupId = dest.id_grupo;
+      if(!groupId && dest.nome){
+        groupId = await buscarGrupoPorNome(dest.nome);
+        if(groupId){
+          dest.id_grupo = groupId;
+          localStorage.setItem('cb_zapi', JSON.stringify(config));
+        }
+      }
+      if(!groupId){
+        log.unshift({data:new Date().toLocaleString('pt-BR'), dest:dest.nome||'(grupo)', tipo:'grupo', status:'erro', erro:'Grupo não encontrado'});
+        continue;
+      }
+      phone = groupId;
+    } else {
+      phone = dest.numero.replace(/\D/g,'');
+    }
+
     try{
-      const img=new Image();
-      img.src=url;
-    }catch(e2){}
+      const res = await fetch(PROXY_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          action: 'send-text',
+          phone: phone,
+          message: mensagem
+        })
+      });
+      const data = await res.json();
+      if(res.ok && !data.error){
+        log.unshift({data:new Date().toLocaleString('pt-BR'), dest:dest.nome||dest.numero, tipo:dest.tipo, status:'sucesso'});
+        console.log('✅ Z-API enviado para', dest.nome||dest.numero);
+      } else {
+        log.unshift({data:new Date().toLocaleString('pt-BR'), dest:dest.nome||dest.numero, tipo:dest.tipo, status:'erro', erro:data.error||data.message||'erro desconhecido'});
+        console.warn('⚠️ Z-API erro:', data);
+      }
+    }catch(e){
+      log.unshift({data:new Date().toLocaleString('pt-BR'), dest:dest.nome||dest.numero, tipo:dest.tipo, status:'erro', erro:e.message});
+    }
+  }
+
+  localStorage.setItem('cb_zapi_log', JSON.stringify(log.slice(0,100)));
+}
+
+// Busca ID de grupo pelo nome via proxy Vercel
+async function buscarGrupoPorNome(nomeGrupo){
+  const PROXY_URL = 'https://casadebolos-proxy.vercel.app/api/zapi';
+  try{
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'list-groups' })
+    });
+    const data = await res.json();
+    if(!Array.isArray(data)) return null;
+    const grupo = data.find(c =>
+      c.isGroup && c.name && c.name.toLowerCase().includes(nomeGrupo.toLowerCase())
+    );
+    return grupo ? grupo.phone : null;
+  }catch(e){
+    console.warn('Erro buscar grupo:', e.message);
+    return null;
+  }
+}
+
+// Teste de envio manual
+async function testarZApi(){
+  const config = getZApiConfig();
+  if(!config.destinatarios || !config.destinatarios.length){toast('Adicione pelo menos 1 destinatário!');return;}
+
+  const btn = document.getElementById('btn-testar-zapi');
+  if(btn){btn.disabled=true; btn.textContent='⏳ Enviando teste...';}
+
+  const msg = `🧪 *TESTE Z-API*\n${getNomeEmpresa()}\n${new Date().toLocaleString('pt-BR')}\n\n✅ Se você recebeu esta mensagem, a integração está funcionando!`;
+  await enviarZApi(msg, null);
+
+  if(btn){btn.disabled=false; btn.textContent='🧪 Testar envio';}
+  toast('Teste enviado! Verifique seu WhatsApp em alguns segundos.');
+  setTimeout(loadZApiLog, 2000);
+}
+
+function loadZApiLog(){
+  const log = JSON.parse(localStorage.getItem('cb_zapi_log')||'[]');
+  const el = document.getElementById('zapi-log');
+  if(!el) return;
+  if(!log.length){el.innerHTML='<div style="font-size:.78rem;color:var(--lt);">Nenhum envio registrado.</div>';return;}
+  el.innerHTML = log.slice(0,15).map(l=>{
+    const cor = l.status==='sucesso'?'var(--gn)':'var(--rd)';
+    const icon = l.status==='sucesso'?'✅':'❌';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F0E8DC;font-size:.75rem;">
+      <span>${icon}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="color:var(--br);font-weight:600;">${l.dest}</div>
+        <div style="color:var(--lt);font-size:.7rem;">${l.data} ${l.erro?'· '+l.erro:''}</div>
+      </div>
+      <span style="color:${cor};font-size:.7rem;font-weight:700;text-transform:uppercase;">${l.status}</span>
+    </div>`;
+  }).join('');
+}
+
+function salvarZApiConfig(){
+  const config = getZApiConfig();
+  config.notificacoes = document.getElementById('zapi-tipo-notif').value;
+  config.ativo = document.getElementById('zapi-ativo').checked;
+  if(!config.destinatarios) config.destinatarios = [];
+  localStorage.setItem('cb_zapi', JSON.stringify(config));
+  toast('✅ Configuração Z-API salva!');
+  loadZApiConfig();
+}
+
+function addDestinatarioZApi(){
+  const tipo = document.getElementById('dest-tipo').value;
+  const nome = document.getElementById('dest-nome').value.trim();
+  const valor = document.getElementById('dest-valor').value.trim();
+  if(!nome){toast('Informe um nome para identificar!');return;}
+  if(tipo==='numero' && !valor){toast('Informe o número!');return;}
+  if(tipo==='grupo' && !nome){toast('Informe o nome do grupo!');return;}
+
+  const config = getZApiConfig();
+  if(!config.destinatarios) config.destinatarios = [];
+  config.destinatarios.push({
+    id: Date.now().toString(),
+    tipo, nome,
+    numero: tipo==='numero' ? valor.replace(/\D/g,'') : null,
+    ativo: true
+  });
+  localStorage.setItem('cb_zapi', JSON.stringify(config));
+  document.getElementById('dest-nome').value='';
+  document.getElementById('dest-valor').value='';
+  toast('✅ Destinatário adicionado!');
+  loadZApiConfig();
+}
+
+function removerDestinatarioZApi(id){
+  if(!confirm('Remover este destinatário?')) return;
+  const config = getZApiConfig();
+  config.destinatarios = (config.destinatarios||[]).filter(d=>d.id!==id);
+  localStorage.setItem('cb_zapi', JSON.stringify(config));
+  loadZApiConfig();
+}
+
+function toggleDestinatarioZApi(id){
+  const config = getZApiConfig();
+  const d = (config.destinatarios||[]).find(x=>x.id===id);
+  if(d){d.ativo = !d.ativo; localStorage.setItem('cb_zapi', JSON.stringify(config)); loadZApiConfig();}
+}
+
+function loadZApiConfig(){
+  const config = getZApiConfig();
+  if(document.getElementById('zapi-tipo-notif')) document.getElementById('zapi-tipo-notif').value = config.notificacoes || 'criticos';
+  if(document.getElementById('zapi-ativo')) document.getElementById('zapi-ativo').checked = config.ativo!==false;
+
+  // Renderiza lista de destinatários
+  const el = document.getElementById('zapi-destinatarios');
+  if(!el) return;
+  const dests = config.destinatarios||[];
+  if(!dests.length){el.innerHTML='<div style="font-size:.78rem;color:var(--lt);padding:8px;">Nenhum destinatário cadastrado.</div>';return;}
+  el.innerHTML = dests.map(d=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;background:white;border-radius:8px;margin-bottom:5px;border:1px solid ${d.ativo?'#B8EFD0':'#E8D8C8'};">
+      <div style="font-size:1.1rem;">${d.tipo==='grupo'?'👥':'📱'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.82rem;font-weight:700;color:var(--br);">${d.nome}</div>
+        <div style="font-size:.7rem;color:var(--lt);">${d.tipo==='grupo'?'Grupo':d.numero||'(sem número)'}</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:4px;font-size:.7rem;color:${d.ativo?'var(--gn)':'var(--lt)'};cursor:pointer;">
+        <input type="checkbox" ${d.ativo?'checked':''} onchange="toggleDestinatarioZApi('${d.id}')" style="cursor:pointer;">${d.ativo?'Ativo':'Inativo'}
+      </label>
+      <button onclick="removerDestinatarioZApi('${d.id}')" style="background:transparent;border:none;color:var(--rd);font-size:.9rem;cursor:pointer;padding:4px;">🗑</button>
+    </div>
+  `).join('');
+
+  loadZApiLog();
+}
+
+function updDestTipo(){
+  const tipo = document.getElementById('dest-tipo').value;
+  const valor = document.getElementById('dest-valor');
+  if(tipo==='grupo'){
+    valor.placeholder='(Para grupos, basta o nome acima)';
+    valor.disabled=true;
+    valor.style.opacity='.5';
+  } else {
+    valor.placeholder='55219... (com DDI e DDD)';
+    valor.disabled=false;
+    valor.style.opacity='1';
   }
 }
 
@@ -4802,6 +5058,14 @@ window.loadLancRapidos=loadLancRapidos;
 window.abrirNovoRapido=abrirNovoRapido;
 window.usarRapido=usarRapido;
 window.excluirRapido=excluirRapido;
+window.salvarZApiConfig=salvarZApiConfig;
+window.testarZApi=testarZApi;
+window.loadZApiConfig=loadZApiConfig;
+window.loadZApiLog=loadZApiLog;
+window.addDestinatarioZApi=addDestinatarioZApi;
+window.removerDestinatarioZApi=removerDestinatarioZApi;
+window.toggleDestinatarioZApi=toggleDestinatarioZApi;
+window.updDestTipo=updDestTipo;
 </script>
 </body>
 </html>
