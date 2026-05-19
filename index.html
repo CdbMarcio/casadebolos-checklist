@@ -2288,18 +2288,49 @@ async function sendCL(){
 async function enviarWpp(rec){
   const config = getZApiConfig();
 
-  // Monta mensagem
+  // Monta mensagem com identificação clara da loja
   const naoFeitos=rec.itensList.filter(i=>!i.done);
-  let msg=`📋 *${getNomeEmpresa()}*\n📅 ${rec.dateStr} ${rec.timeStr}\n🏪 *${rec.storeName}* — ${rec.typeName}\n👤 ${rec.operator}\n📊 *${rec.pct}%* (${rec.done}/${rec.total})\n`;
-  if(naoFeitos.length>0){
-    msg+=`\n❌ *NÃO FEITOS (${naoFeitos.length}):*\n`;
-    naoFeitos.slice(0,15).forEach(i=>{
-      msg+=`• ${i.text.substring(0,80)}\n`;
-      if(i.obs) msg+=`  💬 ${i.obs.substring(0,60)}\n`;
+  const criticos = naoFeitos.filter(i=>i.crit);
+  const statusEmoji = rec.pct >= 90 ? '🟢' : rec.pct >= 70 ? '🟡' : rec.pct >= 60 ? '🟠' : '🔴';
+  const statusTexto = rec.pct >= 90 ? 'EXCELENTE' : rec.pct >= 70 ? 'BOM' : rec.pct >= 60 ? 'ATENÇÃO' : 'CRÍTICO';
+
+  let msg = `╔═══════════════════════╗\n`;
+  msg += `🏪 *${rec.storeName.toUpperCase()}*\n`;
+  msg += `${getNomeEmpresa()}\n`;
+  msg += `╚═══════════════════════╝\n\n`;
+
+  msg += `📋 *${rec.typeName}*\n`;
+  msg += `📅 ${rec.dateStr} às ${rec.timeStr}\n`;
+  msg += `👤 ${rec.operator}\n\n`;
+
+  msg += `${statusEmoji} *${statusTexto}*\n`;
+  msg += `📊 Pontuação: *${rec.pct}%* (${rec.done}/${rec.total})\n`;
+
+  if(criticos.length > 0){
+    msg += `\n🚨 *${criticos.length} ITEM(NS) CRÍTICO(S) NÃO FEITO(S):*\n`;
+    criticos.slice(0,10).forEach(i=>{
+      msg += `❌ ${i.text.substring(0,80)}\n`;
+      if(i.obs) msg += `   💬 ${i.obs.substring(0,60)}\n`;
     });
-    if(naoFeitos.length>15) msg+=`_...e mais ${naoFeitos.length-15}_\n`;
   }
-  if(msg.length>1500) msg=msg.substring(0,1500)+'\n...';
+
+  const naoFeitosNormais = naoFeitos.filter(i=>!i.crit);
+  if(naoFeitosNormais.length > 0){
+    msg += `\n⚠️ *Pendentes (${naoFeitosNormais.length}):*\n`;
+    naoFeitosNormais.slice(0,10).forEach(i=>{
+      msg += `• ${i.text.substring(0,70)}\n`;
+      if(i.obs) msg += `   💬 ${i.obs.substring(0,50)}\n`;
+    });
+    if(naoFeitosNormais.length>10) msg+=`_...e mais ${naoFeitosNormais.length-10}_\n`;
+  }
+
+  if(naoFeitos.length === 0){
+    msg += `\n✅ *Checklist 100% concluído!*\n`;
+  }
+
+  msg += `\n_Casa de Bolos - Sistema de Gestão_`;
+
+  if(msg.length>1500) msg = msg.substring(0,1500)+'\n_...mensagem truncada_';
 
   // Z-API ativo? envia via proxy Vercel
   if(config.ativo !== false && config.destinatarios && config.destinatarios.length > 0){
@@ -2410,7 +2441,15 @@ async function testarZApi(){
   const btn = document.getElementById('btn-testar-zapi');
   if(btn){btn.disabled=true; btn.textContent='⏳ Enviando teste...';}
 
-  const msg = `🧪 *TESTE Z-API*\n${getNomeEmpresa()}\n${new Date().toLocaleString('pt-BR')}\n\n✅ Se você recebeu esta mensagem, a integração está funcionando!`;
+  let msg = `╔═══════════════════════╗\n`;
+  msg += `🧪 *TESTE DE CONEXÃO*\n`;
+  msg += `${getNomeEmpresa()}\n`;
+  msg += `╚═══════════════════════╝\n\n`;
+  msg += `📅 ${new Date().toLocaleString('pt-BR')}\n\n`;
+  msg += `✅ Z-API está funcionando!\n`;
+  msg += `📱 Você receberá notificações automáticas dos checklists.\n\n`;
+  msg += `_Casa de Bolos - Sistema de Gestão_`;
+
   await enviarZApi(msg, null);
 
   if(btn){btn.disabled=false; btn.textContent='🧪 Testar envio';}
