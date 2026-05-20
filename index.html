@@ -1050,6 +1050,14 @@ select:focus,input:focus{border-color:var(--gd);}
             </select></div>
           </div>
         </div>
+        <div style="margin-bottom:10px;">
+          <span class="fl">Tipo de acesso</span>
+          <div class="sw"><select id="nu-role">
+            <option value="user">👤 Operador (checklist, ponto, estoque)</option>
+            <option value="ponto">⏰ Funcionário (só bate ponto)</option>
+            <option value="admin">⚙️ Administrador (acesso total)</option>
+          </select></div>
+        </div>
         <button class="btn" onclick="addUser()">Cadastrar Usuário</button>
       </div>
     </div>
@@ -1969,19 +1977,27 @@ function doLogin(){
   document.getElementById('login-err').classList.remove('show');
   ST.user=user;
   document.getElementById('hdr-user-name').textContent=user.name;
+
+  const ehPonto = user.role==='ponto';
+
+  // Usuário "ponto" só vê a aba Meu Ponto
+  document.getElementById('tab-sel').style.display = ehPonto?'none':'';
+  document.getElementById('tab-hist').style.display = ehPonto?'none':'';
+  document.getElementById('tab-estoque-ia').style.display = ehPonto?'none':'';
+  document.getElementById('tab-ponto').style.display = '';
+
   document.getElementById('tab-admin').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-painel').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-score').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-ia').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-auditoria').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-padrao').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-estoque-ia').style.display='';
   document.getElementById('tab-ponto-eq').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-segmento').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-financeiro').style.display=user.role==='admin'?'':'none';
   buildStoreSelect(user);
   showPage('pg-app');
-  goTab('sel');
+  goTab(ehPonto?'ponto':'sel');
 }
 
 function doLogout(){ST.user=null;showAllScr('sel');showPage('pg-login');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';}
@@ -4556,13 +4572,17 @@ function aprovarAcao(id,decisao){
 // ═══════════════════════════════════════════════
 function renderAdmin(){
   const users=getUsers();
-  document.getElementById('users-list').innerHTML=users.map((u,i)=>`
+  document.getElementById('users-list').innerHTML=users.map((u,i)=>{
+    const roleCor = u.role==='admin'?'#D4A843':u.role==='ponto'?'#5B8FF9':'#27AE60';
+    const roleNome = u.role==='admin'?'Admin':u.role==='ponto'?'⏰ Ponto':'Usuário';
+    const roleClasse = u.role==='admin'?'role-admin':'role-user';
+    return`
     <div class="user-row">
-      <div class="user-avatar" style="background:${u.role==='admin'?'#D4A843':'#27AE60'}">${u.name.charAt(0)}</div>
+      <div class="user-avatar" style="background:${roleCor}">${u.name.charAt(0)}</div>
       <div class="user-info"><div class="user-name">${u.name}</div><div class="user-meta">Login: ${u.login} · ${u.store==='todas'?'Todas':STORES[u.store]||u.store}</div></div>
-      <span class="user-role ${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'Admin':'Usuário'}</span>
+      <span class="user-role ${roleClasse}">${roleNome}</span>
       ${u.role!=='admin'?`<button class="user-del" onclick="delUser(${i})">🗑</button>`:''}
-    </div>`).join('');
+    </div>`;}).join('');
   // Stats
   document.getElementById('admin-stats').innerHTML='⏳ Carregando...';
   if(fbReady && db){
@@ -4590,12 +4610,13 @@ function addUser(){
   const pass=document.getElementById('nu-pass').value;
   const name=document.getElementById('nu-name').value.trim();
   const store=document.getElementById('nu-store').value;
+  const role=document.getElementById('nu-role').value;
   if(!login||!pass||!name){toast('Preencha todos os campos!');return;}
   if(pass.length<4){toast('Senha mínimo 4 caracteres!');return;}
   const users=getUsers();
   if(users.find(u=>u.login===login)){toast('Login já existe!');return;}
   const local=JSON.parse(localStorage.getItem('cb_users')||'[]');
-  local.push({login,pass,name,store,role:'user'});
+  local.push({login,pass,name,store,role});
   localStorage.setItem('cb_users',JSON.stringify(local));
   document.getElementById('nu-login').value='';document.getElementById('nu-pass').value='';document.getElementById('nu-name').value='';
   renderAdmin();toast('✅ Usuário cadastrado!');
