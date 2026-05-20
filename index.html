@@ -1303,7 +1303,7 @@ const firebaseConfig = {
 
 // Firebase carrega em background — app funciona mesmo sem ele
 let db = null;
-let collection, addDoc, getDocs, query, where, doc, updateDoc;
+let collection, addDoc, getDocs, query, where, doc, updateDoc, setDoc, deleteDoc;
 let fbReady = false;
 let fbError = false;
 
@@ -1318,10 +1318,14 @@ async function initFirebase(){
     where = fs.where;
     doc = fs.doc;
     updateDoc = fs.updateDoc;
+    setDoc = fs.setDoc;
+    deleteDoc = fs.deleteDoc;
     const app = initializeApp(firebaseConfig);
     db = fs.getFirestore(app);
     fbReady = true;
     console.log('✅ Firebase conectado');
+    // Sincroniza usuários cadastrados (multi-dispositivo)
+    syncUsersFromFirebase();
     // Atualiza indicador de status
     const bar = document.querySelector('.stext');
     if(bar) bar.textContent = 'Firebase conectado ✅';
@@ -1376,6 +1380,24 @@ function getUsers(){
 function saveUsers(u){
   const soLocal = u.filter(x=>!MASTER_USERS.find(m=>m.login===x.login));
   localStorage.setItem('cb_users',JSON.stringify(soLocal));
+}
+
+// Sincroniza usuários do Firebase para o localStorage (multi-dispositivo)
+async function syncUsersFromFirebase(){
+  if(!fbReady || !db) return;
+  try{
+    const snap = await getDocs(collection(db,'usuarios'));
+    const fbUsers = [];
+    snap.forEach(d=>{ fbUsers.push(d.data()); });
+    if(fbUsers.length){
+      // Mescla com os locais (Firebase tem prioridade)
+      const soLocal = fbUsers.filter(x=>!MASTER_USERS.find(m=>m.login===x.login));
+      localStorage.setItem('cb_users', JSON.stringify(soLocal));
+      console.log('✅ '+fbUsers.length+' usuários sincronizados do Firebase');
+    }
+  }catch(e){
+    console.warn('Erro sync usuários:', e.message);
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1968,11 +1990,23 @@ window.addEventListener('DOMContentLoaded',()=>{
 // ═══════════════════════════════════════════════
 //  LOGIN
 // ═══════════════════════════════════════════════
-function doLogin(){
+async function doLogin(){
   const login=document.getElementById('login-user').value.trim().toLowerCase();
   const pass=document.getElementById('login-pass').value;
-  const users=getUsers();
-  const user=users.find(u=>u.login===login&&u.pass===pass);
+  let users=getUsers();
+  let user=users.find(u=>u.login===login&&u.pass===pass);
+
+  // Se não achou e Firebase está pronto, tenta sincronizar antes de recusar
+  if(!user && fbReady && db){
+    document.getElementById('login-err').classList.remove('show');
+    const btnLogin=document.querySelector('#pg-login button');
+    if(btnLogin){btnLogin.disabled=true;btnLogin.textContent='Verificando...';}
+    await syncUsersFromFirebase();
+    users=getUsers();
+    user=users.find(u=>u.login===login&&u.pass===pass);
+    if(btnLogin){btnLogin.disabled=false;btnLogin.textContent='Entrar →';}
+  }
+
   if(!user){document.getElementById('login-err').classList.add('show');return;}
   document.getElementById('login-err').classList.remove('show');
   ST.user=user;
@@ -3937,10 +3971,11 @@ async function baterPonto(){
   }
 
   // 3) Captura foto
-  btn.innerHTML='📷 Tirando foto...';
+  btn.innerHTML='📷 Abrindo câmera...';
   const foto=await tirarFotoPonto();
   if(!foto){
     btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
+    toast('Foto cancelada. Ponto não registrado.');
     return;
   }
 
@@ -3992,21 +4027,67 @@ async function baterPonto(){
 // Captura foto via camera
 function tirarFotoPonto(){
   return new Promise(resolve=>{
-    const input=document.createElement('input');
-    input.type='file';
-    input.accept='image/*';
-    input.capture='user';
-    input.onchange=async e=>{
-      const f=e.target.files[0];
-      if(!f){resolve(null);return;}
-      const r=new FileReader();
-      r.onload=async ev=>{
-        const c=await compressPhoto(ev.target.result,400,0.6);
-        resolve(c);
-      };
-      r.readAsDataURL(f);
+    // Cria modal de câmera
+    const modal=document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML=`
+      <div style="color:white;font-family:'DM Serif Display',serif;font-size:1.3rem;margin-bottom:12px;">📷 Foto do Ponto</div>
+      <div style="color:#CCC;font-size:.8rem;margin-bottom:14px;text-align:center;">Posicione seu rosto e clique em Capturar</div>
+      <video id="cam-video" autoplay playsinline style="width:100%;max-width:380px;border-radius:14px;background:#000;transform:scaleX(-1);"></video>
+      <canvas id="cam-canvas" style="display:none;"></canvas>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button id="cam-capturar" style="background:#27AE60;color:white;border:none;border-radius:99px;padding:14px 28px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">📸 Capturar</button>
+        <button id="cam-cancelar" style="background:#666;color:white;border:none;border-radius:99px;padding:14px 24px;font-family:inherit;font-size:1rem;cursor:pointer;">Cancelar</button>
+      </div>
+      <div id="cam-erro" style="color:#FF6B6B;font-size:.82rem;margin-top:12px;text-align:center;max-width:380px;display:none;"></div>
+    `;
+    document.body.appendChild(modal);
+
+    const video=modal.querySelector('#cam-video');
+    const canvas=modal.querySelector('#cam-canvas');
+    const btnCap=modal.querySelector('#cam-capturar');
+    const btnCanc=modal.querySelector('#cam-cancelar');
+    const erroBox=modal.querySelector('#cam-erro');
+    let stream=null;
+
+    function fechar(resultado){
+      if(stream){stream.getTracks().forEach(t=>t.stop());}
+      modal.remove();
+      resolve(resultado);
+    }
+
+    // Tenta abrir a câmera (frontal de preferência)
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false})
+      .then(s=>{
+        stream=s;
+        video.srcObject=s;
+      })
+      .catch(err=>{
+        // Fallback: tenta qualquer câmera
+        navigator.mediaDevices.getUserMedia({video:true,audio:false})
+          .then(s=>{stream=s;video.srcObject=s;})
+          .catch(err2=>{
+            erroBox.style.display='block';
+            erroBox.innerHTML='❌ Não foi possível acessar a câmera.<br>Verifique as permissões do navegador (clique no cadeado 🔒 na barra de endereço e ative a Câmera).';
+            btnCap.style.display='none';
+          });
+      });
+
+    btnCap.onclick=async()=>{
+      if(!stream){return;}
+      canvas.width=video.videoWidth;
+      canvas.height=video.videoHeight;
+      const ctx=canvas.getContext('2d');
+      // Espelha a imagem (selfie)
+      ctx.translate(canvas.width,0);
+      ctx.scale(-1,1);
+      ctx.drawImage(video,0,0);
+      const dataUrl=canvas.toDataURL('image/jpeg',0.7);
+      const comprimida=await compressPhoto(dataUrl,400,0.6);
+      fechar(comprimida);
     };
-    input.click();
+
+    btnCanc.onclick=()=>fechar(null);
   });
 }
 
@@ -4605,7 +4686,7 @@ function renderAdmin(){
   }
 }
 
-function addUser(){
+async function addUser(){
   const login=document.getElementById('nu-login').value.trim().toLowerCase();
   const pass=document.getElementById('nu-pass').value;
   const name=document.getElementById('nu-name').value.trim();
@@ -4615,20 +4696,52 @@ function addUser(){
   if(pass.length<4){toast('Senha mínimo 4 caracteres!');return;}
   const users=getUsers();
   if(users.find(u=>u.login===login)){toast('Login já existe!');return;}
+
+  const novoUser={login,pass,name,store,role};
+
+  // Salva no localStorage
   const local=JSON.parse(localStorage.getItem('cb_users')||'[]');
-  local.push({login,pass,name,store,role});
+  local.push(novoUser);
   localStorage.setItem('cb_users',JSON.stringify(local));
+
+  // Salva no Firebase (multi-dispositivo)
+  if(fbReady && db){
+    try{
+      await setDoc(doc(db,'usuarios',login), novoUser);
+      console.log('✅ Usuário salvo no Firebase:', login);
+    }catch(e){
+      console.warn('Erro salvar usuário no Firebase:', e.message);
+      toast('⚠️ Usuário salvo localmente, mas não sincronizou. Verifique a internet.');
+    }
+  } else {
+    toast('⚠️ Firebase offline — usuário só funciona neste dispositivo!');
+  }
+
   document.getElementById('nu-login').value='';document.getElementById('nu-pass').value='';document.getElementById('nu-name').value='';
-  renderAdmin();toast('✅ Usuário cadastrado!');
+  renderAdmin();
+  if(fbReady && db) toast('✅ Usuário cadastrado e sincronizado!');
 }
 
-function delUser(i){
+async function delUser(i){
   const users=getUsers();
   if(users[i].role==='admin'){toast('Não é possível remover o admin!');return;}
+  const loginRemover=users[i].login;
+
+  // Remove do localStorage
   const local=JSON.parse(localStorage.getItem('cb_users')||'[]');
-  const idx=local.findIndex(u=>u.login===users[i].login);
+  const idx=local.findIndex(u=>u.login===loginRemover);
   if(idx>=0)local.splice(idx,1);
   localStorage.setItem('cb_users',JSON.stringify(local));
+
+  // Remove do Firebase
+  if(fbReady && db){
+    try{
+      await deleteDoc(doc(db,'usuarios',loginRemover));
+    }catch(e){
+      console.warn('Erro remover usuário do Firebase:', e.message);
+    }
+  }
+
   renderAdmin();toast('Usuário removido.');
 }
 
