@@ -3946,15 +3946,40 @@ async function baterPonto(){
   let gps=null;
   try{
     gps=await new Promise((res,rej)=>{
+      if(!navigator.geolocation){
+        rej(new Error('Este navegador não suporta GPS.'));
+        return;
+      }
       navigator.geolocation.getCurrentPosition(
         p=>res({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),
         err=>rej(err),
-        {enableHighAccuracy:true,timeout:10000}
+        {enableHighAccuracy:true,timeout:25000,maximumAge:0}
       );
     });
   }catch(e){
     btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
-    alert('❌ Não foi possível obter sua localização. Verifique se o GPS está ativado.');
+    let msg='❌ Não foi possível obter sua localização.\n\n';
+    if(e.code===1){
+      // PERMISSION_DENIED
+      msg+='A permissão de localização foi NEGADA.\n\n';
+      msg+='📱 No iPhone:\n';
+      msg+='1. Abra Ajustes > Privacidade > Serviços de Localização\n';
+      msg+='2. Ative para o Safari/Chrome\n';
+      msg+='3. Recarregue a página e tente de novo\n\n';
+      msg+='📱 No Android:\n';
+      msg+='1. Toque no cadeado 🔒 na barra de endereço\n';
+      msg+='2. Ative "Localização"\n';
+      msg+='3. Recarregue a página';
+    } else if(e.code===2){
+      // POSITION_UNAVAILABLE
+      msg+='O GPS não conseguiu te localizar. Verifique se a localização do celular está ativada e tente em local aberto.';
+    } else if(e.code===3){
+      // TIMEOUT
+      msg+='Demorou muito para pegar o sinal de GPS. Tente novamente em local mais aberto, perto de uma janela.';
+    } else {
+      msg+='Verifique se o GPS/localização do celular está ativado.';
+    }
+    alert(msg);
     return;
   }
 
