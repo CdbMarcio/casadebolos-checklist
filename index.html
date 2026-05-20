@@ -1066,8 +1066,8 @@ select:focus,input:focus{border-color:var(--gd);}
       <div style="margin-bottom:12px;">
         <span class="fl">Tipo de notificações</span>
         <div class="sw"><select id="zapi-tipo-notif">
-          <option value="todos">📨 Todos os checklists</option>
-          <option value="criticos" selected>⚠️ Só críticos (pontuação &lt;60% ou itens críticos não feitos)</option>
+          <option value="todos" selected>📨 Todos os checklists (com destaque p/ críticos)</option>
+          <option value="criticos">⚠️ Só críticos (pontuação &lt;60% ou itens críticos não feitos)</option>
         </select></div>
       </div>
 
@@ -2294,7 +2294,17 @@ async function enviarWpp(rec){
   const statusEmoji = rec.pct >= 90 ? '🟢' : rec.pct >= 70 ? '🟡' : rec.pct >= 60 ? '🟠' : '🔴';
   const statusTexto = rec.pct >= 90 ? 'EXCELENTE' : rec.pct >= 70 ? 'BOM' : rec.pct >= 60 ? 'ATENÇÃO' : 'CRÍTICO';
 
-  let msg = `╔═══════════════════════╗\n`;
+  let msg = '';
+
+  // BANNER DE ALERTA quando crítico
+  const ehCritico = rec.pct < 60 || criticos.length > 0;
+  if(ehCritico){
+    msg += `🚨🚨🚨🚨🚨🚨🚨🚨🚨\n`;
+    msg += `*ATENÇÃO: AÇÃO NECESSÁRIA*\n`;
+    msg += `🚨🚨🚨🚨🚨🚨🚨🚨🚨\n\n`;
+  }
+
+  msg += `╔═══════════════════════╗\n`;
   msg += `🏪 *${rec.storeName.toUpperCase()}*\n`;
   msg += `${getNomeEmpresa()}\n`;
   msg += `╚═══════════════════════╝\n\n`;
@@ -2525,7 +2535,7 @@ function toggleDestinatarioZApi(id){
 
 function loadZApiConfig(){
   const config = getZApiConfig();
-  if(document.getElementById('zapi-tipo-notif')) document.getElementById('zapi-tipo-notif').value = config.notificacoes || 'criticos';
+  if(document.getElementById('zapi-tipo-notif')) document.getElementById('zapi-tipo-notif').value = config.notificacoes || 'todos';
   if(document.getElementById('zapi-ativo')) document.getElementById('zapi-ativo').checked = config.ativo!==false;
 
   // Renderiza lista de destinatários
