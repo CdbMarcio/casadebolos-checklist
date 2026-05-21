@@ -4037,11 +4037,19 @@ async function baterPonto(){
   // LocalStorage
   const todas=JSON.parse(localStorage.getItem('cb_ponto')||'[]');
   todas.unshift(batida);
-  localStorage.setItem('cb_ponto',JSON.stringify(todas.slice(0,500)));
+  localStorage.setItem('cb_ponto',JSON.stringify(todas.slice(0,2000)));
 
   // Firebase
   if(fbReady&&db){
-    try{await addDoc(collection(db,'ponto'),batida);}catch(e){console.warn('Firebase ponto:',e.message);}
+    try{
+      await addDoc(collection(db,'ponto'),batida);
+      console.log('✅ Batida salva no Firebase');
+    }catch(e){
+      console.warn('Firebase ponto:',e.message);
+      toast('⚠️ Ponto salvo no celular, mas não sincronizou. Verifique a internet.');
+    }
+  } else {
+    toast('⚠️ Sem conexão — ponto salvo só neste celular.');
   }
 
   btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
@@ -4306,7 +4314,60 @@ function pontoEqTab(tab){
   if(tab==='config') carregarJornada();
 }
 
+// Sincroniza batidas de ponto do Firebase para o localStorage (multi-dispositivo)
+async function syncPontoFromFirebase(){
+  if(!fbReady || !db) return false;
+  try{
+    const snap = await getDocs(collection(db,'ponto'));
+    const fbBatidas = [];
+    snap.forEach(d=>{ fbBatidas.push(d.data()); });
+
+    // Mescla com locais — evita duplicar (usa ts+user como chave única)
+    const locais = JSON.parse(localStorage.getItem('cb_ponto')||'[]');
+    const mapa = {};
+    [...locais, ...fbBatidas].forEach(b=>{
+      const chave = (b.ts||'') + '_' + (b.user||'');
+      mapa[chave] = b;
+    });
+    const todas = Object.values(mapa).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+    localStorage.setItem('cb_ponto', JSON.stringify(todas.slice(0,2000)));
+    console.log('✅ '+fbBatidas.length+' batidas sincronizadas do Firebase');
+    return true;
+  }catch(e){
+    console.warn('Erro sync ponto:', e.message);
+    return false;
+  }
+}
+
+// Sincroniza solicitações de ajuste do Firebase
+async function syncAjustesFromFirebase(){
+  if(!fbReady || !db) return false;
+  try{
+    const snap = await getDocs(collection(db,'ajustes_ponto'));
+    const fbAjustes = [];
+    snap.forEach(d=>{ fbAjustes.push({...d.data(), _fbId:d.id}); });
+    const locais = JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]');
+    const mapa = {};
+    [...locais, ...fbAjustes].forEach(a=>{
+      const chave = a.id || ((a.ts||'')+'_'+(a.user||''));
+      mapa[chave] = a;
+    });
+    localStorage.setItem('cb_ajustes_ponto', JSON.stringify(Object.values(mapa)));
+    return true;
+  }catch(e){
+    console.warn('Erro sync ajustes:', e.message);
+    return false;
+  }
+}
+
 async function loadPontoEquipe(){
+  const el=document.getElementById('peq-hoje-content');
+  if(el) el.innerHTML='<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">⏳ Sincronizando batidas...</div>';
+
+  // Sincroniza do Firebase antes de exibir
+  await syncPontoFromFirebase();
+  await syncAjustesFromFirebase();
+
   // Atualiza badge de ajustes pendentes
   const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]').filter(a=>a.status==='pendente');
   const badge=document.getElementById('badge-ajustes');
@@ -4479,10 +4540,14 @@ function salvarCerca(){
 }
 
 // RELATÓRIO E EXPORTAÇÃO
-function gerarRelatorioPonto(){
+async function gerarRelatorioPonto(){
   const mes=document.getElementById('rep-mes').value;
   const loja=document.getElementById('rep-loja').value;
   if(!mes){toast('Selecione um mês!');return;}
+
+  const elContent=document.getElementById('peq-relatorio-content');
+  if(elContent) elContent.innerHTML='<div style="padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">⏳ Sincronizando dados...</div>';
+  await syncPontoFromFirebase();
 
   const [ano,mesNum]=mes.split('-');
   const mesFmt=`${mesNum}/${ano}`;
