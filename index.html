@@ -240,6 +240,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <button class="tab" onclick="goTab('estoque-ia')" id="tab-estoque-ia">🔢 Estoque IA</button>
     <button class="tab" onclick="goTab('ponto')" id="tab-ponto">⏰ Meu Ponto</button>
     <button class="tab" onclick="goTab('ponto-eq')" id="tab-ponto-eq" style="display:none">👥 Ponto Equipe</button>
+    <button class="tab" onclick="goTab('funcionarios')" id="tab-funcionarios" style="display:none">🪪 Funcionários</button>
     <button class="tab" onclick="goTab('financeiro')" id="tab-financeiro" style="display:none">💰 Financeiro</button>
     <button class="tab" onclick="goTab('segmento')" id="tab-segmento" style="display:none">🎯 Segmento</button>
     <button class="tab" onclick="goTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
@@ -1185,9 +1186,19 @@ select:focus,input:focus{border-color:var(--gd);}
           <textarea id="aj-just" placeholder="Explique o motivo (ex: esqueci de bater, celular sem bateria...)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:80px;resize:vertical;"></textarea>
         </div>
 
+        <div style="margin-bottom:14px;">
+          <span class="fl">Anexar documento (opcional)</span>
+          <p style="font-size:.7rem;color:var(--lt);margin:2px 0 6px;">Atestado médico, declaração, comprovante. Foto ou PDF.</p>
+          <input type="file" id="aj-doc" accept="image/*,application/pdf" onchange="previewAjusteDoc()" style="width:100%;font-size:.78rem;font-family:inherit;">
+          <div id="aj-doc-preview" style="display:none;margin-top:8px;padding:8px;background:#EAFAF1;border:1px solid #B8EFD0;border-radius:8px;font-size:.76rem;color:var(--gn);align-items:center;gap:8px;">
+            <span id="aj-doc-nome"></span>
+            <button onclick="removerAjusteDoc()" type="button" style="background:transparent;border:none;color:var(--rd);cursor:pointer;font-size:.85rem;margin-left:auto;">🗑</button>
+          </div>
+        </div>
+
         <div style="display:flex;gap:8px;">
           <button onclick="fecharAjuste()" style="flex:1;padding:11px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">Cancelar</button>
-          <button onclick="enviarAjuste()" style="flex:2;padding:11px;border-radius:99px;border:none;background:var(--br);color:var(--gd);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Enviar solicitação</button>
+          <button onclick="enviarAjuste()" id="btn-enviar-ajuste" style="flex:2;padding:11px;border-radius:99px;border:none;background:var(--br);color:var(--gd);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Enviar solicitação</button>
         </div>
       </div>
     </div>
@@ -1282,8 +1293,186 @@ select:focus,input:focus{border-color:var(--gd);}
         <button onclick="capturarLocalLoja()" style="width:100%;background:transparent;border:1px dashed var(--gd);color:var(--gd);border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;margin-bottom:8px;">📍 Capturar GPS atual (estou na loja)</button>
         <button onclick="salvarCerca()" class="btn">💾 Salvar cerca virtual</button>
       </div>
+
+      <!-- FERIADOS -->
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🎉 Feriados</div>
+        <p style="font-size:.75rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">Os feriados nacionais já estão pré-configurados. Adicione aqui feriados municipais do Rio (ex: São Jorge, Dia do Comerciário) e pontos facultativos. Quem trabalhar no feriado tem as horas contadas como <strong>extra 100%</strong> automaticamente.</p>
+
+        <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--rs);padding:10px;margin-bottom:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+            <div><span class="fl">Data</span><input type="date" id="fer-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+            <div><span class="fl">Tipo</span>
+              <div class="sw"><select id="fer-tipo">
+                <option value="municipal">Municipal</option>
+                <option value="estadual">Estadual</option>
+                <option value="facultativo">Ponto Facultativo</option>
+              </select></div>
+            </div>
+          </div>
+          <input type="text" id="fer-nome" placeholder="Nome do feriado (ex: Dia de São Jorge)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;margin-bottom:6px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--md);margin-bottom:8px;cursor:pointer;">
+            <input type="checkbox" id="fer-recorrente" style="cursor:pointer;"> Repete todo ano (mesmo dia/mês)
+          </label>
+          <button onclick="addFeriado()" style="width:100%;background:var(--or);color:white;border:none;border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;font-weight:600;">+ Adicionar feriado</button>
+        </div>
+
+        <div id="lista-feriados"></div>
+      </div>
+
+      <!-- FÉRIAS E AFASTAMENTOS -->
+      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🏖️ Férias e Afastamentos</div>
+        <p style="font-size:.75rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">Cadastre os períodos de férias, atestados longos e afastamentos. Durante esses períodos o funcionário <strong>não precisa bater ponto</strong> e os dias <strong>não contam no banco de horas</strong>.</p>
+
+        <div style="background:#EAF2F8;border:1px solid #AED6F1;border-radius:var(--rs);padding:10px;margin-bottom:12px;">
+          <div style="margin-bottom:6px;">
+            <span class="fl">Funcionário</span>
+            <div class="sw"><select id="fe-user"><option value="">Selecione...</option></select></div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <span class="fl">Tipo</span>
+            <div class="sw"><select id="fe-tipo">
+              <option value="ferias">🏖️ Férias</option>
+              <option value="atestado">🏥 Atestado/Licença Médica</option>
+              <option value="afastamento">📋 Afastamento (INSS)</option>
+              <option value="licenca">👶 Licença (maternidade/outros)</option>
+              <option value="folga">😎 Folga</option>
+            </select></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+            <div><span class="fl">Início</span><input type="date" id="fe-inicio" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+            <div><span class="fl">Fim</span><input type="date" id="fe-fim" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+          </div>
+          <input type="text" id="fe-obs" placeholder="Observação (opcional)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;margin-bottom:6px;">
+          <button onclick="addFerias()" style="width:100%;background:#5B8FF9;color:white;border:none;border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;font-weight:600;">+ Registrar período</button>
+        </div>
+
+        <div id="lista-ferias"></div>
+      </div>
     </div>
   </div>
+  </div>
+
+  <!-- FUNCIONÁRIOS -->
+  <div style="display:none" id="scr-funcionarios">
+  <div class="body-wrap">
+    <h1 class="pg-title">Funcionários</h1>
+    <p class="pg-sub">Cadastro completo da equipe</p>
+
+    <!-- BOTÃO NOVO -->
+    <button onclick="abrirFichaFuncionario()" class="btn" style="margin-bottom:14px;">+ Cadastrar funcionário</button>
+
+    <!-- FILTRO -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <select id="func-filtro-loja" onchange="renderFuncionarios()" style="flex:1;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.8rem;">
+        <option value="todas">Todas as lojas</option>
+        <option value="meier">Méier</option>
+        <option value="tijuca">Tijuca</option>
+        <option value="copacabana">Copacabana</option>
+        <option value="botafogo">Botafogo</option>
+        <option value="ilha">Ilha do Governador</option>
+      </select>
+      <select id="func-filtro-equipe" onchange="renderFuncionarios()" style="flex:1;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.8rem;">
+        <option value="todas">Todas as equipes</option>
+        <option value="cozinha">Cozinha</option>
+        <option value="atendimento">Atendimento</option>
+        <option value="producao">Produção</option>
+        <option value="supervisao">Supervisão</option>
+        <option value="entrega">Entrega</option>
+      </select>
+    </div>
+
+    <div id="func-lista"></div>
+  </div>
+  </div>
+
+  <!-- MODAL FICHA FUNCIONÁRIO -->
+  <div id="modal-ficha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:white;border-radius:var(--r);padding:20px;max-width:440px;width:100%;max-height:88vh;overflow-y:auto;">
+      <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:4px;" id="ficha-titulo">Cadastrar Funcionário</div>
+      <p style="font-size:.72rem;color:var(--lt);margin-bottom:14px;">Preencha os dados do funcionário</p>
+
+      <input type="hidden" id="ficha-id">
+
+      <!-- DADOS PESSOAIS -->
+      <div style="font-size:.68rem;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">👤 Dados Pessoais</div>
+      <div style="margin-bottom:8px;">
+        <span class="fl">Nome completo *</span>
+        <input type="text" id="ficha-nome" placeholder="João da Silva" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div><span class="fl">CPF</span><input type="text" id="ficha-cpf" placeholder="000.000.000-00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">RG</span><input type="text" id="ficha-rg" placeholder="00.000.000-0" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div><span class="fl">Nascimento</span><input type="date" id="ficha-nasc" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">Telefone</span><input type="text" id="ficha-tel" placeholder="(21) 99999-9999" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <span class="fl">Endereço</span>
+        <input type="text" id="ficha-endereco" placeholder="Rua, número, bairro" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;">
+      </div>
+
+      <!-- DADOS TRABALHISTAS -->
+      <div style="font-size:.68rem;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">💼 Dados Trabalhistas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div><span class="fl">Data de contratação</span><input type="date" id="ficha-contratacao" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">Cargo/Função</span><input type="text" id="ficha-cargo" placeholder="Ex: Atendente" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <span class="fl">Loja atual</span>
+          <div class="sw"><select id="ficha-loja" onchange="checarMudancaLoja()">
+            <option value="meier">Méier</option>
+            <option value="tijuca">Tijuca</option>
+            <option value="copacabana">Copacabana</option>
+            <option value="botafogo">Botafogo</option>
+            <option value="ilha">Ilha do Governador</option>
+          </select></div>
+        </div>
+        <div>
+          <span class="fl">Equipe</span>
+          <div class="sw"><select id="ficha-equipe">
+            <option value="cozinha">🍳 Cozinha</option>
+            <option value="atendimento">🛎️ Atendimento</option>
+            <option value="producao">🧁 Produção</option>
+            <option value="supervisao">👔 Supervisão</option>
+            <option value="entrega">🛵 Entrega</option>
+          </select></div>
+        </div>
+      </div>
+      <div id="ficha-aviso-mudanca" style="display:none;background:#FEF9E7;border:1px solid #F9E79F;border-radius:8px;padding:8px;font-size:.72rem;color:var(--or);margin-bottom:8px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div><span class="fl">Salário (opcional)</span><input type="number" id="ficha-salario" placeholder="0,00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+        <div>
+          <span class="fl">Status</span>
+          <div class="sw"><select id="ficha-status">
+            <option value="ativo">🟢 Ativo</option>
+            <option value="afastado">🏥 Afastado</option>
+            <option value="desligado">🔴 Desligado</option>
+          </select></div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <span class="fl">Vincular login do app (opcional)</span>
+        <div class="sw"><select id="ficha-login">
+          <option value="">Nenhum (só ficha cadastral)</option>
+        </select></div>
+        <p style="font-size:.66rem;color:var(--lt);margin-top:3px;">Vincule ao usuário que esse funcionário usa para bater ponto.</p>
+      </div>
+
+      <!-- HISTÓRICO DE LOJAS -->
+      <div id="ficha-historico-box" style="display:none;margin-bottom:14px;">
+        <div style="font-size:.68rem;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">📍 Histórico de Lojas</div>
+        <div id="ficha-historico"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button onclick="fecharFicha()" style="flex:1;padding:11px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">Cancelar</button>
+        <button onclick="salvarFicha()" id="btn-salvar-ficha" style="flex:2;padding:11px;border-radius:99px;border:none;background:var(--br);color:var(--gd);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Salvar ficha</button>
+      </div>
+    </div>
   </div>
 
 </div><!-- fim pg-app -->
@@ -1326,6 +1515,9 @@ async function initFirebase(){
     console.log('✅ Firebase conectado');
     // Sincroniza usuários cadastrados (multi-dispositivo)
     syncUsersFromFirebase();
+    syncFeriadosFromFirebase();
+    syncFeriasFromFirebase();
+    syncFuncionariosFromFirebase();
     // Atualiza indicador de status
     const bar = document.querySelector('.stext');
     if(bar) bar.textContent = 'Firebase conectado ✅';
@@ -2027,6 +2219,7 @@ async function doLogin(){
   document.getElementById('tab-auditoria').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-padrao').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-ponto-eq').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-funcionarios').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-segmento').style.display=user.role==='admin'?'':'none';
   document.getElementById('tab-financeiro').style.display=user.role==='admin'?'':'none';
   buildStoreSelect(user);
@@ -2053,7 +2246,7 @@ function buildStoreSelect(user){
 //  NAVIGATION
 // ═══════════════════════════════════════════════
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
-function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','auditoria','padrao','estoque-ia','ponto','ponto-eq','financeiro','segmento','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
+function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','auditoria','padrao','estoque-ia','ponto','ponto-eq','funcionarios','financeiro','segmento','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
 function goTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+t)?.classList.add('on');
@@ -2067,6 +2260,7 @@ function goTab(t){
   else if(t==='estoque-ia'){showAllScr('estoque-ia');loadEstHist();}
   else if(t==='ponto'){showAllScr('ponto');loadPonto();}
   else if(t==='ponto-eq'){showAllScr('ponto-eq');loadPontoEquipe();}
+  else if(t==='funcionarios'){showAllScr('funcionarios');loadFuncionarios();}
   else if(t==='segmento'){showAllScr('segmento');loadSegmento();}
   else if(t==='financeiro'){showAllScr('financeiro');initFinanceiro();}
   else if(t==='admin'){showAllScr('admin');renderAdmin();loadZApiConfig();}
@@ -4160,11 +4354,530 @@ function jornadaPadraoMin(){
   return m1+m2;
 }
 
+// ═══════════════════════════════════════════════
+//  FERIADOS — Cálculo de hora extra 100%
+// ═══════════════════════════════════════════════
+// Feriados nacionais fixos (pré-carregados)
+const FERIADOS_NACIONAIS = [
+  {dia:'01/01', nome:'Confraternização Universal'},
+  {dia:'21/04', nome:'Tiradentes'},
+  {dia:'01/05', nome:'Dia do Trabalho'},
+  {dia:'07/09', nome:'Independência do Brasil'},
+  {dia:'12/10', nome:'Nossa Senhora Aparecida'},
+  {dia:'02/11', nome:'Finados'},
+  {dia:'15/11', nome:'Proclamação da República'},
+  {dia:'20/11', nome:'Consciência Negra'},
+  {dia:'25/12', nome:'Natal'}
+];
+
+function getFeriados(){
+  // Feriados customizados (municipais, pontos facultativos) que o admin cadastra
+  return JSON.parse(localStorage.getItem('cb_feriados')||'[]');
+}
+
+// Verifica se uma data (DD/MM/AAAA) é feriado
+function ehFeriado(dataStr){
+  if(!dataStr) return null;
+  const partes = dataStr.split('/'); // DD/MM/AAAA
+  if(partes.length<2) return null;
+  const diaMs = partes[0]+'/'+partes[1]; // DD/MM
+
+  // Verifica feriados nacionais fixos
+  const nac = FERIADOS_NACIONAIS.find(f=>f.dia===diaMs);
+  if(nac) return {nome:nac.nome, tipo:'nacional'};
+
+  // Verifica feriados customizados (podem ter ano específico ou ser todo ano)
+  const custom = getFeriados().find(f=>{
+    if(f.data===dataStr) return true; // data completa DD/MM/AAAA
+    if(f.data===diaMs) return true; // recorrente DD/MM
+    return false;
+  });
+  if(custom) return {nome:custom.nome, tipo:custom.tipo||'municipal'};
+
+  return null;
+}
+
+async function syncFeriadosFromFirebase(){
+  if(!fbReady || !db) return;
+  try{
+    const snap = await getDocs(collection(db,'feriados'));
+    const fb = [];
+    snap.forEach(d=>{ fb.push({...d.data(), _fbId:d.id}); });
+    if(fb.length){
+      localStorage.setItem('cb_feriados', JSON.stringify(fb));
+    }
+  }catch(e){ console.warn('Erro sync feriados:', e.message); }
+}
+
+// ═══════════════════════════════════════════════
+//  FÉRIAS E AFASTAMENTOS
+// ═══════════════════════════════════════════════
+function getFerias(){
+  return JSON.parse(localStorage.getItem('cb_ferias')||'[]');
+}
+
+// Verifica se um funcionário está de férias/afastado numa data (DD/MM/AAAA)
+function estaDeFerias(userLogin, dataStr){
+  if(!userLogin||!dataStr) return null;
+  // Converte DD/MM/AAAA para Date comparável (AAAA-MM-DD)
+  const partes=dataStr.split('/');
+  if(partes.length<3) return null;
+  const dataComp=`${partes[2]}-${partes[1]}-${partes[0]}`;
+
+  const ferias=getFerias().find(f=>{
+    if(f.user!==userLogin) return false;
+    return dataComp>=f.inicio && dataComp<=f.fim;
+  });
+  return ferias||null;
+}
+
+async function syncFeriasFromFirebase(){
+  if(!fbReady || !db) return;
+  try{
+    const snap = await getDocs(collection(db,'ferias'));
+    const fb = [];
+    snap.forEach(d=>{ fb.push({...d.data(), _fbId:d.id}); });
+    localStorage.setItem('cb_ferias', JSON.stringify(fb));
+  }catch(e){ console.warn('Erro sync férias:', e.message); }
+}
+
+async function addFerias(){
+  const user=document.getElementById('fe-user').value;
+  const tipo=document.getElementById('fe-tipo').value;
+  const inicio=document.getElementById('fe-inicio').value;
+  const fim=document.getElementById('fe-fim').value;
+  const obs=document.getElementById('fe-obs').value.trim();
+  if(!user){toast('Selecione o funcionário!');return;}
+  if(!inicio||!fim){toast('Informe data de início e fim!');return;}
+  if(fim<inicio){toast('A data fim não pode ser antes do início!');return;}
+
+  const users=getUsers();
+  const userObj=users.find(u=>u.login===user);
+
+  const novoFerias={
+    id:Date.now().toString(),
+    user,
+    userName:userObj?userObj.name:user,
+    tipo,
+    inicio, fim,
+    obs,
+    criadoEm:new Date().toLocaleDateString('pt-BR')
+  };
+
+  const ferias=getFerias();
+  ferias.push(novoFerias);
+  localStorage.setItem('cb_ferias', JSON.stringify(ferias));
+
+  if(fbReady && db){
+    try{ await setDoc(doc(db,'ferias',novoFerias.id), novoFerias); }
+    catch(e){ console.warn('Erro salvar férias:', e.message); }
+  }
+
+  document.getElementById('fe-inicio').value='';
+  document.getElementById('fe-fim').value='';
+  document.getElementById('fe-obs').value='';
+  toast('✅ Período registrado!');
+  renderFerias();
+}
+
+async function removerFerias(id){
+  if(!confirm('Remover este período?')) return;
+  const ferias=getFerias().filter(f=>f.id!==id);
+  localStorage.setItem('cb_ferias', JSON.stringify(ferias));
+  if(fbReady && db){
+    try{ await deleteDoc(doc(db,'ferias',id)); }catch(e){}
+  }
+  renderFerias();
+}
+
+const TIPOS_AUSENCIA={
+  ferias:{nome:'Férias',icon:'🏖️',cor:'#5B8FF9'},
+  atestado:{nome:'Atestado/Licença Médica',icon:'🏥',cor:'#E88A2C'},
+  afastamento:{nome:'Afastamento (INSS)',icon:'📋',cor:'#A0303C'},
+  licenca:{nome:'Licença (maternidade/outros)',icon:'👶',cor:'#27AE60'},
+  folga:{nome:'Folga',icon:'😎',cor:'#7B96B8'}
+};
+
+function fmtDataBR(iso){
+  if(!iso) return '';
+  const p=iso.split('-');
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+function renderFerias(){
+  // Popula o select de funcionários
+  const sel=document.getElementById('fe-user');
+  if(sel && sel.options.length<=1){
+    getUsers().filter(u=>u.role!=='admin').forEach(u=>{
+      sel.add(new Option(u.name,u.login));
+    });
+  }
+
+  const el=document.getElementById('lista-ferias');
+  if(!el) return;
+  const ferias=getFerias().sort((a,b)=>b.inicio.localeCompare(a.inicio));
+  if(!ferias.length){
+    el.innerHTML='<div style="font-size:.78rem;color:var(--lt);padding:8px;">Nenhum período registrado.</div>';
+    return;
+  }
+
+  const hoje=new Date().toISOString().split('T')[0];
+  el.innerHTML=ferias.map(f=>{
+    const t=TIPOS_AUSENCIA[f.tipo]||TIPOS_AUSENCIA.ferias;
+    const ativo = hoje>=f.inicio && hoje<=f.fim;
+    const futuro = f.inicio>hoje;
+    const statusTxt = ativo?'🟢 EM ANDAMENTO':futuro?'🔵 AGENDADO':'⚪ FINALIZADO';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px;background:white;border-radius:8px;margin-bottom:5px;border-left:3px solid ${t.cor};">
+      <span style="font-size:1.2rem;">${t.icon}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.82rem;font-weight:700;color:var(--br);">${f.userName}</div>
+        <div style="font-size:.7rem;color:var(--lt);">${t.nome} · ${fmtDataBR(f.inicio)} a ${fmtDataBR(f.fim)}</div>
+        ${f.obs?`<div style="font-size:.66rem;color:var(--lt);font-style:italic;">${f.obs}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:.6rem;font-weight:700;color:${ativo?'var(--gn)':'var(--lt)'};">${statusTxt}</div>
+      </div>
+      <button onclick="removerFerias('${f.id}')" style="background:transparent;border:none;color:var(--rd);font-size:.9rem;cursor:pointer;">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  CADASTRO COMPLETO DE FUNCIONÁRIOS
+// ═══════════════════════════════════════════════
+const EQUIPES={
+  cozinha:{nome:'Cozinha',icon:'🍳',cor:'#E88A2C'},
+  atendimento:{nome:'Atendimento',icon:'🛎️',cor:'#5B8FF9'},
+  producao:{nome:'Produção',icon:'🧁',cor:'#A0303C'},
+  supervisao:{nome:'Supervisão',icon:'👔',cor:'#7B96B8'},
+  entrega:{nome:'Entrega',icon:'🛵',cor:'#27AE60'}
+};
+
+function getFuncionarios(){
+  return JSON.parse(localStorage.getItem('cb_funcionarios')||'[]');
+}
+
+async function syncFuncionariosFromFirebase(){
+  if(!fbReady || !db) return;
+  try{
+    const snap = await getDocs(collection(db,'funcionarios'));
+    const fb = [];
+    snap.forEach(d=>{ fb.push(d.data()); });
+    localStorage.setItem('cb_funcionarios', JSON.stringify(fb));
+  }catch(e){ console.warn('Erro sync funcionários:', e.message); }
+}
+
+let fichaEditando=null; // guarda o funcionário sendo editado
+
+function abrirFichaFuncionario(id){
+  fichaEditando = id ? getFuncionarios().find(f=>f.id===id) : null;
+
+  // Popula select de logins disponíveis
+  const selLogin=document.getElementById('ficha-login');
+  selLogin.innerHTML='<option value="">Nenhum (só ficha cadastral)</option>';
+  getUsers().filter(u=>u.role!=='admin').forEach(u=>{
+    selLogin.add(new Option(`${u.name} (${u.login})`, u.login));
+  });
+
+  if(fichaEditando){
+    document.getElementById('ficha-titulo').textContent='Editar Funcionário';
+    document.getElementById('ficha-id').value=fichaEditando.id;
+    document.getElementById('ficha-nome').value=fichaEditando.nome||'';
+    document.getElementById('ficha-cpf').value=fichaEditando.cpf||'';
+    document.getElementById('ficha-rg').value=fichaEditando.rg||'';
+    document.getElementById('ficha-nasc').value=fichaEditando.nascimento||'';
+    document.getElementById('ficha-tel').value=fichaEditando.telefone||'';
+    document.getElementById('ficha-endereco').value=fichaEditando.endereco||'';
+    document.getElementById('ficha-contratacao').value=fichaEditando.contratacao||'';
+    document.getElementById('ficha-cargo').value=fichaEditando.cargo||'';
+    document.getElementById('ficha-loja').value=fichaEditando.loja||'meier';
+    document.getElementById('ficha-equipe').value=fichaEditando.equipe||'atendimento';
+    document.getElementById('ficha-salario').value=fichaEditando.salario||'';
+    document.getElementById('ficha-status').value=fichaEditando.status||'ativo';
+    document.getElementById('ficha-login').value=fichaEditando.loginVinculado||'';
+    renderHistoricoLojas(fichaEditando);
+  } else {
+    document.getElementById('ficha-titulo').textContent='Cadastrar Funcionário';
+    ['ficha-id','ficha-nome','ficha-cpf','ficha-rg','ficha-nasc','ficha-tel','ficha-endereco','ficha-contratacao','ficha-cargo','ficha-salario'].forEach(id=>{document.getElementById(id).value='';});
+    document.getElementById('ficha-loja').value='meier';
+    document.getElementById('ficha-equipe').value='atendimento';
+    document.getElementById('ficha-status').value='ativo';
+    document.getElementById('ficha-login').value='';
+    document.getElementById('ficha-historico-box').style.display='none';
+  }
+  document.getElementById('ficha-aviso-mudanca').style.display='none';
+  document.getElementById('modal-ficha').style.display='flex';
+}
+
+function fecharFicha(){
+  document.getElementById('modal-ficha').style.display='none';
+  fichaEditando=null;
+}
+
+// Detecta se a loja mudou (para registrar no histórico)
+function checarMudancaLoja(){
+  if(!fichaEditando) return;
+  const lojaNova=document.getElementById('ficha-loja').value;
+  const aviso=document.getElementById('ficha-aviso-mudanca');
+  if(lojaNova!==fichaEditando.loja){
+    aviso.style.display='block';
+    aviso.innerHTML=`📍 Mudança de loja detectada: <strong>${STORES[fichaEditando.loja]}</strong> → <strong>${STORES[lojaNova]}</strong>. Ao salvar, será registrada no histórico com a data de hoje.`;
+  } else {
+    aviso.style.display='none';
+  }
+}
+
+function renderHistoricoLojas(func){
+  const box=document.getElementById('ficha-historico-box');
+  const el=document.getElementById('ficha-historico');
+  const hist=func.historicoLojas||[];
+  if(!hist.length){ box.style.display='none'; return; }
+  box.style.display='block';
+  el.innerHTML=hist.slice().reverse().map(h=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#F8F8F8;border-radius:6px;margin-bottom:4px;">
+      <span style="font-size:.85rem;">📍</span>
+      <div style="flex:1;font-size:.75rem;color:var(--br);">
+        <strong>${STORES[h.loja]||h.loja}</strong>
+        <span style="font-size:.66rem;color:var(--lt);">desde ${fmtDataBR(h.desde)}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function salvarFicha(){
+  const nome=document.getElementById('ficha-nome').value.trim();
+  if(!nome){toast('Informe ao menos o nome!');return;}
+
+  const lojaNova=document.getElementById('ficha-loja').value;
+  const hoje=new Date().toISOString().split('T')[0];
+
+  let func;
+  if(fichaEditando){
+    func={...fichaEditando};
+    // Registra mudança de loja no histórico
+    if(lojaNova!==fichaEditando.loja){
+      if(!func.historicoLojas) func.historicoLojas=[];
+      func.historicoLojas.push({loja:lojaNova, desde:hoje});
+    }
+  } else {
+    func={
+      id:Date.now().toString(),
+      historicoLojas:[{loja:lojaNova, desde:hoje}]
+    };
+  }
+
+  func.nome=nome;
+  func.cpf=document.getElementById('ficha-cpf').value.trim();
+  func.rg=document.getElementById('ficha-rg').value.trim();
+  func.nascimento=document.getElementById('ficha-nasc').value;
+  func.telefone=document.getElementById('ficha-tel').value.trim();
+  func.endereco=document.getElementById('ficha-endereco').value.trim();
+  func.contratacao=document.getElementById('ficha-contratacao').value;
+  func.cargo=document.getElementById('ficha-cargo').value.trim();
+  func.loja=lojaNova;
+  func.equipe=document.getElementById('ficha-equipe').value;
+  func.salario=document.getElementById('ficha-salario').value;
+  func.status=document.getElementById('ficha-status').value;
+  func.loginVinculado=document.getElementById('ficha-login').value;
+  func.atualizadoEm=new Date().toLocaleDateString('pt-BR');
+
+  // Salva no localStorage
+  const lista=getFuncionarios();
+  const idx=lista.findIndex(f=>f.id===func.id);
+  if(idx>=0) lista[idx]=func; else lista.push(func);
+  localStorage.setItem('cb_funcionarios', JSON.stringify(lista));
+
+  // Firebase
+  if(fbReady && db){
+    try{ await setDoc(doc(db,'funcionarios',func.id), func); }
+    catch(e){ console.warn('Erro salvar funcionário:', e.message); }
+  }
+
+  fecharFicha();
+  toast('✅ Ficha salva!');
+  renderFuncionarios();
+}
+
+async function excluirFuncionario(id){
+  if(!confirm('Excluir este funcionário? A ficha será removida permanentemente.')) return;
+  const lista=getFuncionarios().filter(f=>f.id!==id);
+  localStorage.setItem('cb_funcionarios', JSON.stringify(lista));
+  if(fbReady && db){
+    try{ await deleteDoc(doc(db,'funcionarios',id)); }catch(e){}
+  }
+  renderFuncionarios();
+  toast('Funcionário removido.');
+}
+
+function calcularIdade(nasc){
+  if(!nasc) return null;
+  const hoje=new Date();
+  const n=new Date(nasc);
+  let idade=hoje.getFullYear()-n.getFullYear();
+  const m=hoje.getMonth()-n.getMonth();
+  if(m<0||(m===0&&hoje.getDate()<n.getDate())) idade--;
+  return idade;
+}
+
+function calcularTempoCasa(contratacao){
+  if(!contratacao) return null;
+  const hoje=new Date();
+  const c=new Date(contratacao);
+  let meses=(hoje.getFullYear()-c.getFullYear())*12+(hoje.getMonth()-c.getMonth());
+  if(meses<0) return null;
+  const anos=Math.floor(meses/12);
+  const m=meses%12;
+  if(anos>0) return `${anos}a ${m}m`;
+  return `${m} meses`;
+}
+
+async function loadFuncionarios(){
+  const el=document.getElementById('func-lista');
+  if(el) el.innerHTML='<div style="padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">⏳ Carregando...</div>';
+  await syncFuncionariosFromFirebase();
+  renderFuncionarios();
+}
+
+function renderFuncionarios(){
+  const filtroLoja=document.getElementById('func-filtro-loja').value;
+  const filtroEquipe=document.getElementById('func-filtro-equipe').value;
+  let lista=getFuncionarios();
+  if(filtroLoja!=='todas') lista=lista.filter(f=>f.loja===filtroLoja);
+  if(filtroEquipe!=='todas') lista=lista.filter(f=>f.equipe===filtroEquipe);
+
+  const el=document.getElementById('func-lista');
+  if(!lista.length){
+    el.innerHTML='<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:24px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhum funcionário cadastrado.<br>Clique em "+ Cadastrar funcionário" para começar.</div>';
+    return;
+  }
+
+  // Ordena por nome
+  lista.sort((a,b)=>a.nome.localeCompare(b.nome));
+
+  el.innerHTML=lista.map(f=>{
+    const eq=EQUIPES[f.equipe]||EQUIPES.atendimento;
+    const statusInfo={ativo:{txt:'Ativo',cor:'var(--gn)',bg:'#EAFAF1'},afastado:{txt:'Afastado',cor:'var(--or)',bg:'#FEF9E7'},desligado:{txt:'Desligado',cor:'var(--rd)',bg:'#FDEDEC'}}[f.status||'ativo'];
+    const idade=calcularIdade(f.nascimento);
+    const tempo=calcularTempoCasa(f.contratacao);
+
+    return`<div style="background:var(--wm);border:1px solid #E8D8C8;border-left:3px solid ${eq.cor};border-radius:var(--rs);padding:13px;margin-bottom:8px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div style="width:42px;height:42px;border-radius:50%;background:${eq.cor};color:white;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:1.1rem;flex-shrink:0;">${f.nome.charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:.88rem;font-weight:700;color:var(--br);">${f.nome}</span>
+            <span style="font-size:.6rem;font-weight:700;padding:1px 7px;border-radius:99px;background:${statusInfo.bg};color:${statusInfo.cor};">${statusInfo.txt}</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--md);margin-top:2px;">${f.cargo||'—'} · ${eq.icon} ${eq.nome}</div>
+          <div style="font-size:.68rem;color:var(--lt);margin-top:2px;">🏪 ${STORES[f.loja]||f.loja}${tempo?' · 📅 '+tempo+' de casa':''}${idade?' · 🎂 '+idade+' anos':''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;">
+        <button onclick="abrirFichaFuncionario('${f.id}')" style="flex:1;background:transparent;border:1px solid var(--gd);color:var(--gd);border-radius:99px;padding:6px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;">✏️ Editar ficha</button>
+        <button onclick="excluirFuncionario('${f.id}')" style="background:transparent;border:1px solid #E8D8C8;color:var(--rd);border-radius:99px;padding:6px 12px;font-size:.72rem;cursor:pointer;font-family:inherit;">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function addFeriado(){
+  const dataInput=document.getElementById('fer-data').value;
+  const nome=document.getElementById('fer-nome').value.trim();
+  const tipo=document.getElementById('fer-tipo').value;
+  const recorrente=document.getElementById('fer-recorrente').checked;
+  if(!dataInput){toast('Selecione a data!');return;}
+  if(!nome){toast('Informe o nome do feriado!');return;}
+
+  // Converte YYYY-MM-DD para DD/MM/AAAA ou DD/MM (se recorrente)
+  const [ano,mes,dia]=dataInput.split('-');
+  const dataFmt = recorrente ? `${dia}/${mes}` : `${dia}/${mes}/${ano}`;
+
+  const feriados=getFeriados();
+  if(feriados.find(f=>f.data===dataFmt)){toast('Feriado já cadastrado nessa data!');return;}
+
+  const novoFeriado={id:Date.now().toString(), data:dataFmt, nome, tipo, recorrente};
+  feriados.push(novoFeriado);
+  localStorage.setItem('cb_feriados', JSON.stringify(feriados));
+
+  // Firebase
+  if(fbReady && db){
+    try{ await setDoc(doc(db,'feriados',novoFeriado.id), novoFeriado); }
+    catch(e){ console.warn('Erro salvar feriado:', e.message); }
+  }
+
+  document.getElementById('fer-data').value='';
+  document.getElementById('fer-nome').value='';
+  document.getElementById('fer-recorrente').checked=false;
+  toast('✅ Feriado adicionado!');
+  renderFeriados();
+}
+
+async function removerFeriado(id){
+  if(!confirm('Remover este feriado?')) return;
+  const feriados=getFeriados().filter(f=>f.id!==id);
+  localStorage.setItem('cb_feriados', JSON.stringify(feriados));
+  if(fbReady && db){
+    try{ await deleteDoc(doc(db,'feriados',id)); }catch(e){}
+  }
+  renderFeriados();
+}
+
+function renderFeriados(){
+  const el=document.getElementById('lista-feriados');
+  if(!el) return;
+
+  // Feriados nacionais (fixos, não removíveis)
+  let html='<div style="font-size:.68rem;font-weight:700;color:var(--lt);text-transform:uppercase;margin-bottom:6px;">Nacionais (fixos)</div>';
+  html+=FERIADOS_NACIONAIS.map(f=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#F8F8F8;border-radius:6px;margin-bottom:4px;">
+      <span style="font-size:.9rem;">🇧🇷</span>
+      <div style="flex:1;font-size:.78rem;color:var(--br);"><strong>${f.dia}</strong> · ${f.nome}</div>
+    </div>`).join('');
+
+  // Feriados customizados
+  const custom=getFeriados();
+  if(custom.length){
+    html+='<div style="font-size:.68rem;font-weight:700;color:var(--lt);text-transform:uppercase;margin:10px 0 6px;">Adicionados por você</div>';
+    html+=custom.sort((a,b)=>a.data.localeCompare(b.data)).map(f=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#FEF9E7;border-radius:6px;margin-bottom:4px;border:1px solid #F9E79F;">
+        <span style="font-size:.9rem;">🎉</span>
+        <div style="flex:1;font-size:.78rem;color:var(--br);">
+          <strong>${f.data}</strong> · ${f.nome}
+          <span style="font-size:.62rem;color:var(--lt);">(${f.tipo}${f.recorrente?' · todo ano':''})</span>
+        </div>
+        <button onclick="removerFeriado('${f.id}')" style="background:transparent;border:none;color:var(--rd);font-size:.85rem;cursor:pointer;">🗑</button>
+      </div>`).join('');
+  }
+
+  el.innerHTML=html;
+}
+
 async function loadPonto(){
   document.getElementById('ponto-data').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
 
   const hoje=new Date().toLocaleDateString('pt-BR');
   const batidas=getBatidasUsuario(ST.user.login,hoje);
+
+  // Verifica se o funcionário está de férias/afastado HOJE
+  const feriasHoje=estaDeFerias(ST.user.login, hoje);
+  const btnPonto=document.getElementById('btn-bater-ponto');
+  let avisoFerias=document.getElementById('aviso-ferias');
+  if(feriasHoje){
+    const t=TIPOS_AUSENCIA[feriasHoje.tipo]||TIPOS_AUSENCIA.ferias;
+    if(!avisoFerias){
+      avisoFerias=document.createElement('div');
+      avisoFerias.id='aviso-ferias';
+      btnPonto.parentNode.insertBefore(avisoFerias, btnPonto);
+    }
+    avisoFerias.style.cssText='background:#EAF2F8;border:1.5px solid #AED6F1;border-radius:var(--r);padding:16px;margin-bottom:14px;text-align:center;';
+    avisoFerias.innerHTML=`<div style="font-size:2rem;">${t.icon}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.1rem;color:#1A5276;margin:6px 0;">Você está de ${t.nome}</div>
+      <div style="font-size:.78rem;color:var(--md);">Período: ${fmtDataBR(feriasHoje.inicio)} a ${fmtDataBR(feriasHoje.fim)}</div>
+      <div style="font-size:.72rem;color:var(--lt);margin-top:6px;">Não é necessário bater ponto durante este período. Bom descanso! 😊</div>`;
+    btnPonto.style.display='none';
+  } else {
+    if(avisoFerias) avisoFerias.remove();
+    btnPonto.style.display='';
+  }
 
   // Batidas de hoje
   const el=document.getElementById('ponto-batidas-hoje');
@@ -4206,27 +4919,43 @@ async function loadPonto(){
     btn.style.opacity='1';
   }
 
-  // Saldo banco de horas (mês)
+  // Saldo banco de horas (mês) — com cálculo de feriados (extra 100%)
   const mesAtual=new Date().toLocaleDateString('pt-BR').split('/').slice(1).join('/');
   const todasMes=JSON.parse(localStorage.getItem('cb_ponto')||'[]')
     .filter(b=>b.user===ST.user.login&&b.data.endsWith(mesAtual));
 
   const datasUnicas=[...new Set(todasMes.map(b=>b.data))];
   let saldoTotal=0;
+  let extraFeriado=0;
   const jornadaMin=jornadaPadraoMin();
 
   datasUnicas.forEach(data=>{
     const bs=todasMes.filter(b=>b.data===data).sort((a,b)=>a.ts.localeCompare(b.ts));
     if(bs.length>=2){
+      // Se o funcionário estava de férias/afastado nesse dia, não conta no banco
+      const ferias=estaDeFerias(ST.user.login, data);
+      if(ferias) return;
+
       const trabalhado=calcHorasDia(bs);
-      saldoTotal+=(trabalhado-jornadaMin);
+      const feriado=ehFeriado(data);
+      if(feriado){
+        // Feriado: TODAS as horas trabalhadas contam como extra 100% (dobro)
+        saldoTotal += trabalhado * 2;
+        extraFeriado += trabalhado * 2;
+      } else {
+        saldoTotal+=(trabalhado-jornadaMin);
+      }
     }
   });
 
   const saldoEl=document.getElementById('ponto-saldo');
   saldoEl.textContent=formatMinutos(Math.round(saldoTotal));
   saldoEl.style.color=saldoTotal>=0?'var(--gn)':'var(--rd)';
-  document.getElementById('ponto-saldo-label').textContent=saldoTotal>=0?'✅ Saldo positivo (horas extras)':'⚠️ Saldo negativo (horas a compensar)';
+  let labelSaldo = saldoTotal>=0?'✅ Saldo positivo (horas extras)':'⚠️ Saldo negativo (horas a compensar)';
+  if(extraFeriado>0){
+    labelSaldo += ` · 🎉 ${formatMinutos(Math.round(extraFeriado))} de feriado (100%)`;
+  }
+  document.getElementById('ponto-saldo-label').textContent=labelSaldo;
 
   // Histórico do mês
   renderHistoricoPonto(datasUnicas,todasMes);
@@ -4240,12 +4969,28 @@ function renderHistoricoPonto(datas,todasMes){
   el.innerHTML=datas.sort((a,b)=>b.localeCompare(a)).map(data=>{
     const bs=todasMes.filter(b=>b.data===data).sort((a,b)=>a.ts.localeCompare(b.ts));
     const trabMin=calcHorasDia(bs);
-    const saldoDia=Math.round(trabMin-jornadaMin);
-    const saldoCor=saldoDia>=0?'var(--gn)':'var(--rd)';
+    const feriado=ehFeriado(data);
+    const ferias=estaDeFerias(ST.user.login, data);
+    let saldoDia, saldoCor, badgeFeriado='';
+
+    if(ferias){
+      const t=TIPOS_AUSENCIA[ferias.tipo]||TIPOS_AUSENCIA.ferias;
+      saldoDia=0;
+      saldoCor='var(--lt)';
+      badgeFeriado=`<span style="background:#EAF2F8;color:#1A5276;font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:99px;margin-left:6px;">${t.icon} ${t.nome.toUpperCase()}</span>`;
+    } else if(feriado){
+      saldoDia=Math.round(trabMin*2);
+      saldoCor='var(--gn)';
+      badgeFeriado=`<span style="background:#FEF9E7;color:var(--or);font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:99px;margin-left:6px;">🎉 ${feriado.nome} · EXTRA 100%</span>`;
+    } else {
+      saldoDia=Math.round(trabMin-jornadaMin);
+      saldoCor=saldoDia>=0?'var(--gn)':'var(--rd)';
+    }
+
     return`<div style="border-bottom:1px solid #F0E8DC;padding:8px 0;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:.82rem;font-weight:600;">${data}</div>
-        <div style="font-size:.72rem;color:${saldoCor};font-weight:700;">${saldoDia>=0?'+':''}${formatMinutos(saldoDia)}</div>
+        <div style="font-size:.82rem;font-weight:600;">${data}${badgeFeriado}</div>
+        <div style="font-size:.72rem;color:${saldoCor};font-weight:700;">${ferias?'—':(saldoDia>=0?'+':'')+formatMinutos(saldoDia)}</div>
       </div>
       <div style="font-size:.7rem;color:var(--lt);margin-top:3px;">
         ${bs.map(b=>`${ICONES_BATIDA[b.tipo]} ${b.hora}`).join(' · ')}
@@ -4257,11 +5002,55 @@ function renderHistoricoPonto(datas,todasMes){
 // AJUSTE DE PONTO
 function abrirAjustePonto(){
   document.getElementById('aj-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('aj-hora').value='';
+  document.getElementById('aj-just').value='';
+  document.getElementById('aj-doc').value='';
+  document.getElementById('aj-doc-preview').style.display='none';
+  ajusteDocBase64=null;
   document.getElementById('modal-ajuste').style.display='flex';
 }
 
 function fecharAjuste(){
   document.getElementById('modal-ajuste').style.display='none';
+}
+
+// Armazena o documento anexado temporariamente
+let ajusteDocBase64=null;
+let ajusteDocTipo=null;
+
+function previewAjusteDoc(){
+  const input=document.getElementById('aj-doc');
+  const f=input.files[0];
+  if(!f) return;
+
+  // Limite de 5MB
+  if(f.size > 5*1024*1024){
+    toast('Arquivo muito grande! Máximo 5MB.');
+    input.value='';
+    return;
+  }
+
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    let dado=ev.target.result;
+    // Se for imagem, comprime para economizar espaço
+    if(f.type.startsWith('image/')){
+      try{ dado=await compressPhoto(dado, 1000, 0.7); }catch(e){}
+    }
+    ajusteDocBase64=dado;
+    ajusteDocTipo=f.type;
+    document.getElementById('aj-doc-nome').textContent='📎 '+f.name;
+    const prev=document.getElementById('aj-doc-preview');
+    prev.style.display='flex';
+  };
+  reader.readAsDataURL(f);
+}
+
+function removerAjusteDoc(){
+  ajusteDocBase64=null;
+  ajusteDocTipo=null;
+  document.getElementById('aj-doc').value='';
+  document.getElementById('aj-doc-preview').style.display='none';
 }
 
 async function enviarAjuste(){
@@ -4270,6 +5059,9 @@ async function enviarAjuste(){
   const hora=document.getElementById('aj-hora').value;
   const just=document.getElementById('aj-just').value.trim();
   if(!data||!hora||!just){toast('Preencha todos os campos!');return;}
+
+  const btn=document.getElementById('btn-enviar-ajuste');
+  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
 
   const ajuste={
     id:Date.now().toString(),
@@ -4282,6 +5074,8 @@ async function enviarAjuste(){
     tipoNome:tipo==='corrigir'?'Correção':tipo==='remover'?'Remoção':NOMES_BATIDA[tipo]||tipo,
     hora,
     justificativa:just,
+    documento:ajusteDocBase64||null,
+    documentoTipo:ajusteDocTipo||null,
     status:'pendente',
     criadoEm:new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
   };
@@ -4291,9 +5085,16 @@ async function enviarAjuste(){
   localStorage.setItem('cb_ajustes_ponto',JSON.stringify(ajustes.slice(0,200)));
 
   if(fbReady&&db){
-    try{await addDoc(collection(db,'ajustes_ponto'),ajuste);}catch(e){}
+    try{
+      await setDoc(doc(db,'ajustes_ponto',ajuste.id),ajuste);
+    }catch(e){
+      console.warn('Erro salvar ajuste:',e.message);
+    }
   }
 
+  if(btn){btn.disabled=false;btn.textContent='Enviar solicitação';}
+  ajusteDocBase64=null;
+  ajusteDocTipo=null;
   fecharAjuste();
   toast('✅ Solicitação enviada! Aguarde aprovação do admin.');
 }
@@ -4311,7 +5112,7 @@ function pontoEqTab(tab){
   });
   if(tab==='hoje') renderPontoHoje();
   if(tab==='ajustes') renderAjustesPendentes();
-  if(tab==='config') carregarJornada();
+  if(tab==='config'){ carregarJornada(); renderFeriados(); renderFerias(); }
 }
 
 // Sincroniza batidas de ponto do Firebase para o localStorage (multi-dispositivo)
@@ -4367,6 +5168,8 @@ async function loadPontoEquipe(){
   // Sincroniza do Firebase antes de exibir
   await syncPontoFromFirebase();
   await syncAjustesFromFirebase();
+  await syncFeriadosFromFirebase();
+  await syncFeriasFromFirebase();
 
   // Atualiza badge de ajustes pendentes
   const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]').filter(a=>a.status==='pendente');
@@ -4412,6 +5215,15 @@ function renderPontoHoje(){
   }).join('');
 }
 
+function renderDocAnexo(a){
+  if(!a.documento) return '';
+  const ehPdf = a.documentoTipo && a.documentoTipo.includes('pdf');
+  if(ehPdf){
+    return '<div style="margin-bottom:8px;"><a href="'+a.documento+'" download="atestado_'+a.userName+'.pdf" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #E8D8C8;border-radius:8px;padding:8px 12px;font-size:.76rem;color:var(--br);text-decoration:none;">📄 Ver documento anexado (PDF)</a></div>';
+  }
+  return '<div style="margin-bottom:8px;"><img src="'+a.documento+'" onclick="openZoom(\''+a.documento+'\')" style="max-width:120px;border-radius:8px;border:1px solid #E8D8C8;cursor:pointer;" title="Clique para ampliar"><div style="font-size:.65rem;color:var(--lt);margin-top:2px;">📎 Documento anexado — clique para ampliar</div></div>';
+}
+
 function renderAjustesPendentes(){
   const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]');
   const el=document.getElementById('peq-ajustes-content');
@@ -4429,6 +5241,7 @@ function renderAjustesPendentes(){
       </div>
       <div style="font-size:.78rem;color:var(--br);margin-bottom:4px;"><strong>${a.tipoNome}</strong> — ${a.data} às ${a.hora}</div>
       <div style="font-size:.75rem;color:var(--md);background:rgba(255,255,255,.6);padding:6px 8px;border-radius:4px;margin-bottom:8px;">${a.justificativa}</div>
+      ${renderDocAnexo(a)}
       <div style="font-size:.65rem;color:var(--lt);margin-bottom:8px;">Solicitado em ${a.criadoEm}</div>
       ${a.status==='pendente'?`<div style="display:flex;gap:6px;">
         <button onclick="aprovarAjuste('${a.id}','aprovado')" style="flex:1;background:var(--gn);color:white;border:none;border-radius:99px;padding:6px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;">✅ Aprovar</button>
@@ -4572,11 +5385,23 @@ async function gerarRelatorioPonto(){
   el.innerHTML=users.map(([login,d])=>{
     let saldoTotal=0;
     let diasTrab=0;
-    Object.values(d.dias).forEach(bs=>{
+    let extraFeriado=0;
+    let diasFerias=0;
+    Object.entries(d.dias).forEach(([data,bs])=>{
       bs.sort((a,b)=>a.ts.localeCompare(b.ts));
       if(bs.length>=2){
+        // Pula dias de férias/afastamento
+        const ferias=estaDeFerias(login, data);
+        if(ferias){ diasFerias++; return; }
+
         const t=calcHorasDia(bs);
-        saldoTotal+=(t-jornadaMin);
+        const feriado=ehFeriado(data);
+        if(feriado){
+          saldoTotal += t*2;
+          extraFeriado += t*2;
+        } else {
+          saldoTotal+=(t-jornadaMin);
+        }
         diasTrab++;
       }
     });
@@ -4585,7 +5410,7 @@ async function gerarRelatorioPonto(){
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div>
           <div style="font-size:.85rem;font-weight:700;color:var(--br);">${d.userName}</div>
-          <div style="font-size:.7rem;color:var(--lt);">${d.storeName} · ${diasTrab} dias</div>
+          <div style="font-size:.7rem;color:var(--lt);">${d.storeName} · ${diasTrab} dias${extraFeriado>0?' · 🎉 '+formatMinutos(Math.round(extraFeriado))+' feriado':''}${diasFerias>0?' · 🏖️ '+diasFerias+' dias afastado':''}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:${cor};">${formatMinutos(Math.round(saldoTotal))}</div>
@@ -5302,6 +6127,8 @@ window.closeZoom=closeZoom;
 window.baterPonto=baterPonto;
 window.loadPonto=loadPonto;
 window.abrirAjustePonto=abrirAjustePonto;
+window.previewAjusteDoc=previewAjusteDoc;
+window.removerAjusteDoc=removerAjusteDoc;
 window.fecharAjuste=fecharAjuste;
 window.enviarAjuste=enviarAjuste;
 window.pontoEqTab=pontoEqTab;
@@ -5313,6 +6140,19 @@ window.carregarCerca=carregarCerca;
 window.capturarLocalLoja=capturarLocalLoja;
 window.salvarCerca=salvarCerca;
 window.gerarRelatorioPonto=gerarRelatorioPonto;
+window.addFeriado=addFeriado;
+window.removerFeriado=removerFeriado;
+window.renderFeriados=renderFeriados;
+window.addFerias=addFerias;
+window.removerFerias=removerFerias;
+window.renderFerias=renderFerias;
+window.abrirFichaFuncionario=abrirFichaFuncionario;
+window.fecharFicha=fecharFicha;
+window.salvarFicha=salvarFicha;
+window.excluirFuncionario=excluirFuncionario;
+window.loadFuncionarios=loadFuncionarios;
+window.renderFuncionarios=renderFuncionarios;
+window.checarMudancaLoja=checarMudancaLoja;
 window.exportarPontoExcel=exportarPontoExcel;
 window.loadSegmento=loadSegmento;
 window.trocarSegmento=trocarSegmento;
