@@ -5777,21 +5777,107 @@ async function exportarExcel(){
 // ═══════════════════════════════════════════════
 //  MODO AUDITORIA
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+//  AUDITORIA SURPRESA — comparação item a item
+// ═══════════════════════════════════════════════
+let _audItens=[];      // itens sendo auditados
+let _audChecklistRef=null; // checklist da loja usado como referência
+let _audFotos=[];      // fotos da auditoria
+
 async function iniciarAuditoria(){
   const loja=document.getElementById('aud-loja').value;
+  const el=document.getElementById('aud-resultado');
+  el.innerHTML='<div style="padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">⏳ Buscando checklists da loja...</div>';
+
   if(!historyCache.length) await loadHistSilent();
-  const ultimosCL=historyCache.filter(r=>r.store===loja).slice(0,3);
-  if(!ultimosCL.length){document.getElementById('aud-resultado').innerHTML=`<div style="font-size:.82rem;color:var(--rd);">Nenhum checklist encontrado para ${STORES[loja]}.</div>`;return;}
-  let html=`<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;margin-bottom:10px;"><div style="font-size:.75rem;font-weight:700;color:var(--or);margin-bottom:8px;">📋 Últimos checklists de ${STORES[loja]}</div>`;
+  const ultimosCL=historyCache.filter(r=>r.store===loja).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+
+  if(!ultimosCL.length){
+    el.innerHTML=`<div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Nenhum checklist encontrado para ${STORES[loja]}. A loja precisa ter feito ao menos um checklist para ser auditada.</div>`;
+    return;
+  }
+
+  // Junta TODOS os itens dos checklists recentes da loja (sem duplicar)
+  // Usa o checklist mais recente de cada tipo
+  const porTipo={};
   ultimosCL.forEach(r=>{
-    const naoFeitos=(r.itensList||[]).filter(i=>!i.done);
-    html+=`<div style="border-bottom:1px solid #F5E9C0;padding:8px 0;"><div style="font-size:.82rem;font-weight:600;">${r.typeName} — ${r.dateStr} ${r.timeStr}</div><div style="font-size:.75rem;color:var(--md);">Operador: ${r.operator} | Score: ${r.pct}%</div>${r.gps?`<div style="font-size:.7rem;color:var(--lt);">📍 ${r.gps.lat}, ${r.gps.lng}</div>`:''} ${naoFeitos.length?`<div style="font-size:.75rem;color:var(--rd);margin-top:4px;">❌ ${naoFeitos.map(i=>i.text.substring(0,40)).join(', ')}</div>`:'<div style="font-size:.75rem;color:var(--gn);">✅ Todos feitos</div>'}</div>`;
+    if(!porTipo[r.type]) porTipo[r.type]=r;
   });
-  html+=`</div><div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;"><div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:8px;">🔍 Sua avaliação como auditor</div><textarea id="aud-obs" placeholder="Descreva o que encontrou..." style="width:100%;padding:10px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:80px;resize:vertical;"></textarea><div style="margin-top:8px;"><span class="fl">Nota da auditoria (0-100)</span><input type="number" id="aud-nota" min="0" max="100" placeholder="85" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.88rem;"></div><div class="uarea" style="margin-top:10px;"><input type="file" accept="image/*" capture="environment" onchange="audFotoUp(event)"><div class="uicon">📷</div><div class="utxt">Foto obrigatória</div></div><div id="aud-fotos" style="margin-top:8px;"></div><button class="btn" style="margin-top:10px;" onclick="salvarAuditoria('${loja}')">📤 Salvar auditoria</button></div>`;
-  document.getElementById('aud-resultado').innerHTML=html;
+  _audChecklistRef=Object.values(porTipo);
+
+  // Monta lista única de itens, marcando o que a loja reportou
+  _audItens=[];
+  _audChecklistRef.forEach(cl=>{
+    (cl.itensList||[]).forEach(item=>{
+      _audItens.push({
+        texto:item.text,
+        tipoChecklist:cl.typeName,
+        lojaReportou:item.done,        // o que a loja marcou
+        auditorAchou:item.done,        // começa igual, auditor altera
+        crit:item.crit||false
+      });
+    });
+  });
+
+  if(!_audItens.length){
+    el.innerHTML=`<div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Os checklists de ${STORES[loja]} não têm itens para auditar.</div>`;
+    return;
+  }
+
+  _audFotos=[];
+  renderAuditoriaItens(loja);
 }
 
-let _audFotos=[];
+function renderAuditoriaItens(loja){
+  const el=document.getElementById('aud-resultado');
+
+  let html=`<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:12px;margin-bottom:12px;">
+    <div style="font-size:.8rem;font-weight:700;color:var(--or);">🔍 Auditando: ${STORES[loja]}</div>
+    <div style="font-size:.72rem;color:var(--md);margin-top:3px;">Marque o que VOCÊ encontrou. O app compara com o que a loja reportou.</div>
+  </div>`;
+
+  // Agrupa por tipo de checklist
+  const tipos=[...new Set(_audItens.map(i=>i.tipoChecklist))];
+  tipos.forEach(tipo=>{
+    html+=`<div style="font-size:.72rem;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 6px;">${tipo}</div>`;
+    _audItens.forEach((item,idx)=>{
+      if(item.tipoChecklist!==tipo) return;
+      const conforme=item.auditorAchou;
+      html+=`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--rs);padding:10px;margin-bottom:6px;">
+        <div style="font-size:.8rem;color:var(--br);margin-bottom:6px;">${item.crit?'🔴 ':''}${item.texto}</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button onclick="marcarAudItem(${idx},true)" style="flex:1;padding:7px;border-radius:99px;border:1.5px solid ${conforme?'var(--gn)':'#E8D8C8'};background:${conforme?'#EAFAF1':'transparent'};color:${conforme?'var(--gn)':'var(--lt)'};font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;">✅ Conforme</button>
+          <button onclick="marcarAudItem(${idx},false)" style="flex:1;padding:7px;border-radius:99px;border:1.5px solid ${!conforme?'var(--rd)':'#E8D8C8'};background:${!conforme?'#FDEDEC':'transparent'};color:${!conforme?'var(--rd)':'var(--lt)'};font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;">❌ Não conforme</button>
+        </div>
+        ${item.lojaReportou!==item.auditorAchou?`<div style="font-size:.66rem;color:var(--or);margin-top:5px;font-weight:600;">⚠️ DIVERGÊNCIA: loja reportou "${item.lojaReportou?'feito':'não feito'}"</div>`:''}
+      </div>`;
+    });
+  });
+
+  // Campo de avaliação
+  html+=`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
+    <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:8px;">📝 Observações do auditor</div>
+    <textarea id="aud-obs" placeholder="Descreva o que encontrou, problemas, recomendações..." style="width:100%;padding:10px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:70px;resize:vertical;"></textarea>
+    <div class="uarea" style="margin-top:10px;">
+      <input type="file" accept="image/*" capture="environment" onchange="audFotoUp(event)">
+      <div class="uicon">📷</div><div class="utxt">Foto da auditoria (obrigatória)</div>
+    </div>
+    <div id="aud-fotos" style="margin-top:8px;"></div>
+    <button class="btn" style="margin-top:10px;" onclick="salvarAuditoria('${loja}')">📤 Finalizar e salvar auditoria</button>
+  </div>`;
+
+  el.innerHTML=html;
+}
+
+function marcarAudItem(idx,conforme){
+  if(_audItens[idx]){
+    _audItens[idx].auditorAchou=conforme;
+    // Re-renderiza só para atualizar visual (mantém a loja)
+    const loja=document.getElementById('aud-loja').value;
+    renderAuditoriaItens(loja);
+  }
+}
+
 function audFotoUp(ev){
   Array.from(ev.target.files).forEach(f=>{
     const r=new FileReader();
@@ -5802,14 +5888,78 @@ function audFotoUp(ev){
 
 async function salvarAuditoria(loja){
   const obs=document.getElementById('aud-obs')?.value||'';
-  const nota=document.getElementById('aud-nota')?.value;
-  if(!nota){toast('Informe a nota!');return;}
-  const aud={id:Date.now().toString(),loja,lojaName:STORES[loja],obs,nota:parseInt(nota),fotos:[..._audFotos],data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),auditor:ST.user.name};
+  if(!_audItens.length){toast('Inicie a auditoria primeiro!');return;}
+  if(!_audFotos.length){toast('A foto da auditoria é obrigatória!');return;}
+
+  // Calcula nota: % de itens conformes
+  const conformes=_audItens.filter(i=>i.auditorAchou).length;
+  const total=_audItens.length;
+  const nota=Math.round((conformes/total)*100);
+
+  // Detecta divergências (loja disse uma coisa, auditor achou outra)
+  const divergencias=_audItens.filter(i=>i.lojaReportou!==i.auditorAchou);
+  const divergenciasGraves=divergencias.filter(i=>i.lojaReportou && !i.auditorAchou);
+  // loja disse "feito" mas auditor achou "não conforme" = grave
+
+  const aud={
+    id:Date.now().toString(),
+    loja, lojaName:STORES[loja],
+    obs, nota,
+    itens:_audItens.map(i=>({texto:i.texto,lojaReportou:i.lojaReportou,auditorAchou:i.auditorAchou,crit:i.crit})),
+    totalItens:total,
+    conformes,
+    divergencias:divergencias.length,
+    divergenciasGraves:divergenciasGraves.length,
+    fotos:[..._audFotos],
+    data:new Date().toLocaleDateString('pt-BR'),
+    hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    auditor:ST.user.name
+  };
+
   const audits=JSON.parse(localStorage.getItem('cb_audits')||'[]');
-  audits.unshift(aud);localStorage.setItem('cb_audits',JSON.stringify(audits.slice(0,50)));
+  audits.unshift(aud);
+  localStorage.setItem('cb_audits',JSON.stringify(audits.slice(0,50)));
+
+  // Salva no Firebase
+  if(fbReady&&db){
+    try{ await setDoc(doc(db,'auditorias',aud.id),aud); }
+    catch(e){ console.warn('Erro salvar auditoria:',e.message); }
+  }
+
+  // Envia resumo no WhatsApp se houver divergências graves
+  if(divergenciasGraves.length>0){
+    const config=getZApiConfig();
+    if(config.ativo!==false && config.destinatarios && config.destinatarios.length>0){
+      let msg='🚨 *AUDITORIA COM DIVERGÊNCIAS*\n\n';
+      msg+=`🏪 ${STORES[loja]}\n`;
+      msg+=`👤 Auditor: ${ST.user.name}\n`;
+      msg+=`📅 ${aud.data} ${aud.hora}\n\n`;
+      msg+=`📊 Nota: *${nota}/100*\n`;
+      msg+=`⚠️ *${divergenciasGraves.length} item(ns) que a loja marcou como FEITO mas não estavam conformes:*\n`;
+      divergenciasGraves.slice(0,10).forEach(i=>{ msg+=`❌ ${i.texto.substring(0,70)}\n`; });
+      msg+='\n_Casa de Bolos - Auditoria_';
+      try{ await enviarZApi(msg,null); }catch(e){}
+    }
+  }
+
   _audFotos=[];
-  toast('✅ Auditoria salva!');
-  document.getElementById('aud-resultado').innerHTML=`<div style="background:var(--gnb);border:1px solid #B8EFD0;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--gn);">✅ Auditoria registrada! Nota: ${nota}/100</div>`;
+  _audItens=[];
+
+  // Tela de resultado
+  let resHtml=`<div style="background:${nota>=80?'#EAFAF1':nota>=60?'#FEF9E7':'#FDEDEC'};border:1px solid ${nota>=80?'#B8EFD0':nota>=60?'#F9E79F':'#F5B7B1'};border-radius:var(--r);padding:16px;text-align:center;">
+    <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:${nota>=80?'var(--gn)':nota>=60?'var(--or)':'var(--rd)'};">${nota}/100</div>
+    <div style="font-size:.85rem;font-weight:700;color:var(--br);margin:4px 0;">Auditoria registrada!</div>
+    <div style="font-size:.75rem;color:var(--md);">${conformes} de ${total} itens conformes</div>`;
+  if(divergencias.length>0){
+    resHtml+=`<div style="font-size:.78rem;color:var(--or);margin-top:8px;font-weight:600;">⚠️ ${divergencias.length} divergência(s) com o que a loja reportou</div>`;
+  }
+  if(divergenciasGraves.length>0){
+    resHtml+=`<div style="font-size:.74rem;color:var(--rd);margin-top:4px;">🚨 ${divergenciasGraves.length} item(ns) reportado(s) como feito mas não conforme — alerta enviado no WhatsApp</div>`;
+  }
+  resHtml+=`</div><button class="btn" style="margin-top:12px;" onclick="document.getElementById('aud-resultado').innerHTML='';">Nova auditoria</button>`;
+  document.getElementById('aud-resultado').innerHTML=resHtml;
+
+  toast(`✅ Auditoria salva! Nota: ${nota}/100`);
 }
 
 // ═══════════════════════════════════════════════
@@ -6379,6 +6529,7 @@ window.copiarRelatorio=copiarRelatorio;
 window.exportarPDF=exportarPDF;
 window.exportarExcel=exportarExcel;
 window.iniciarAuditoria=iniciarAuditoria;
+window.marcarAudItem=marcarAudItem;
 window.audFotoUp=audFotoUp;
 window.salvarAuditoria=salvarAuditoria;
 window.salvarAlertas=salvarAlertas;
