@@ -5783,6 +5783,7 @@ async function exportarExcel(){
 let _audItens=[];      // itens sendo auditados
 let _audChecklistRef=null; // checklist da loja usado como referência
 let _audFotos=[];      // fotos da auditoria
+let _audObsGeral='';   // observação geral do auditor
 
 async function iniciarAuditoria(){
   const loja=document.getElementById('aud-loja').value;
@@ -5833,7 +5834,7 @@ function renderAuditoriaItens(loja){
 
   let html=`<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:12px;margin-bottom:12px;">
     <div style="font-size:.8rem;font-weight:700;color:var(--or);">🔍 Auditando: ${STORES[loja]}</div>
-    <div style="font-size:.72rem;color:var(--md);margin-top:3px;">Marque o que VOCÊ encontrou. O app compara com o que a loja reportou.</div>
+    <div style="font-size:.72rem;color:var(--md);margin-top:3px;">Marque o que VOCÊ encontrou. Itens "Não conforme" exigem foto de evidência.</div>
   </div>`;
 
   // Agrupa por tipo de checklist
@@ -5843,26 +5844,41 @@ function renderAuditoriaItens(loja){
     _audItens.forEach((item,idx)=>{
       if(item.tipoChecklist!==tipo) return;
       const conforme=item.auditorAchou;
-      html+=`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--rs);padding:10px;margin-bottom:6px;">
+      html+=`<div style="background:var(--wm);border:1px solid ${!conforme?'#F5B7B1':'#E8D8C8'};border-radius:var(--rs);padding:10px;margin-bottom:6px;">
         <div style="font-size:.8rem;color:var(--br);margin-bottom:6px;">${item.crit?'🔴 ':''}${item.texto}</div>
         <div style="display:flex;align-items:center;gap:6px;">
           <button onclick="marcarAudItem(${idx},true)" style="flex:1;padding:7px;border-radius:99px;border:1.5px solid ${conforme?'var(--gn)':'#E8D8C8'};background:${conforme?'#EAFAF1':'transparent'};color:${conforme?'var(--gn)':'var(--lt)'};font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;">✅ Conforme</button>
           <button onclick="marcarAudItem(${idx},false)" style="flex:1;padding:7px;border-radius:99px;border:1.5px solid ${!conforme?'var(--rd)':'#E8D8C8'};background:${!conforme?'#FDEDEC':'transparent'};color:${!conforme?'var(--rd)':'var(--lt)'};font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;">❌ Não conforme</button>
         </div>
         ${item.lojaReportou!==item.auditorAchou?`<div style="font-size:.66rem;color:var(--or);margin-top:5px;font-weight:600;">⚠️ DIVERGÊNCIA: loja reportou "${item.lojaReportou?'feito':'não feito'}"</div>`:''}
+        ${!conforme?`
+        <div style="margin-top:8px;background:#FDEDEC;border:1px solid #F5B7B1;border-radius:8px;padding:8px;">
+          <div style="font-size:.68rem;font-weight:700;color:var(--rd);margin-bottom:5px;">📷 Foto de evidência (obrigatória)</div>
+          ${item.foto
+            ? `<div style="display:flex;align-items:center;gap:8px;">
+                <img src="${item.foto}" onclick="openZoom('${item.foto}')" style="width:54px;height:54px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #E8D8C8;">
+                <button onclick="removerFotoAudItem(${idx})" style="background:transparent;border:1px solid #E8D8C8;color:var(--rd);border-radius:99px;padding:5px 12px;font-size:.7rem;cursor:pointer;font-family:inherit;">🗑 Trocar foto</button>
+              </div>`
+            : `<label style="display:block;background:white;border:1px dashed var(--rd);border-radius:8px;padding:10px;text-align:center;cursor:pointer;">
+                <input type="file" accept="image/*" capture="environment" onchange="fotoAudItem(${idx},event)" style="display:none;">
+                <div style="font-size:1.3rem;">📷</div>
+                <div style="font-size:.7rem;color:var(--rd);">Tirar foto do problema</div>
+              </label>`}
+          <textarea onchange="obsAudItem(${idx},this.value)" placeholder="O que você encontrou? (opcional)" style="width:100%;margin-top:6px;padding:7px;border-radius:6px;border:1px solid #E8D8C8;font-family:inherit;font-size:.74rem;min-height:44px;resize:vertical;">${item.obsItem||''}</textarea>
+        </div>`:''}
       </div>`;
     });
   });
 
   // Campo de avaliação
   html+=`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
-    <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:8px;">📝 Observações do auditor</div>
-    <textarea id="aud-obs" placeholder="Descreva o que encontrou, problemas, recomendações..." style="width:100%;padding:10px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:70px;resize:vertical;"></textarea>
+    <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:8px;">📝 Observações gerais do auditor</div>
+    <textarea id="aud-obs" placeholder="Resumo geral, recomendações..." style="width:100%;padding:10px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:70px;resize:vertical;">${_audObsGeral||''}</textarea>
     <div class="uarea" style="margin-top:10px;">
       <input type="file" accept="image/*" capture="environment" onchange="audFotoUp(event)">
-      <div class="uicon">📷</div><div class="utxt">Foto da auditoria (obrigatória)</div>
+      <div class="uicon">📷</div><div class="utxt">Foto geral da auditoria (obrigatória)</div>
     </div>
-    <div id="aud-fotos" style="margin-top:8px;"></div>
+    <div id="aud-fotos" style="margin-top:8px;">${_audFotos.map(p=>`<img src="${p}" style="width:70px;height:70px;object-fit:cover;border-radius:6px;margin:3px;">`).join('')}</div>
     <button class="btn" style="margin-top:10px;" onclick="salvarAuditoria('${loja}')">📤 Finalizar e salvar auditoria</button>
   </div>`;
 
@@ -5871,11 +5887,38 @@ function renderAuditoriaItens(loja){
 
 function marcarAudItem(idx,conforme){
   if(_audItens[idx]){
+    // Salva a observação geral antes de re-renderizar
+    const obsEl=document.getElementById('aud-obs');
+    if(obsEl) _audObsGeral=obsEl.value;
     _audItens[idx].auditorAchou=conforme;
-    // Re-renderiza só para atualizar visual (mantém a loja)
+    // Se voltou a ser conforme, limpa a foto de evidência
+    if(conforme){ _audItens[idx].foto=null; _audItens[idx].obsItem=''; }
     const loja=document.getElementById('aud-loja').value;
     renderAuditoriaItens(loja);
   }
+}
+
+function fotoAudItem(idx,ev){
+  const f=ev.target.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    const c=await compressPhoto(e.target.result);
+    _audItens[idx].foto=c;
+    const loja=document.getElementById('aud-loja').value;
+    renderAuditoriaItens(loja);
+  };
+  r.readAsDataURL(f);
+}
+
+function removerFotoAudItem(idx){
+  _audItens[idx].foto=null;
+  const loja=document.getElementById('aud-loja').value;
+  renderAuditoriaItens(loja);
+}
+
+function obsAudItem(idx,valor){
+  if(_audItens[idx]) _audItens[idx].obsItem=valor;
 }
 
 function audFotoUp(ev){
@@ -5887,9 +5930,21 @@ function audFotoUp(ev){
 }
 
 async function salvarAuditoria(loja){
-  const obs=document.getElementById('aud-obs')?.value||'';
+  const obsEl=document.getElementById('aud-obs');
+  const obs=obsEl?obsEl.value:_audObsGeral;
   if(!_audItens.length){toast('Inicie a auditoria primeiro!');return;}
-  if(!_audFotos.length){toast('A foto da auditoria é obrigatória!');return;}
+
+  // Valida foto obrigatória nos itens NÃO CONFORMES
+  const naoConformesSemFoto=_audItens.filter(i=>!i.auditorAchou && !i.foto);
+  if(naoConformesSemFoto.length>0){
+    toast(`⚠️ ${naoConformesSemFoto.length} item(ns) não conforme(s) sem foto! A foto é obrigatória.`);
+    // Rola até o primeiro item sem foto
+    const loja2=document.getElementById('aud-loja').value;
+    renderAuditoriaItens(loja2);
+    return;
+  }
+
+  if(!_audFotos.length){toast('A foto geral da auditoria é obrigatória!');return;}
 
   // Calcula nota: % de itens conformes
   const conformes=_audItens.filter(i=>i.auditorAchou).length;
@@ -5899,13 +5954,12 @@ async function salvarAuditoria(loja){
   // Detecta divergências (loja disse uma coisa, auditor achou outra)
   const divergencias=_audItens.filter(i=>i.lojaReportou!==i.auditorAchou);
   const divergenciasGraves=divergencias.filter(i=>i.lojaReportou && !i.auditorAchou);
-  // loja disse "feito" mas auditor achou "não conforme" = grave
 
   const aud={
     id:Date.now().toString(),
     loja, lojaName:STORES[loja],
     obs, nota,
-    itens:_audItens.map(i=>({texto:i.texto,lojaReportou:i.lojaReportou,auditorAchou:i.auditorAchou,crit:i.crit})),
+    itens:_audItens.map(i=>({texto:i.texto,lojaReportou:i.lojaReportou,auditorAchou:i.auditorAchou,crit:i.crit,foto:i.foto||null,obsItem:i.obsItem||''})),
     totalItens:total,
     conformes,
     divergencias:divergencias.length,
@@ -5944,6 +5998,7 @@ async function salvarAuditoria(loja){
 
   _audFotos=[];
   _audItens=[];
+  _audObsGeral='';
 
   // Tela de resultado
   let resHtml=`<div style="background:${nota>=80?'#EAFAF1':nota>=60?'#FEF9E7':'#FDEDEC'};border:1px solid ${nota>=80?'#B8EFD0':nota>=60?'#F9E79F':'#F5B7B1'};border-radius:var(--r);padding:16px;text-align:center;">
@@ -6530,6 +6585,9 @@ window.exportarPDF=exportarPDF;
 window.exportarExcel=exportarExcel;
 window.iniciarAuditoria=iniciarAuditoria;
 window.marcarAudItem=marcarAudItem;
+window.fotoAudItem=fotoAudItem;
+window.removerFotoAudItem=removerFotoAudItem;
+window.obsAudItem=obsAudItem;
 window.audFotoUp=audFotoUp;
 window.salvarAuditoria=salvarAuditoria;
 window.salvarAlertas=salvarAlertas;
