@@ -1056,6 +1056,7 @@ select:focus,input:focus{border-color:var(--gd);}
           <div class="sw"><select id="nu-role">
             <option value="user">👤 Operador (checklist, ponto, estoque)</option>
             <option value="ponto">⏰ Funcionário (só bate ponto)</option>
+            <option value="auditor">🔍 Auditor (só faz auditorias)</option>
             <option value="admin">⚙️ Administrador (acesso total)</option>
           </select></div>
         </div>
@@ -2216,26 +2217,29 @@ async function doLogin(){
   document.getElementById('hdr-user-name').textContent=user.name;
 
   const ehPonto = user.role==='ponto';
+  const ehAuditor = user.role==='auditor';
+  const ehAdmin = user.role==='admin';
 
-  // Usuário "ponto" só vê a aba Meu Ponto
-  document.getElementById('tab-sel').style.display = ehPonto?'none':'';
-  document.getElementById('tab-hist').style.display = ehPonto?'none':'';
-  document.getElementById('tab-estoque-ia').style.display = ehPonto?'none':'';
-  document.getElementById('tab-ponto').style.display = '';
+  // Usuário "ponto" só vê Meu Ponto · "auditor" só vê Auditoria
+  document.getElementById('tab-sel').style.display = (ehPonto||ehAuditor)?'none':'';
+  document.getElementById('tab-hist').style.display = (ehPonto||ehAuditor)?'none':'';
+  document.getElementById('tab-estoque-ia').style.display = (ehPonto||ehAuditor)?'none':'';
+  document.getElementById('tab-ponto').style.display = ehAuditor?'none':'';
 
-  document.getElementById('tab-admin').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-painel').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-score').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-ia').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-auditoria').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-padrao').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-ponto-eq').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-funcionarios').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-segmento').style.display=user.role==='admin'?'':'none';
-  document.getElementById('tab-financeiro').style.display=user.role==='admin'?'':'none';
+  document.getElementById('tab-admin').style.display=ehAdmin?'':'none';
+  document.getElementById('tab-painel').style.display=ehAdmin?'':'none';
+  document.getElementById('tab-score').style.display=ehAdmin?'':'none';
+  document.getElementById('tab-ia').style.display=ehAdmin?'':'none';
+  // Auditoria: admin OU auditor
+  document.getElementById('tab-auditoria').style.display=(ehAdmin||ehAuditor)?'':'none';
+  document.getElementById('tab-padrao').style.display=ehAdmin?'':'none';
+  document.getElementById('tab-ponto-eq').style.display=ehAdmin?'':'none';
+  document.getElementById('tab-funcionarios').style.display=ehAdmin?'':'none';
+  document.getElementById('tab-segmento').style.display=ehAdmin?'':'none';
+  document.getElementById('tab-financeiro').style.display=ehAdmin?'':'none';
   buildStoreSelect(user);
   showPage('pg-app');
-  goTab(ehPonto?'ponto':'sel');
+  goTab(ehPonto?'ponto':ehAuditor?'auditoria':'sel');
 }
 
 function doLogout(){ST.user=null;showAllScr('sel');showPage('pg-login');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';}
@@ -6055,8 +6059,8 @@ function aprovarAcao(id,decisao){
 function renderAdmin(){
   const users=getUsers();
   document.getElementById('users-list').innerHTML=users.map((u,i)=>{
-    const roleCor = u.role==='admin'?'#D4A843':u.role==='ponto'?'#5B8FF9':'#27AE60';
-    const roleNome = u.role==='admin'?'Admin':u.role==='ponto'?'⏰ Ponto':'Usuário';
+    const roleCor = u.role==='admin'?'#D4A843':u.role==='ponto'?'#5B8FF9':u.role==='auditor'?'#E88A2C':'#27AE60';
+    const roleNome = u.role==='admin'?'Admin':u.role==='ponto'?'⏰ Ponto':u.role==='auditor'?'🔍 Auditor':'Usuário';
     const roleClasse = u.role==='admin'?'role-admin':'role-user';
     return`
     <div class="user-row">
