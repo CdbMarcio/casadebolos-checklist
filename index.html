@@ -1221,6 +1221,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- ABA HOJE -->
     <div id="peq-hoje">
+      <button onclick="enviarResumoDia()" id="btn-resumo-dia" style="width:100%;background:var(--gd);color:var(--br);border:none;border-radius:99px;padding:11px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:12px;">📲 Enviar resumo do dia no WhatsApp</button>
       <div id="peq-hoje-content"></div>
     </div>
 
@@ -1280,6 +1281,14 @@ select:focus,input:focus{border-color:var(--gd);}
           </select></div>
         </div>
 
+        <div style="background:#EAF2F8;border:1px solid #AED6F1;border-radius:var(--rs);padding:10px;margin-bottom:10px;">
+          <span class="fl">📍 Endereço da loja</span>
+          <p style="font-size:.68rem;color:var(--lt);margin:2px 0 6px;">Digite o endereço completo e clique em buscar. O app gera a cerca virtual automaticamente.</p>
+          <input type="text" id="cv-endereco" placeholder="Ex: Rua Dias da Cruz 100, Méier, Rio de Janeiro" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;margin-bottom:6px;">
+          <button onclick="buscarEnderecoLoja()" id="btn-buscar-endereco" style="width:100%;background:#5B8FF9;color:white;border:none;border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;font-weight:600;">🔍 Buscar endereço e gerar cerca</button>
+          <div id="cv-endereco-result" style="display:none;margin-top:8px;font-size:.74rem;padding:8px;border-radius:6px;"></div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
           <div><span class="fl">Latitude</span><input type="text" id="cv-lat" placeholder="-22.9068" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
           <div><span class="fl">Longitude</span><input type="text" id="cv-lng" placeholder="-43.1729" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
@@ -1287,10 +1296,10 @@ select:focus,input:focus{border-color:var(--gd);}
 
         <div style="margin-bottom:10px;">
           <span class="fl">Raio (metros)</span>
-          <input type="number" id="cv-raio" value="100" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="number" id="cv-raio" value="150" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
         </div>
 
-        <button onclick="capturarLocalLoja()" style="width:100%;background:transparent;border:1px dashed var(--gd);color:var(--gd);border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;margin-bottom:8px;">📍 Capturar GPS atual (estou na loja)</button>
+        <button onclick="capturarLocalLoja()" style="width:100%;background:transparent;border:1px dashed var(--gd);color:var(--gd);border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;margin-bottom:8px;">📍 Ou capturar GPS atual (estou na loja)</button>
         <button onclick="salvarCerca()" class="btn">💾 Salvar cerca virtual</button>
       </div>
 
@@ -1518,6 +1527,8 @@ async function initFirebase(){
     syncFeriadosFromFirebase();
     syncFeriasFromFirebase();
     syncFuncionariosFromFirebase();
+    syncCercasFromFirebase();
+    syncZApiFromFirebase();
     // Atualiza indicador de status
     const bar = document.querySelector('.stext');
     if(bar) bar.textContent = 'Firebase conectado ✅';
@@ -2263,7 +2274,7 @@ function goTab(t){
   else if(t==='funcionarios'){showAllScr('funcionarios');loadFuncionarios();}
   else if(t==='segmento'){showAllScr('segmento');loadSegmento();}
   else if(t==='financeiro'){showAllScr('financeiro');initFinanceiro();}
-  else if(t==='admin'){showAllScr('admin');renderAdmin();loadZApiConfig();}
+  else if(t==='admin'){showAllScr('admin');renderAdmin();loadZApiConfig();syncZApiFromFirebase();}
 }
 function goBack(){goTab('sel');}
 function newCL(){ST.editingId=null;goTab('sel');}
@@ -2530,6 +2541,9 @@ async function sendCL(){
 //  WHATSAPP
 // ═══════════════════════════════════════════════
 async function enviarWpp(rec){
+  // Garante que a config Z-API está atualizada (busca do Firebase, aguardando se necessário)
+  // Importante: o funcionário pode estar em outro equipamento sem a config local
+  await syncZApiAguardando();
   const config = getZApiConfig();
 
   // Monta mensagem com identificação clara da loja
@@ -2730,17 +2744,55 @@ function loadZApiLog(){
   }).join('');
 }
 
-function salvarZApiConfig(){
+// Salva config Z-API no localStorage E no Firebase (multi-dispositivo)
+async function persistZApiConfig(config){
+  localStorage.setItem('cb_zapi', JSON.stringify(config));
+  if(fbReady && db){
+    try{ await setDoc(doc(db,'config','zapi'), config); }
+    catch(e){ console.warn('Erro salvar Z-API config:', e.message); }
+  }
+}
+
+// Sincroniza config Z-API do Firebase (versão imediata, não espera)
+async function syncZApiFromFirebase(){
+  if(!fbReady || !db) return;
+  try{
+    const snap=await getDocs(collection(db,'config'));
+    snap.forEach(d=>{
+      if(d.id==='zapi'){
+        localStorage.setItem('cb_zapi', JSON.stringify(d.data()));
+        console.log('✅ Config Z-API sincronizada do Firebase');
+        if(document.getElementById('zapi-tipo-notif')) loadZApiConfig();
+      }
+    });
+  }catch(e){ console.warn('Erro sync Z-API:', e.message); }
+}
+
+// Versão que aguarda o Firebase ficar pronto (usada antes de enviar checklist)
+async function syncZApiAguardando(){
+  let tentativas=0;
+  while((!fbReady || !db) && tentativas<20){
+    await new Promise(r=>setTimeout(r,500));
+    tentativas++;
+  }
+  if(!fbReady || !db){
+    console.warn('Z-API sync: Firebase não ficou pronto a tempo');
+    return;
+  }
+  await syncZApiFromFirebase();
+}
+
+async function salvarZApiConfig(){
   const config = getZApiConfig();
   config.notificacoes = document.getElementById('zapi-tipo-notif').value;
   config.ativo = document.getElementById('zapi-ativo').checked;
   if(!config.destinatarios) config.destinatarios = [];
-  localStorage.setItem('cb_zapi', JSON.stringify(config));
-  toast('✅ Configuração Z-API salva!');
+  await persistZApiConfig(config);
+  toast('✅ Configuração Z-API salva e sincronizada!');
   loadZApiConfig();
 }
 
-function addDestinatarioZApi(){
+async function addDestinatarioZApi(){
   const tipo = document.getElementById('dest-tipo').value;
   const nome = document.getElementById('dest-nome').value.trim();
   const valor = document.getElementById('dest-valor').value.trim();
@@ -2756,25 +2808,29 @@ function addDestinatarioZApi(){
     numero: tipo==='numero' ? valor.replace(/\D/g,'') : null,
     ativo: true
   });
-  localStorage.setItem('cb_zapi', JSON.stringify(config));
+  await persistZApiConfig(config);
   document.getElementById('dest-nome').value='';
   document.getElementById('dest-valor').value='';
   toast('✅ Destinatário adicionado!');
   loadZApiConfig();
 }
 
-function removerDestinatarioZApi(id){
+async function removerDestinatarioZApi(id){
   if(!confirm('Remover este destinatário?')) return;
   const config = getZApiConfig();
   config.destinatarios = (config.destinatarios||[]).filter(d=>d.id!==id);
-  localStorage.setItem('cb_zapi', JSON.stringify(config));
+  await persistZApiConfig(config);
   loadZApiConfig();
 }
 
-function toggleDestinatarioZApi(id){
+async function toggleDestinatarioZApi(id){
   const config = getZApiConfig();
   const d = (config.destinatarios||[]).find(x=>x.id===id);
-  if(d){d.ativo = !d.ativo; localStorage.setItem('cb_zapi', JSON.stringify(config)); loadZApiConfig();}
+  if(d){
+    d.ativo = !d.ativo;
+    await persistZApiConfig(config);
+    loadZApiConfig();
+  }
 }
 
 function loadZApiConfig(){
@@ -4248,7 +4304,64 @@ async function baterPonto(){
 
   btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
   toast(`✅ ${NOMES_BATIDA[proximoTipo]} registrada às ${batida.hora}!`);
+
+  // Se foi a batida de SAÍDA (4ª), verifica jornada e avisa o admin
+  if(proximoTipo==='saida'){
+    verificarJornadaSaida(hoje);
+  }
+
   loadPonto();
+}
+
+// Verifica jornada na saída e avisa o admin via WhatsApp
+async function verificarJornadaSaida(hoje){
+  const TOLERANCIA=15; // minutos
+  const batidasHoje=getBatidasUsuario(ST.user.login,hoje);
+  if(batidasHoje.length<4) return;
+
+  // Não avisa se o funcionário está de férias
+  if(estaDeFerias(ST.user.login,hoje)) return;
+
+  const trabalhado=calcHorasDia(batidasHoje);
+  const jornada=jornadaPadraoMin();
+  const diff=trabalhado-jornada;
+
+  // Dentro da tolerância — não avisa
+  if(Math.abs(diff)<=TOLERANCIA) return;
+
+  const entrada=batidasHoje[0]?batidasHoje[0].hora:'-';
+  const saida=batidasHoje[3]?batidasHoje[3].hora:'-';
+
+  let msg='';
+  if(diff<0){
+    // Jornada incompleta
+    msg ='⚠️ *JORNADA INCOMPLETA*\n\n';
+    msg+=`🏪 ${STORES[ST.user.store]||ST.user.store}\n`;
+    msg+=`👤 ${ST.user.name}\n`;
+    msg+=`📅 ${hoje}\n\n`;
+    msg+=`⏱️ Trabalhado: *${formatMinutos(Math.round(trabalhado))}*\n`;
+    msg+=`🎯 Esperado: ${formatMinutos(jornada)}\n`;
+    msg+=`🔴 Faltou: *${formatMinutos(Math.round(Math.abs(diff)))}*\n\n`;
+    msg+=`Entrada: ${entrada} · Saída: ${saida}\n\n`;
+    msg+='_Casa de Bolos - Controle de Ponto_';
+  } else {
+    // Hora extra
+    msg ='🟢 *HORA EXTRA REGISTRADA*\n\n';
+    msg+=`🏪 ${STORES[ST.user.store]||ST.user.store}\n`;
+    msg+=`👤 ${ST.user.name}\n`;
+    msg+=`📅 ${hoje}\n\n`;
+    msg+=`⏱️ Trabalhado: *${formatMinutos(Math.round(trabalhado))}*\n`;
+    msg+=`🎯 Esperado: ${formatMinutos(jornada)}\n`;
+    msg+=`➕ Extra: *${formatMinutos(Math.round(diff))}*\n\n`;
+    msg+=`Entrada: ${entrada} · Saída: ${saida}\n\n`;
+    msg+='_Casa de Bolos - Controle de Ponto_';
+  }
+
+  // Envia via Z-API (mesma config dos checklists)
+  const config=getZApiConfig();
+  if(config.ativo!==false && config.destinatarios && config.destinatarios.length>0){
+    try{ await enviarZApi(msg,null); }catch(e){ console.warn('Erro aviso jornada:',e.message); }
+  }
 }
 
 // Captura foto via camera
@@ -5224,6 +5337,98 @@ function renderDocAnexo(a){
   return '<div style="margin-bottom:8px;"><img src="'+a.documento+'" onclick="openZoom(\''+a.documento+'\')" style="max-width:120px;border-radius:8px;border:1px solid #E8D8C8;cursor:pointer;" title="Clique para ampliar"><div style="font-size:.65rem;color:var(--lt);margin-top:2px;">📎 Documento anexado — clique para ampliar</div></div>';
 }
 
+// Resumo do dia — envia panorama de todos os funcionários para o admin
+async function enviarResumoDia(){
+  const TOLERANCIA=15;
+  const btn=document.getElementById('btn-resumo-dia');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Gerando resumo...';}
+
+  await syncPontoFromFirebase();
+
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const todas=JSON.parse(localStorage.getItem('cb_ponto')||'[]').filter(b=>b.data===hoje);
+
+  const porUser={};
+  todas.forEach(b=>{
+    if(!porUser[b.user]){porUser[b.user]={user:b.user,userName:b.userName,storeName:b.storeName,store:b.store,batidas:[]};}
+    porUser[b.user].batidas.push(b);
+  });
+
+  const jornada=jornadaPadraoMin();
+  const users=Object.values(porUser);
+
+  if(!users.length){
+    if(btn){btn.disabled=false;btn.textContent='📲 Enviar resumo do dia no WhatsApp';}
+    toast('Nenhum funcionário bateu ponto hoje.');
+    return;
+  }
+
+  let msg=`📊 *RESUMO DO DIA — ${hoje}*\n`;
+  msg+=`Casa de Bolos\n`;
+  msg+=`━━━━━━━━━━━━━━━\n\n`;
+
+  const completos=[], incompletos=[], extras=[], faltaBatida=[];
+
+  users.forEach(d=>{
+    const bs=d.batidas.sort((a,b)=>a.ts.localeCompare(b.ts));
+    if(bs.length<4){
+      faltaBatida.push(d);
+      return;
+    }
+    const trab=calcHorasDia(bs);
+    const diff=trab-jornada;
+    if(diff<-TOLERANCIA) incompletos.push({d,trab,diff});
+    else if(diff>TOLERANCIA) extras.push({d,trab,diff});
+    else completos.push({d,trab});
+  });
+
+  if(incompletos.length){
+    msg+=`🔴 *JORNADA INCOMPLETA (${incompletos.length}):*\n`;
+    incompletos.forEach(({d,trab,diff})=>{
+      msg+=`• ${d.userName} (${d.storeName})\n  ${formatMinutos(Math.round(trab))} — faltou ${formatMinutos(Math.round(Math.abs(diff)))}\n`;
+    });
+    msg+='\n';
+  }
+  if(extras.length){
+    msg+=`🟢 *HORA EXTRA (${extras.length}):*\n`;
+    extras.forEach(({d,trab,diff})=>{
+      msg+=`• ${d.userName} (${d.storeName})\n  ${formatMinutos(Math.round(trab))} — extra ${formatMinutos(Math.round(diff))}\n`;
+    });
+    msg+='\n';
+  }
+  if(faltaBatida.length){
+    msg+=`⚠️ *BATIDAS INCOMPLETAS (${faltaBatida.length}):*\n`;
+    faltaBatida.forEach(d=>{
+      msg+=`• ${d.userName} (${d.storeName}) — ${d.batidas.length}/4 batidas\n`;
+    });
+    msg+='\n';
+  }
+  if(completos.length){
+    msg+=`✅ *JORNADA OK (${completos.length}):*\n`;
+    completos.forEach(({d})=>{
+      msg+=`• ${d.userName} (${d.storeName})\n`;
+    });
+    msg+='\n';
+  }
+
+  msg+='_Casa de Bolos - Controle de Ponto_';
+
+  const config=getZApiConfig();
+  if(config.ativo!==false && config.destinatarios && config.destinatarios.length>0){
+    try{
+      await enviarZApi(msg,null);
+      toast('✅ Resumo enviado no WhatsApp!');
+    }catch(e){
+      toast('⚠️ Erro ao enviar. Verifique a conexão Z-API.');
+    }
+  } else {
+    toast('⚠️ Configure o Z-API primeiro na aba Admin.');
+  }
+
+  if(btn){btn.disabled=false;btn.textContent='📲 Enviar resumo do dia no WhatsApp';}
+}
+
+
 function renderAjustesPendentes(){
   const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]');
   const el=document.getElementById('peq-ajustes-content');
@@ -5329,7 +5534,9 @@ function carregarCerca(){
   const c=cercas[loja]||{};
   document.getElementById('cv-lat').value=c.lat||'';
   document.getElementById('cv-lng').value=c.lng||'';
-  document.getElementById('cv-raio').value=c.raio||100;
+  document.getElementById('cv-raio').value=c.raio||150;
+  document.getElementById('cv-endereco').value=c.endereco||'';
+  document.getElementById('cv-endereco-result').style.display='none';
 }
 
 function capturarLocalLoja(){
@@ -5340,16 +5547,90 @@ function capturarLocalLoja(){
   },err=>alert('Erro ao capturar GPS: '+err.message));
 }
 
-function salvarCerca(){
+// Geocoding — converte endereço em coordenadas (OpenStreetMap Nominatim, grátis)
+async function buscarEnderecoLoja(){
+  const endereco=document.getElementById('cv-endereco').value.trim();
+  const resultEl=document.getElementById('cv-endereco-result');
+  const btn=document.getElementById('btn-buscar-endereco');
+
+  if(!endereco){toast('Digite o endereço primeiro!');return;}
+  if(endereco.length<10){toast('Digite o endereço completo (rua, número, bairro, cidade).');return;}
+
+  if(btn){btn.disabled=true;btn.textContent='🔍 Buscando...';}
+  resultEl.style.display='none';
+
+  try{
+    // Adiciona Brasil ao final para melhorar a precisão
+    let query=endereco;
+    if(!query.toLowerCase().includes('brasil')) query+=', Brasil';
+
+    const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(query);
+    const res=await fetch(url,{headers:{'Accept':'application/json'}});
+    const data=await res.json();
+
+    if(!data || !data.length){
+      resultEl.style.display='block';
+      resultEl.style.background='#FDEDEC';
+      resultEl.style.color='var(--rd)';
+      resultEl.innerHTML='❌ Endereço não encontrado. Tente ser mais específico (rua, número, bairro, cidade) ou capture o GPS na loja.';
+      if(btn){btn.disabled=false;btn.textContent='🔍 Buscar endereço e gerar cerca';}
+      return;
+    }
+
+    const lat=parseFloat(data[0].lat).toFixed(6);
+    const lng=parseFloat(data[0].lon).toFixed(6);
+    document.getElementById('cv-lat').value=lat;
+    document.getElementById('cv-lng').value=lng;
+
+    resultEl.style.display='block';
+    resultEl.style.background='#EAFAF1';
+    resultEl.style.color='var(--gn)';
+    resultEl.innerHTML='✅ Endereço localizado!<br><strong>'+(data[0].display_name||'').substring(0,90)+'</strong><br>📍 Coordenadas preenchidas abaixo. Confira o raio e clique em Salvar.';
+
+    toast('✅ Coordenadas geradas pelo endereço!');
+  }catch(e){
+    resultEl.style.display='block';
+    resultEl.style.background='#FDEDEC';
+    resultEl.style.color='var(--rd)';
+    resultEl.innerHTML='❌ Erro ao buscar. Verifique sua internet e tente de novo.';
+  }
+
+  if(btn){btn.disabled=false;btn.textContent='🔍 Buscar endereço e gerar cerca';}
+}
+
+async function salvarCerca(){
   const loja=document.getElementById('cv-loja').value;
+  const lat=document.getElementById('cv-lat').value.trim();
+  const lng=document.getElementById('cv-lng').value.trim();
+  if(!lat||!lng){toast('Busque o endereço ou capture o GPS primeiro!');return;}
+
   const cercas=JSON.parse(localStorage.getItem('cb_cercas')||'{}');
   cercas[loja]={
-    lat:document.getElementById('cv-lat').value,
-    lng:document.getElementById('cv-lng').value,
-    raio:document.getElementById('cv-raio').value
+    lat, lng,
+    raio:document.getElementById('cv-raio').value,
+    endereco:document.getElementById('cv-endereco').value.trim()
   };
   localStorage.setItem('cb_cercas',JSON.stringify(cercas));
+
+  // Firebase (multi-dispositivo)
+  if(fbReady && db){
+    try{ await setDoc(doc(db,'cercas','config'), cercas); }
+    catch(e){ console.warn('Erro salvar cerca:', e.message); }
+  }
+
   toast('✅ Cerca virtual salva para '+STORES[loja]);
+}
+
+async function syncCercasFromFirebase(){
+  if(!fbReady || !db) return;
+  try{
+    const snap=await getDocs(collection(db,'cercas'));
+    snap.forEach(d=>{
+      if(d.id==='config'){
+        localStorage.setItem('cb_cercas', JSON.stringify(d.data()));
+      }
+    });
+  }catch(e){ console.warn('Erro sync cercas:', e.message); }
 }
 
 // RELATÓRIO E EXPORTAÇÃO
@@ -6138,6 +6419,7 @@ window.carregarJornada=carregarJornada;
 window.salvarJornada=salvarJornada;
 window.carregarCerca=carregarCerca;
 window.capturarLocalLoja=capturarLocalLoja;
+window.buscarEnderecoLoja=buscarEnderecoLoja;
 window.salvarCerca=salvarCerca;
 window.gerarRelatorioPonto=gerarRelatorioPonto;
 window.addFeriado=addFeriado;
@@ -6153,6 +6435,7 @@ window.excluirFuncionario=excluirFuncionario;
 window.loadFuncionarios=loadFuncionarios;
 window.renderFuncionarios=renderFuncionarios;
 window.checarMudancaLoja=checarMudancaLoja;
+window.enviarResumoDia=enviarResumoDia;
 window.exportarPontoExcel=exportarPontoExcel;
 window.loadSegmento=loadSegmento;
 window.trocarSegmento=trocarSegmento;
@@ -6172,6 +6455,7 @@ window.abrirNovoRapido=abrirNovoRapido;
 window.usarRapido=usarRapido;
 window.excluirRapido=excluirRapido;
 window.salvarZApiConfig=salvarZApiConfig;
+window.syncZApiFromFirebase=syncZApiFromFirebase;
 window.testarZApi=testarZApi;
 window.loadZApiConfig=loadZApiConfig;
 window.loadZApiLog=loadZApiLog;
