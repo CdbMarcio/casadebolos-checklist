@@ -2375,9 +2375,9 @@ function buildItem(idx){
       ${it.p?`
       <div style="margin-top:10px;">
         <div class="ex-lbl">📷 Foto obrigatória</div>
-        ${it.photos.length===0?`<div class="uarea"><input type="file" accept="image/*" capture="environment" multiple onchange="addPh(event,${idx})"><div class="uicon">📷</div><div class="utxt"><strong>Tirar foto</strong> ou selecionar da galeria</div></div>`:''}
+        ${it.photos.length===0?`<div class="uarea"><input type="file" accept="image/*" capture="environment" onchange="addPh(event,${idx})"><div class="uicon">📷</div><div class="utxt"><strong>Tirar foto</strong> agora</div></div>`:''}
         <div class="tgrid">${it.photos.map((p,pi)=>`<div class="thumb"><img src="${p}" onclick="openZoom('${p}')"><button class="thrm" onclick="rmPh(${idx},${pi});event.stopPropagation()">×</button></div>`).join('')}</div>
-        ${it.photos.length>0&&it.photos.length<3?`<div class="uarea" style="margin-top:6px;"><input type="file" accept="image/*" capture="environment" multiple onchange="addPh(event,${idx})"><div class="utxt" style="font-size:.68rem;">+ Mais fotos</div></div>`:''}
+        ${it.photos.length>0&&it.photos.length<3?`<div class="uarea" style="margin-top:6px;"><input type="file" accept="image/*" capture="environment" onchange="addPh(event,${idx})"><div class="utxt" style="font-size:.68rem;">+ Mais fotos</div></div>`:''}
       </div>`:''}
     </div>`;
   return div;
@@ -2436,13 +2436,90 @@ function compressPhoto(dataUrl, maxSize=400, quality=0.5){
   });
 }
 
+// Carimba data/hora/loja/usuário na foto (anti-fraude)
+function carimbarFoto(dataUrl, maxSize=600, quality=0.6){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      if(w>h){ if(w>maxSize){h=Math.round(h*maxSize/w);w=maxSize;} }
+      else { if(h>maxSize){w=Math.round(w*maxSize/h);h=maxSize;} }
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+
+      // Monta o texto do carimbo
+      const agora=new Date();
+      const dataHora=agora.toLocaleDateString('pt-BR')+' '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const loja=ST.store?(STORES[ST.store]||ST.store):'';
+      const usuario=ST.user?ST.user.name:'';
+      const linha1=dataHora;
+      const linha2=(loja?loja+' · ':'')+usuario;
+
+      // Faixa preta semitransparente no rodapé
+      const fontSize=Math.max(11,Math.round(w*0.032));
+      const padding=Math.round(fontSize*0.5);
+      const alturaFaixa=fontSize*2+padding*3;
+      ctx.fillStyle='rgba(0,0,0,0.55)';
+      ctx.fillRect(0, h-alturaFaixa, w, alturaFaixa);
+
+      // Texto branco
+      ctx.fillStyle='#ffffff';
+      ctx.font='bold '+fontSize+'px Arial';
+      ctx.textBaseline='top';
+      ctx.fillText('📅 '+linha1, padding, h-alturaFaixa+padding);
+      ctx.font=Math.round(fontSize*0.9)+'px Arial';
+      ctx.fillText(linha2, padding, h-alturaFaixa+padding+fontSize+padding/2);
+
+      resolve(canvas.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>resolve(dataUrl);
+    img.src=dataUrl;
+  });
+}
+
+// Gera uma assinatura simples da imagem (para detectar foto repetida)
+function hashFoto(dataUrl){
+  let hash=0;
+  // Amostra a string em intervalos (não precisa varrer tudo)
+  const step=Math.max(1, Math.floor(dataUrl.length/2000));
+  for(let i=0;i<dataUrl.length;i+=step){
+    hash=((hash<<5)-hash+dataUrl.charCodeAt(i))|0;
+  }
+  return hash.toString(36)+'_'+dataUrl.length;
+}
+
+// Verifica se a foto já foi usada antes (nos últimos checklists)
+function fotoJaUsada(hash){
+  const usadas=JSON.parse(localStorage.getItem('cb_fotos_hashes')||'[]');
+  return usadas.includes(hash);
+}
+
+// Registra o hash de uma foto usada
+function registrarFotoUsada(hash){
+  const usadas=JSON.parse(localStorage.getItem('cb_fotos_hashes')||'[]');
+  usadas.unshift(hash);
+  localStorage.setItem('cb_fotos_hashes', JSON.stringify(usadas.slice(0,500)));
+}
+
 function addPh(ev,idx){
   Array.from(ev.target.files).forEach(f=>{
     const r=new FileReader();
     r.onload=async e=>{
-      // Comprime antes de salvar
-      const compressed = await compressPhoto(e.target.result);
-      ST.items[idx].photos.push(compressed);
+      // Carimba data/hora/loja/usuário na foto (anti-fraude)
+      const carimbada = await carimbarFoto(e.target.result);
+
+      // Detecta foto repetida
+      const hash = hashFoto(carimbada);
+      if(fotoJaUsada(hash)){
+        const segue=confirm('⚠️ Esta foto parece ser IGUAL a uma já usada antes.\n\nTire uma foto NOVA do local agora.\n\nDeseja usar mesmo assim?');
+        if(!segue){ rerender(idx); return; }
+        ST.items[idx].fotoRepetida=true;
+      }
+      registrarFotoUsada(hash);
+
+      ST.items[idx].photos.push(carimbada);
       if(ST.items[idx].count===true){
         const hasQty=ST.items[idx].qty!==''&&parseInt(ST.items[idx].qty||0)>=0;
         ST.items[idx].done=hasQty&&ST.items[idx].photos.length>0;
@@ -2517,6 +2594,7 @@ async function sendCL(){
     ts:now.toISOString(),
     gps: gps,
     foraDoLocal: foraDoLocal,
+    fotoRepetida: ST.items.some(i=>i.fotoRepetida===true),
     distanciaLoja: distanciaLoja,
     createdAt:new Date()
   };
@@ -2626,16 +2704,21 @@ async function enviarWpp(rec){
 
     // Se foi feito FORA DO LOCAL, envia aviso SEPARADO só para os gestores
     // (admin/Fabíola/Helen) — o funcionário comum não recebe nada disso
-    if(rec.foraDoLocal){
-      let alerta='🚨 *CHECKLIST FORA DO LOCAL*\n\n';
+    if(rec.foraDoLocal || rec.fotoRepetida){
+      let alerta='🚨 *CHECKLIST SUSPEITO*\n\n';
       alerta+=`🏪 ${rec.storeName}\n`;
       alerta+=`📋 ${rec.typeName}\n`;
       alerta+=`👤 ${rec.operator}\n`;
       alerta+=`📅 ${rec.dateStr} às ${rec.timeStr}\n\n`;
-      if(rec.distanciaLoja){
-        alerta+=`📍 Distância da loja: *${rec.distanciaLoja}m*\n`;
-      } else {
-        alerta+=`📍 Localização não confirmada (GPS indisponível)\n`;
+      if(rec.foraDoLocal){
+        if(rec.distanciaLoja){
+          alerta+=`📍 FORA DO LOCAL — ${rec.distanciaLoja}m da loja\n`;
+        } else {
+          alerta+=`📍 Localização não confirmada (GPS indisponível)\n`;
+        }
+      }
+      if(rec.fotoRepetida){
+        alerta+=`🖼️ FOTO REPETIDA — usou imagem já enviada antes\n`;
       }
       alerta+=`\n_Aviso restrito à gestão_`;
       await enviarZApi(alerta, null, true); // true = só gestores
