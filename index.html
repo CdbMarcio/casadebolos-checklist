@@ -1502,7 +1502,7 @@ const firebaseConfig = {
 
 // Firebase carrega em background — app funciona mesmo sem ele
 let db = null;
-let collection, addDoc, getDocs, query, where, doc, updateDoc, setDoc, deleteDoc;
+let collection, addDoc, getDocs, getDoc, query, where, doc, updateDoc, setDoc, deleteDoc;
 let fbReady = false;
 let fbError = false;
 
@@ -1513,6 +1513,7 @@ async function initFirebase(){
     collection = fs.collection;
     addDoc = fs.addDoc;
     getDocs = fs.getDocs;
+    getDoc = fs.getDoc;
     query = fs.query;
     where = fs.where;
     doc = fs.doc;
@@ -5277,7 +5278,12 @@ function pontoEqTab(tab){
   });
   if(tab==='hoje') renderPontoHoje();
   if(tab==='ajustes') renderAjustesPendentes();
-  if(tab==='config'){ carregarJornada(); renderFeriados(); renderFerias(); }
+  if(tab==='config'){
+    carregarJornada(); renderFeriados(); renderFerias();
+    // Sincroniza cercas do Firebase e carrega na tela
+    syncCercasFromFirebase().then(()=>carregarCerca());
+    carregarCerca();
+  }
 }
 
 // Sincroniza batidas de ponto do Firebase para o localStorage (multi-dispositivo)
@@ -5664,24 +5670,28 @@ async function salvarCerca(){
   };
   localStorage.setItem('cb_cercas',JSON.stringify(cercas));
 
-  // Firebase (multi-dispositivo)
-  if(fbReady && db){
-    try{ await setDoc(doc(db,'cercas','config'), cercas); }
-    catch(e){ console.warn('Erro salvar cerca:', e.message); }
+  // Firebase (multi-dispositivo) — aguarda o Firebase ficar pronto
+  if(!fbReady || !db){
+    toast('⚠️ Salvo só neste aparelho — Firebase ainda conectando. Tente de novo em alguns segundos.');
+    return;
   }
-
-  toast('✅ Cerca virtual salva para '+STORES[loja]);
+  try{
+    await setDoc(doc(db,'cercas','config'), cercas);
+    toast('✅ Cerca virtual salva para '+STORES[loja]);
+  }catch(e){
+    console.warn('Erro salvar cerca:', e.message);
+    toast('⚠️ Erro ao sincronizar a cerca. Verifique a internet.');
+  }
 }
 
 async function syncCercasFromFirebase(){
   if(!fbReady || !db) return;
   try{
-    const snap=await getDocs(collection(db,'cercas'));
-    snap.forEach(d=>{
-      if(d.id==='config'){
-        localStorage.setItem('cb_cercas', JSON.stringify(d.data()));
-      }
-    });
+    const snap=await getDoc(doc(db,'cercas','config'));
+    if(snap.exists()){
+      localStorage.setItem('cb_cercas', JSON.stringify(snap.data()));
+      console.log('✅ Cercas sincronizadas do Firebase');
+    }
   }catch(e){ console.warn('Erro sync cercas:', e.message); }
 }
 
