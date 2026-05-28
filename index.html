@@ -244,6 +244,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <button class="tab" onclick="goTab('financeiro')" id="tab-financeiro" style="display:none">💰 Financeiro</button>
     <button class="tab" onclick="goTab('segmento')" id="tab-segmento" style="display:none">🎯 Segmento</button>
     <button class="tab" onclick="goTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
+    <button class="tab" onclick="goTab('superadmin')" id="tab-superadmin" style="display:none">🏢 Empresas</button>
   </div>
 
   <!-- SELEÇÃO -->
@@ -1485,6 +1486,64 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
   </div>
 
+  <!-- SUPER ADMIN — Gestão de Empresas (CheckPro) -->
+  <div style="display:none" id="scr-superadmin">
+  <div class="body-wrap">
+    <h1 class="pg-title">Empresas CheckPro</h1>
+    <p class="pg-sub">Gestão de empresas clientes (Super Admin)</p>
+
+    <div style="background:#EAF2F8;border:1px solid #AED6F1;border-radius:var(--r);padding:12px;margin-bottom:14px;">
+      <div style="font-size:.75rem;color:var(--md);line-height:1.5;">🏢 Cada empresa cliente tem seu espaço isolado. Os dados de uma empresa não aparecem para outra.</div>
+    </div>
+
+    <!-- CADASTRO DE NOVA EMPRESA -->
+    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">➕ Nova Empresa</div>
+      <div style="margin-bottom:8px;">
+        <span class="fl">Nome da empresa *</span>
+        <input type="text" id="emp-nome" placeholder="Ex: Padaria Pão Quente" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;">
+      </div>
+      <div style="margin-bottom:8px;">
+        <span class="fl">Código da empresa (sem espaços) *</span>
+        <input type="text" id="emp-tenant" placeholder="Ex: paoquente" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;">
+        <p style="font-size:.66rem;color:var(--lt);margin-top:3px;">Identificador único. Use letras minúsculas, sem espaço ou acento.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <span class="fl">Segmento</span>
+          <div class="sw"><select id="emp-segmento">
+            <option value="confeitaria">Confeitaria/Padaria</option>
+            <option value="restaurante">Restaurante</option>
+            <option value="lanchonete">Lanchonete</option>
+            <option value="varejo">Varejo</option>
+            <option value="outro">Outro</option>
+          </select></div>
+        </div>
+        <div>
+          <span class="fl">Plano</span>
+          <div class="sw"><select id="emp-plano">
+            <option value="basico">Básico</option>
+            <option value="completo">Completo</option>
+          </select></div>
+        </div>
+      </div>
+      <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:8px;padding:9px;margin-bottom:8px;">
+        <div style="font-size:.7rem;font-weight:700;color:var(--or);margin-bottom:6px;">👤 Usuário administrador da empresa</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <input type="text" id="emp-admin-login" placeholder="Login do admin" style="padding:8px;border-radius:6px;border:1px solid #E8D8C8;font-family:inherit;font-size:.78rem;">
+          <input type="text" id="emp-admin-senha" placeholder="Senha (mín 4)" style="padding:8px;border-radius:6px;border:1px solid #E8D8C8;font-family:inherit;font-size:.78rem;">
+        </div>
+        <input type="text" id="emp-admin-nome" placeholder="Nome do responsável" style="width:100%;margin-top:6px;padding:8px;border-radius:6px;border:1px solid #E8D8C8;font-family:inherit;font-size:.78rem;">
+      </div>
+      <button onclick="criarEmpresa()" class="btn">🏢 Criar empresa</button>
+    </div>
+
+    <!-- LISTA DE EMPRESAS -->
+    <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Empresas cadastradas</div>
+    <div id="superadmin-lista"></div>
+  </div>
+  </div>
+
 </div><!-- fim pg-app -->
 
 <script type="module">
@@ -1502,7 +1561,7 @@ const firebaseConfig = {
 
 // Firebase carrega em background — app funciona mesmo sem ele
 let db = null;
-let collection, addDoc, getDocs, query, where, doc, updateDoc, setDoc, deleteDoc;
+let collection, addDoc, getDocs, getDoc, query, where, doc, updateDoc, setDoc, deleteDoc;
 let fbReady = false;
 let fbError = false;
 
@@ -1513,6 +1572,7 @@ async function initFirebase(){
     collection = fs.collection;
     addDoc = fs.addDoc;
     getDocs = fs.getDocs;
+    getDoc = fs.getDoc;
     query = fs.query;
     where = fs.where;
     doc = fs.doc;
@@ -1565,15 +1625,46 @@ const STORES    = {meier:'Méier',tijuca:'Tijuca',copacabana:'Copacabana',botafo
 //  USUÁRIOS MASTER
 // ═══════════════════════════════════════════════
 const MASTER_USERS = [
-  {login:'admin',      pass:'admin123',  name:'Marcio (Admin)',  store:'todas', role:'admin'},
-  {login:'meier',      pass:'35807339',  name:'Loja Meier',      store:'meier', role:'user'},
-  {login:'botafogo',   pass:'39888893',  name:'Loja Botafogo',   store:'botafogo', role:'user'},
-  {login:'copacabana', pass:'39865914',  name:'Loja Copacabana', store:'copacabana', role:'user'},
-  {login:'tijuca',     pass:'31739558',  name:'Loja Tijuca',     store:'tijuca', role:'user'},
-  {login:'ilha',       pass:'21371698',  name:'Loja Ilha',       store:'ilha', role:'user'},
-  {login:'helen',      pass:'991330105', name:'Helen Mendes',    store:'todas', role:'user'},
-  {login:'fabiola',    pass:'979766647', name:'Fabiola Felinto', store:'todas', role:'user'},
+  {login:'admin',      pass:'admin123',  name:'Marcio (Admin)',  store:'todas', role:'admin', tenantId:'casadebolos'},
+  {login:'meier',      pass:'35807339',  name:'Loja Meier',      store:'meier', role:'user', tenantId:'casadebolos'},
+  {login:'botafogo',   pass:'39888893',  name:'Loja Botafogo',   store:'botafogo', role:'user', tenantId:'casadebolos'},
+  {login:'copacabana', pass:'39865914',  name:'Loja Copacabana', store:'copacabana', role:'user', tenantId:'casadebolos'},
+  {login:'tijuca',     pass:'31739558',  name:'Loja Tijuca',     store:'tijuca', role:'user', tenantId:'casadebolos'},
+  {login:'ilha',       pass:'21371698',  name:'Loja Ilha',       store:'ilha', role:'user', tenantId:'casadebolos'},
+  {login:'helen',      pass:'991330105', name:'Helen Mendes',    store:'todas', role:'user', tenantId:'casadebolos'},
+  {login:'fabiola',    pass:'979766647', name:'Fabiola Felinto', store:'todas', role:'user', tenantId:'casadebolos'},
 ];
+
+// ═══════════════════════════════════════════════
+//  SEGURANÇA — Hash de senhas (SHA-256 + salt)
+// ═══════════════════════════════════════════════
+// Salt fixo do app — dificulta ataques de rainbow table
+const APP_SALT = 'CheckPro2026!cb';
+
+// Converte senha em hash irreversível
+async function hashSenha(senha){
+  const dados = new TextEncoder().encode(APP_SALT + senha + APP_SALT);
+  const buffer = await crypto.subtle.digest('SHA-256', dados);
+  return Array.from(new Uint8Array(buffer))
+    .map(b=>b.toString(16).padStart(2,'0'))
+    .join('');
+}
+
+// Verifica se uma senha bate com o registro do usuário.
+// Compatível com senhas antigas (texto puro) E novas (hash).
+async function verificarSenha(senhaDigitada, userObj){
+  if(!userObj) return false;
+  // Senha em hash (novo formato) — campo passHash
+  if(userObj.passHash){
+    const h = await hashSenha(senhaDigitada);
+    return h === userObj.passHash;
+  }
+  // Senha em texto puro (formato antigo) — compatibilidade
+  if(userObj.pass){
+    return senhaDigitada === userObj.pass;
+  }
+  return false;
+}
 
 function getUsers(){
   const local = JSON.parse(localStorage.getItem('cb_users')||'[]');
@@ -2172,7 +2263,190 @@ const CATS={atend:'cards-atend',coz:'cards-coz',semanal:'cards-semanal',geral:'c
 // ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
-let ST={user:null,type:'',store:'',items:[],histFilter:'todos',editingId:null};
+let ST={user:null,type:'',store:'',items:[],histFilter:'todos',editingId:null,tenantId:null};
+
+// ═══════════════════════════════════════════════
+//  MULTI-TENANT — Sistema de empresas (CheckPro SaaS)
+// ═══════════════════════════════════════════════
+// Cada empresa cliente tem um tenantId único. Todos os dados
+// (checklists, ponto, funcionários...) carregam esse código.
+
+// Tenant fixo para a Casa de Bolos (primeira empresa)
+const TENANT_PADRAO = 'casadebolos';
+
+// Retorna o tenantId da empresa logada
+function getTenant(){
+  return ST.tenantId || (ST.user && ST.user.tenantId) || TENANT_PADRAO;
+}
+
+// Lista de empresas cadastradas (gerenciada pelo super admin)
+function getEmpresas(){
+  const e = JSON.parse(localStorage.getItem('cp_empresas')||'[]');
+  // Garante que a Casa de Bolos sempre existe
+  if(!e.find(x=>x.tenantId===TENANT_PADRAO)){
+    e.unshift({
+      tenantId:TENANT_PADRAO,
+      nome:'Casa de Bolos',
+      segmento:'confeitaria',
+      plano:'completo',
+      status:'ativo',
+      criadoEm:'18/05/2026'
+    });
+  }
+  return e;
+}
+
+async function syncEmpresasFromFirebase(){
+  if(!fbReady || !db) return;
+  try{
+    const snap = await getDocs(collection(db,'empresas'));
+    const fb = [];
+    snap.forEach(d=>{ fb.push(d.data()); });
+    if(fb.length){
+      localStorage.setItem('cp_empresas', JSON.stringify(fb));
+    }
+  }catch(e){ console.warn('Erro sync empresas:', e.message); }
+}
+
+// Verifica se a empresa está ativa (não suspensa por falta de pagamento)
+function empresaAtiva(tenantId){
+  const emp = getEmpresas().find(e=>e.tenantId===tenantId);
+  return emp ? emp.status==='ativo' : true;
+}
+
+// ─── SUPER ADMIN — quem pode gerenciar empresas ───
+// É você: login 'admin' da Casa de Bolos
+function ehSuperAdmin(){
+  return ST.user && ST.user.login==='admin' && (ST.user.tenantId||TENANT_PADRAO)==='casadebolos';
+}
+
+async function criarEmpresa(){
+  const nome=document.getElementById('emp-nome').value.trim();
+  const tenant=document.getElementById('emp-tenant').value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+  const segmento=document.getElementById('emp-segmento').value;
+  const plano=document.getElementById('emp-plano').value;
+  const adminLogin=document.getElementById('emp-admin-login').value.trim().toLowerCase();
+  const adminSenha=document.getElementById('emp-admin-senha').value;
+  const adminNome=document.getElementById('emp-admin-nome').value.trim();
+
+  if(!nome){toast('Informe o nome da empresa!');return;}
+  if(!tenant||tenant.length<3){toast('Código da empresa inválido (mín 3 letras)!');return;}
+  if(!adminLogin||!adminSenha||!adminNome){toast('Preencha os dados do administrador!');return;}
+  if(adminSenha.length<4){toast('Senha do admin: mínimo 4 caracteres!');return;}
+
+  const empresas=getEmpresas();
+  if(empresas.find(e=>e.tenantId===tenant)){toast('Já existe empresa com esse código!');return;}
+
+  const users=getUsers();
+  if(users.find(u=>u.login===adminLogin)){toast('Esse login de admin já existe!');return;}
+
+  // Cria a empresa
+  const novaEmpresa={
+    tenantId:tenant,
+    nome,
+    segmento,
+    plano,
+    status:'ativo',
+    criadoEm:new Date().toLocaleDateString('pt-BR')
+  };
+  empresas.push(novaEmpresa);
+  localStorage.setItem('cp_empresas', JSON.stringify(empresas));
+  if(fbReady && db){
+    try{ await setDoc(doc(db,'empresas',tenant), novaEmpresa); }
+    catch(e){ console.warn('Erro salvar empresa:',e.message); }
+  }
+
+  // Cria o usuário admin da empresa (com senha hash, vinculado ao tenant)
+  const passHash=await hashSenha(adminSenha);
+  const adminUser={login:adminLogin,passHash,name:adminNome,store:'todas',role:'admin',tenantId:tenant};
+  const local=JSON.parse(localStorage.getItem('cb_users')||'[]');
+  local.push(adminUser);
+  localStorage.setItem('cb_users',JSON.stringify(local));
+  if(fbReady && db){
+    try{ await setDoc(doc(db,'usuarios',adminLogin), adminUser); }
+    catch(e){ console.warn('Erro salvar admin empresa:',e.message); }
+  }
+
+  // Limpa o form
+  ['emp-nome','emp-tenant','emp-admin-login','emp-admin-senha','emp-admin-nome'].forEach(id=>{document.getElementById(id).value='';});
+
+  toast('✅ Empresa "'+nome+'" criada!');
+  renderSuperAdmin();
+}
+
+async function toggleEmpresaStatus(tenant){
+  const empresas=getEmpresas();
+  const emp=empresas.find(e=>e.tenantId===tenant);
+  if(!emp) return;
+  if(emp.tenantId===TENANT_PADRAO){toast('A Casa de Bolos não pode ser suspensa.');return;}
+  emp.status = emp.status==='ativo' ? 'suspenso' : 'ativo';
+  localStorage.setItem('cp_empresas', JSON.stringify(empresas));
+  if(fbReady && db){
+    try{ await setDoc(doc(db,'empresas',tenant), emp); }catch(e){}
+  }
+  toast(emp.status==='ativo'?'✅ Empresa reativada':'⏸️ Empresa suspensa');
+  renderSuperAdmin();
+}
+
+async function loadSuperAdmin(){
+  await syncEmpresasFromFirebase();
+  renderSuperAdmin();
+}
+
+function renderSuperAdmin(){
+  const el=document.getElementById('superadmin-lista');
+  if(!el) return;
+  const empresas=getEmpresas();
+  const SEG_NOMES={confeitaria:'Confeitaria/Padaria',restaurante:'Restaurante',lanchonete:'Lanchonete',varejo:'Varejo',outro:'Outro'};
+
+  el.innerHTML=empresas.map(e=>{
+    const ativo=e.status==='ativo';
+    const ehPadrao=e.tenantId===TENANT_PADRAO;
+    // Conta usuários da empresa
+    const nUsers=getUsers().filter(u=>(u.tenantId||TENANT_PADRAO)===e.tenantId).length;
+    return`<div style="background:var(--wm);border:1px solid #E8D8C8;border-left:3px solid ${ativo?'var(--gn)':'var(--rd)'};border-radius:var(--rs);padding:12px;margin-bottom:8px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div style="flex:1;">
+          <div style="font-size:.88rem;font-weight:700;color:var(--br);">${e.nome} ${ehPadrao?'<span style="font-size:.6rem;color:var(--gd);">(matriz)</span>':''}</div>
+          <div style="font-size:.7rem;color:var(--lt);margin-top:2px;">Código: ${e.tenantId} · ${SEG_NOMES[e.segmento]||e.segmento}</div>
+          <div style="font-size:.7rem;color:var(--lt);">Plano: ${e.plano} · ${nUsers} usuário(s) · desde ${e.criadoEm}</div>
+        </div>
+        <span style="font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:99px;background:${ativo?'#EAFAF1':'#FDEDEC'};color:${ativo?'var(--gn)':'var(--rd)'};">${ativo?'ATIVO':'SUSPENSO'}</span>
+      </div>
+      ${!ehPadrao?`<button onclick="toggleEmpresaStatus('${e.tenantId}')" style="margin-top:8px;width:100%;background:transparent;border:1px solid ${ativo?'#F5B7B1':'#B8EFD0'};color:${ativo?'var(--rd)':'var(--gn)'};border-radius:99px;padding:6px;font-size:.72rem;cursor:pointer;font-family:inherit;">${ativo?'⏸️ Suspender empresa':'▶️ Reativar empresa'}</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ─── Helpers tenant-aware para Firebase ───
+// Adiciona o tenantId a qualquer registro antes de salvar
+function comTenant(obj){
+  return {...obj, tenantId:getTenant()};
+}
+
+// Filtra uma lista de registros, mantendo só os do tenant atual
+// (registros antigos sem tenantId são tratados como do tenant padrão)
+function filtrarTenant(lista){
+  const t = getTenant();
+  return lista.filter(r=>{
+    const rt = r.tenantId || TENANT_PADRAO;
+    return rt === t;
+  });
+}
+
+// Salva documento no Firebase já com tenantId
+async function fbSetComTenant(colecao, id, obj){
+  if(!fbReady || !db) return;
+  try{ await setDoc(doc(db,colecao,id), comTenant(obj)); }
+  catch(e){ console.warn('Erro salvar '+colecao+':', e.message); }
+}
+
+// Adiciona documento no Firebase já com tenantId
+async function fbAddComTenant(colecao, obj){
+  if(!fbReady || !db) return null;
+  try{ const r=await addDoc(collection(db,colecao), comTenant(obj)); return r.id; }
+  catch(e){ console.warn('Erro adicionar '+colecao+':', e.message); return null; }
+}
 let historyCache=[];
 
 // ═══════════════════════════════════════════════
@@ -2198,21 +2472,39 @@ async function doLogin(){
   const login=document.getElementById('login-user').value.trim().toLowerCase();
   const pass=document.getElementById('login-pass').value;
   let users=getUsers();
-  let user=users.find(u=>u.login===login&&u.pass===pass);
+  // Procura o usuário pelo login, depois valida a senha (hash ou texto)
+  let userObj=users.find(u=>u.login===login);
+  let senhaOk=userObj?await verificarSenha(pass,userObj):false;
 
   // Se não achou e Firebase está pronto, tenta sincronizar antes de recusar
-  if(!user && fbReady && db){
+  if((!userObj||!senhaOk) && fbReady && db){
     document.getElementById('login-err').classList.remove('show');
     const btnLogin=document.querySelector('#pg-login button');
     if(btnLogin){btnLogin.disabled=true;btnLogin.textContent='Verificando...';}
     await syncUsersFromFirebase();
     users=getUsers();
-    user=users.find(u=>u.login===login&&u.pass===pass);
+    userObj=users.find(u=>u.login===login);
+    senhaOk=userObj?await verificarSenha(pass,userObj):false;
     if(btnLogin){btnLogin.disabled=false;btnLogin.textContent='Entrar →';}
   }
 
+  const user = (userObj && senhaOk) ? userObj : null;
+
   if(!user){document.getElementById('login-err').classList.add('show');return;}
   document.getElementById('login-err').classList.remove('show');
+
+  // Define o tenant da empresa logada
+  ST.tenantId = user.tenantId || TENANT_PADRAO;
+
+  // Verifica se a empresa está ativa
+  await syncEmpresasFromFirebase();
+  if(!empresaAtiva(ST.tenantId)){
+    document.getElementById('login-err').textContent='Empresa com acesso suspenso. Entre em contato com o suporte.';
+    document.getElementById('login-err').classList.add('show');
+    ST.tenantId=null;
+    return;
+  }
+
   ST.user=user;
   document.getElementById('hdr-user-name').textContent=user.name;
 
@@ -2227,6 +2519,8 @@ async function doLogin(){
   document.getElementById('tab-ponto').style.display = ehAuditor?'none':'';
 
   document.getElementById('tab-admin').style.display=ehAdmin?'':'none';
+  // Aba Empresas: só o super admin (você, login admin da Casa de Bolos)
+  document.getElementById('tab-superadmin').style.display=ehSuperAdmin()?'':'none';
   document.getElementById('tab-painel').style.display=ehAdmin?'':'none';
   document.getElementById('tab-score').style.display=ehAdmin?'':'none';
   document.getElementById('tab-ia').style.display=ehAdmin?'':'none';
@@ -2242,7 +2536,14 @@ async function doLogin(){
   goTab(ehPonto?'ponto':ehAuditor?'auditoria':'sel');
 }
 
-function doLogout(){ST.user=null;showAllScr('sel');showPage('pg-login');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';}
+function doLogout(){
+  ST.user=null;ST.tenantId=null;
+  // Limpa caches específicos da empresa (evita vazar dados ao trocar de login)
+  ['cb_zapi','cb_cercas','cb_hist','cb_ponto','cb_feriados','cb_ferias','cb_funcionarios','cb_ajustes_ponto','cb_financeiro','cb_audits'].forEach(k=>localStorage.removeItem(k));
+  showAllScr('sel');showPage('pg-login');
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+}
 
 function buildStoreSelect(user){
   const sel=document.getElementById('s-store');
@@ -2261,7 +2562,7 @@ function buildStoreSelect(user){
 //  NAVIGATION
 // ═══════════════════════════════════════════════
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
-function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','auditoria','padrao','estoque-ia','ponto','ponto-eq','funcionarios','financeiro','segmento','admin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
+function showAllScr(active){['sel','cl','ok','hist','painel','score','ia','auditoria','padrao','estoque-ia','ponto','ponto-eq','funcionarios','financeiro','segmento','admin','superadmin'].forEach(s=>{const el=document.getElementById('scr-'+s);if(el)el.style.display=s===active?'':'none';});}
 function goTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+t)?.classList.add('on');
@@ -2279,6 +2580,7 @@ function goTab(t){
   else if(t==='segmento'){showAllScr('segmento');loadSegmento();}
   else if(t==='financeiro'){showAllScr('financeiro');initFinanceiro();}
   else if(t==='admin'){showAllScr('admin');renderAdmin();loadZApiConfig();syncZApiFromFirebase();}
+  else if(t==='superadmin'){showAllScr('superadmin');loadSuperAdmin();}
 }
 function goBack(){goTab('sel');}
 function newCL(){ST.editingId=null;goTab('sel');}
@@ -2481,17 +2783,33 @@ async function sendCL(){
     if(navigator.geolocation){
       gps = await new Promise((res)=>{
         navigator.geolocation.getCurrentPosition(
-          p=>res({lat:p.coords.latitude.toFixed(6),lng:p.coords.longitude.toFixed(6)}),
+          p=>res({lat:p.coords.latitude.toFixed(6),lng:p.coords.longitude.toFixed(6),acc:Math.round(p.coords.accuracy)}),
           ()=>res(null),
-          {timeout:5000}
+          {enableHighAccuracy:true,timeout:10000,maximumAge:0}
         );
       });
     }
   }catch(e){}
 
+  // Verifica cerca virtual da loja — registra silenciosamente (funcionário não vê)
+  let foraDoLocal=false;
+  let distanciaLoja=null;
+  const cercas=JSON.parse(localStorage.getItem('cb_cercas')||'{}');
+  const cerca=cercas[ST.store];
+  if(cerca && cerca.lat && cerca.lng && gps){
+    distanciaLoja=Math.round(distanciaGPS(parseFloat(gps.lat),parseFloat(gps.lng),parseFloat(cerca.lat),parseFloat(cerca.lng)));
+    const raio=parseFloat(cerca.raio||150);
+    if(distanciaLoja>raio){
+      foraDoLocal=true; // marca, mas NÃO avisa o funcionário — segue normal
+    }
+  } else if(cerca && cerca.lat && cerca.lng && !gps){
+    foraDoLocal=true; // tem cerca mas GPS falhou
+  }
+
   setOv(true,'Salvando...');
   const now=new Date();
   const rec={
+    tenantId:getTenant(),
     store:ST.store,storeName:STORES[ST.store],
     type:ST.type,typeName:CL[ST.type].name,
     operator:ST.user.name,userLogin:ST.user.login,
@@ -2502,6 +2820,8 @@ async function sendCL(){
     dateStr:now.toLocaleDateString('pt-BR'),
     ts:now.toISOString(),
     gps: gps,
+    foraDoLocal: foraDoLocal,
+    distanciaLoja: distanciaLoja,
     createdAt:new Date()
   };
 
@@ -2606,7 +2926,25 @@ async function enviarWpp(rec){
 
   // Z-API ativo? envia via proxy Vercel
   if(config.ativo !== false && config.destinatarios && config.destinatarios.length > 0){
-    return await enviarZApi(msg, rec);
+    await enviarZApi(msg, rec);
+
+    // Se foi feito FORA DO LOCAL, envia aviso SEPARADO só para os gestores
+    // (admin/Fabíola/Helen) — o funcionário comum não recebe nada disso
+    if(rec.foraDoLocal){
+      let alerta='🚨 *CHECKLIST FORA DO LOCAL*\n\n';
+      alerta+=`🏪 ${rec.storeName}\n`;
+      alerta+=`📋 ${rec.typeName}\n`;
+      alerta+=`👤 ${rec.operator}\n`;
+      alerta+=`📅 ${rec.dateStr} às ${rec.timeStr}\n\n`;
+      if(rec.distanciaLoja){
+        alerta+=`📍 Distância da loja: *${rec.distanciaLoja}m*\n`;
+      } else {
+        alerta+=`📍 Localização não confirmada (GPS indisponível)\n`;
+      }
+      alerta+=`\n_Aviso restrito à gestão_`;
+      await enviarZApi(alerta, null, true); // true = só gestores
+    }
+    return;
   }
 
   // Fallback: CallMeBot (legado)
@@ -2616,18 +2954,33 @@ async function enviarWpp(rec){
   }
 }
 
-async function enviarZApi(mensagem, contextoRec){
+async function enviarZApi(mensagem, contextoRec, soGestores){
   const config = getZApiConfig();
 
-  const destinatarios = config.destinatarios || [];
+  let destinatarios = config.destinatarios || [];
   if(!destinatarios.length){
     console.warn('Z-API: nenhum destinatário cadastrado');
     return;
   }
 
+  // Se for aviso restrito a gestores (ex: checklist fora do local),
+  // envia só para os números dos gestores (Marcio, Fabíola, Helen)
+  if(soGestores){
+    const NUMEROS_GESTORES = ['5521982792825','5521991330105','5521979766647'];
+    destinatarios = destinatarios.filter(d=>{
+      if(d.tipo==='grupo') return false; // só números diretos
+      const num = (d.numero||'').replace(/\D/g,'');
+      return NUMEROS_GESTORES.includes(num);
+    });
+    if(!destinatarios.length){
+      console.warn('Z-API: nenhum gestor entre os destinatários');
+      return;
+    }
+  }
+
   // Verifica filtro de notificações (sucesso/falha)
   const tipo = config.notificacoes || 'todos';
-  if(contextoRec && tipo === 'criticos'){
+  if(contextoRec && tipo === 'criticos' && !soGestores){
     const critico = contextoRec.pct<60 || contextoRec.itensList.some(i=>i.crit && !i.done);
     if(!critico) return;
   }
@@ -2749,10 +3102,11 @@ function loadZApiLog(){
 }
 
 // Salva config Z-API no localStorage E no Firebase (multi-dispositivo)
+// Documento por empresa: config/zapi_{tenantId}
 async function persistZApiConfig(config){
   localStorage.setItem('cb_zapi', JSON.stringify(config));
   if(fbReady && db){
-    try{ await setDoc(doc(db,'config','zapi'), config); }
+    try{ await setDoc(doc(db,'config','zapi_'+getTenant()), config); }
     catch(e){ console.warn('Erro salvar Z-API config:', e.message); }
   }
 }
@@ -2761,14 +3115,12 @@ async function persistZApiConfig(config){
 async function syncZApiFromFirebase(){
   if(!fbReady || !db) return;
   try{
-    const snap=await getDocs(collection(db,'config'));
-    snap.forEach(d=>{
-      if(d.id==='zapi'){
-        localStorage.setItem('cb_zapi', JSON.stringify(d.data()));
-        console.log('✅ Config Z-API sincronizada do Firebase');
-        if(document.getElementById('zapi-tipo-notif')) loadZApiConfig();
-      }
-    });
+    const snap=await getDoc(doc(db,'config','zapi_'+getTenant()));
+    if(snap.exists()){
+      localStorage.setItem('cb_zapi', JSON.stringify(snap.data()));
+      console.log('✅ Config Z-API sincronizada do Firebase');
+      if(document.getElementById('zapi-tipo-notif')) loadZApiConfig();
+    }
   }catch(e){ console.warn('Erro sync Z-API:', e.message); }
 }
 
@@ -2912,8 +3264,7 @@ async function loadHist(){
     }
 
     if(snap && snap.size > 0){
-      historyCache = snap.docs
-        .map(d=>({id:d.id,...d.data()}))
+      historyCache = filtrarTenant(snap.docs.map(d=>({id:d.id,...d.data()})))
         .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
       renderHist();
       return;
@@ -2928,7 +3279,7 @@ async function loadHist(){
   }
 
   // Firebase não disponível — usa localStorage como fallback
-  const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+  const local = filtrarTenant(JSON.parse(localStorage.getItem('cb_hist')||'[]'));
   historyCache = local;
 
   if(local.length > 0){
@@ -2989,7 +3340,7 @@ function renderHist(){
         <div class="hi-dot" style="background:${dotColor}"></div>
         <div class="hi-info">
           <div class="hi-title">${CL[r.type]?CL[r.type].icon:''} ${r.typeName} — ${r.storeName}</div>
-          <div class="hi-meta">${r.operator} · ${r.timeStr} · ${r.dateStr}</div>
+          <div class="hi-meta">${r.operator} · ${r.timeStr} · ${r.dateStr}${(r.foraDoLocal && ST.user?.role==='admin')?` · <span style="color:var(--rd);font-weight:700;">📍 FORA DO LOCAL${r.distanciaLoja?' ('+r.distanciaLoja+'m)':''}</span>`:''}</div>
         </div>
         <div class="hi-pct ${pctClass}">${r.pct}%</div>
         <div class="hi-chevron" id="chev-${i}">▾</div>
@@ -3552,7 +3903,7 @@ function calcReincidencias(targetId){
 
 async function loadHistSilent(){
   if(!fbReady || !db){
-    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+    const local = filtrarTenant(JSON.parse(localStorage.getItem('cb_hist')||'[]'));
     if(local.length) historyCache = local;
     return;
   }
@@ -3560,11 +3911,11 @@ async function loadHistSilent(){
     const snap = ST.user?.role==='admin'||ST.user?.store==='todas'
       ? await getDocs(collection(db,'checklists'))
       : await getDocs(query(collection(db,'checklists'),where('store','==',ST.user.store)));
-    historyCache = snap.docs.map(d=>({id:d.id,...d.data()}))
+    historyCache = filtrarTenant(snap.docs.map(d=>({id:d.id,...d.data()})))
       .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
   }catch(e){
     console.warn('loadHistSilent:',e.message);
-    const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+    const local = filtrarTenant(JSON.parse(localStorage.getItem('cb_hist')||'[]'));
     if(local.length) historyCache = local;
   }
 }
@@ -3771,7 +4122,7 @@ function finTab(tab){
 }
 
 function getLancamentos(){
-  return JSON.parse(localStorage.getItem('cb_financeiro')||'[]');
+  return filtrarTenant(JSON.parse(localStorage.getItem('cb_financeiro')||'[]'));
 }
 
 function getLancFiltrados(){
@@ -3807,6 +4158,7 @@ function salvarLancamento(){
   const lancs = getLancamentos();
   lancs.unshift({
     id:Date.now().toString(),
+    tenantId:getTenant(),
     tipo, cat, data, valor, loja,
     lojaNome: STORES[loja],
     catNome: CAT_NOMES[cat],
@@ -4274,6 +4626,7 @@ async function baterPonto(){
   const agora=new Date();
   const batida={
     id:Date.now().toString(),
+    tenantId:getTenant(),
     user:ST.user.login,
     userName:ST.user.name,
     store:ST.user.store,
@@ -4520,9 +4873,7 @@ async function syncFeriadosFromFirebase(){
     const snap = await getDocs(collection(db,'feriados'));
     const fb = [];
     snap.forEach(d=>{ fb.push({...d.data(), _fbId:d.id}); });
-    if(fb.length){
-      localStorage.setItem('cb_feriados', JSON.stringify(fb));
-    }
+    localStorage.setItem('cb_feriados', JSON.stringify(filtrarTenant(fb)));
   }catch(e){ console.warn('Erro sync feriados:', e.message); }
 }
 
@@ -4554,7 +4905,7 @@ async function syncFeriasFromFirebase(){
     const snap = await getDocs(collection(db,'ferias'));
     const fb = [];
     snap.forEach(d=>{ fb.push({...d.data(), _fbId:d.id}); });
-    localStorage.setItem('cb_ferias', JSON.stringify(fb));
+    localStorage.setItem('cb_ferias', JSON.stringify(filtrarTenant(fb)));
   }catch(e){ console.warn('Erro sync férias:', e.message); }
 }
 
@@ -4573,6 +4924,7 @@ async function addFerias(){
 
   const novoFerias={
     id:Date.now().toString(),
+    tenantId:getTenant(),
     user,
     userName:userObj?userObj.name:user,
     tipo,
@@ -4680,7 +5032,7 @@ async function syncFuncionariosFromFirebase(){
     const snap = await getDocs(collection(db,'funcionarios'));
     const fb = [];
     snap.forEach(d=>{ fb.push(d.data()); });
-    localStorage.setItem('cb_funcionarios', JSON.stringify(fb));
+    localStorage.setItem('cb_funcionarios', JSON.stringify(filtrarTenant(fb)));
   }catch(e){ console.warn('Erro sync funcionários:', e.message); }
 }
 
@@ -4778,6 +5130,7 @@ async function salvarFicha(){
   } else {
     func={
       id:Date.now().toString(),
+      tenantId:getTenant(),
       historicoLojas:[{loja:lojaNova, desde:hoje}]
     };
   }
@@ -4911,7 +5264,7 @@ async function addFeriado(){
   const feriados=getFeriados();
   if(feriados.find(f=>f.data===dataFmt)){toast('Feriado já cadastrado nessa data!');return;}
 
-  const novoFeriado={id:Date.now().toString(), data:dataFmt, nome, tipo, recorrente};
+  const novoFeriado={id:Date.now().toString(), tenantId:getTenant(), data:dataFmt, nome, tipo, recorrente};
   feriados.push(novoFeriado);
   localStorage.setItem('cb_feriados', JSON.stringify(feriados));
 
@@ -5182,6 +5535,7 @@ async function enviarAjuste(){
 
   const ajuste={
     id:Date.now().toString(),
+    tenantId:getTenant(),
     user:ST.user.login,
     userName:ST.user.name,
     store:ST.user.store,
@@ -5247,7 +5601,8 @@ async function syncPontoFromFirebase(){
       const chave = (b.ts||'') + '_' + (b.user||'');
       mapa[chave] = b;
     });
-    const todas = Object.values(mapa).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+    // Mantém só batidas do tenant atual
+    const todas = filtrarTenant(Object.values(mapa)).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
     localStorage.setItem('cb_ponto', JSON.stringify(todas.slice(0,2000)));
     console.log('✅ '+fbBatidas.length+' batidas sincronizadas do Firebase');
     return true;
@@ -5270,7 +5625,7 @@ async function syncAjustesFromFirebase(){
       const chave = a.id || ((a.ts||'')+'_'+(a.user||''));
       mapa[chave] = a;
     });
-    localStorage.setItem('cb_ajustes_ponto', JSON.stringify(Object.values(mapa)));
+    localStorage.setItem('cb_ajustes_ponto', JSON.stringify(filtrarTenant(Object.values(mapa))));
     return true;
   }catch(e){
     console.warn('Erro sync ajustes:', e.message);
@@ -5616,9 +5971,9 @@ async function salvarCerca(){
   };
   localStorage.setItem('cb_cercas',JSON.stringify(cercas));
 
-  // Firebase (multi-dispositivo)
+  // Firebase — documento por empresa (cercas/{tenantId})
   if(fbReady && db){
-    try{ await setDoc(doc(db,'cercas','config'), cercas); }
+    try{ await setDoc(doc(db,'cercas',getTenant()), cercas); }
     catch(e){ console.warn('Erro salvar cerca:', e.message); }
   }
 
@@ -5628,12 +5983,14 @@ async function salvarCerca(){
 async function syncCercasFromFirebase(){
   if(!fbReady || !db) return;
   try{
-    const snap=await getDocs(collection(db,'cercas'));
-    snap.forEach(d=>{
-      if(d.id==='config'){
-        localStorage.setItem('cb_cercas', JSON.stringify(d.data()));
-      }
-    });
+    // Busca só a cerca da empresa atual
+    const snap=await getDoc(doc(db,'cercas',getTenant()));
+    if(snap.exists()){
+      localStorage.setItem('cb_cercas', JSON.stringify(snap.data()));
+    } else {
+      // Empresa nova ainda sem cercas
+      localStorage.setItem('cb_cercas', '{}');
+    }
   }catch(e){ console.warn('Erro sync cercas:', e.message); }
 }
 
@@ -5961,6 +6318,7 @@ async function salvarAuditoria(loja){
 
   const aud={
     id:Date.now().toString(),
+    tenantId:getTenant(),
     loja, lojaName:STORES[loja],
     obs, nota,
     itens:_audItens.map(i=>({texto:i.texto,lojaReportou:i.lojaReportou,auditorAchou:i.auditorAchou,crit:i.crit,foto:i.foto||null,obsItem:i.obsItem||''})),
@@ -6102,7 +6460,9 @@ async function addUser(){
   const users=getUsers();
   if(users.find(u=>u.login===login)){toast('Login já existe!');return;}
 
-  const novoUser={login,pass,name,store,role};
+  // Senha salva com HASH — nunca em texto puro
+  const passHash = await hashSenha(pass);
+  const novoUser={login,passHash,name,store,role};
 
   // Salva no localStorage
   const local=JSON.parse(localStorage.getItem('cb_users')||'[]');
@@ -6647,6 +7007,10 @@ window.salvarFicha=salvarFicha;
 window.excluirFuncionario=excluirFuncionario;
 window.loadFuncionarios=loadFuncionarios;
 window.renderFuncionarios=renderFuncionarios;
+window.criarEmpresa=criarEmpresa;
+window.toggleEmpresaStatus=toggleEmpresaStatus;
+window.loadSuperAdmin=loadSuperAdmin;
+window.renderSuperAdmin=renderSuperAdmin;
 window.checarMudancaLoja=checarMudancaLoja;
 window.enviarResumoDia=enviarResumoDia;
 window.exportarPontoExcel=exportarPontoExcel;
