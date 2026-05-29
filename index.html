@@ -762,12 +762,24 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- FOTO -->
     <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
-      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">2. Tirar foto do estoque</div>
+      <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;">2. Tirar foto do estoque</div>
+
+      <!-- DICAS PARA MELHOR FOTO -->
+      <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--rs);padding:10px;margin-bottom:12px;">
+        <div style="font-size:.7rem;font-weight:700;color:var(--or);margin-bottom:6px;">📸 Como tirar a melhor foto:</div>
+        <div style="font-size:.72rem;color:var(--md);line-height:1.6;">
+          ✅ Foto <strong>de cima</strong>, mostrando todos os itens<br>
+          ✅ Itens <strong>separados</strong>, sem sobreposição<br>
+          ✅ <strong>Boa iluminação</strong> (sem sombras fortes)<br>
+          ✅ Enquadre <strong>só o item</strong> que vai contar<br>
+          ❌ Evite fotos de longe ou cortadas
+        </div>
+      </div>
 
       <div class="uarea" id="est-drop">
         <input type="file" accept="image/*" capture="environment" onchange="estAddFoto(event)">
         <div class="uicon">📷</div>
-        <div class="utxt"><strong>Tirar foto agora</strong><br><span style="font-size:.68rem;color:var(--lt);">Enquadre bem o estoque do item selecionado</span></div>
+        <div class="utxt"><strong>Tirar foto agora</strong></div>
       </div>
 
       <div id="est-preview" style="display:none;margin-top:10px;">
@@ -1297,7 +1309,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
         <div style="margin-bottom:10px;">
           <span class="fl">Raio (metros)</span>
-          <input type="number" id="cv-raio" value="150" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="number" id="cv-raio" value="500" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
         </div>
 
         <button onclick="capturarLocalLoja()" style="width:100%;background:transparent;border:1px dashed var(--gd);color:var(--gd);border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;margin-bottom:8px;">📍 Ou capturar GPS atual (estou na loja)</button>
@@ -2553,86 +2565,106 @@ async function sendCL(){
   if(done===0){toast('Preencha ao menos 1 item!');return;}
   if(ST.items.filter(i=>i.p&&i.done&&i.photos.length===0).length>0){toast('📸 Envie todas as fotos obrigatórias!');return;}
 
-  // Captura GPS
-  let gps = null;
-  try {
-    if(navigator.geolocation){
-      gps = await new Promise((res)=>{
-        navigator.geolocation.getCurrentPosition(
-          p=>res({lat:p.coords.latitude.toFixed(6),lng:p.coords.longitude.toFixed(6),acc:Math.round(p.coords.accuracy)}),
-          ()=>res(null),
-          {enableHighAccuracy:true,timeout:10000,maximumAge:0}
-        );
-      });
-    }
-  }catch(e){}
-
-  // Verifica cerca virtual da loja — registra silenciosamente (funcionário não vê)
-  let foraDoLocal=false;
-  let distanciaLoja=null;
-  const cercasCheck=JSON.parse(localStorage.getItem('cb_cercas')||'{}');
-  const cercaCheck=cercasCheck[ST.store];
-  if(cercaCheck && cercaCheck.lat && cercaCheck.lng && gps){
-    distanciaLoja=Math.round(distanciaGPS(parseFloat(gps.lat),parseFloat(gps.lng),parseFloat(cercaCheck.lat),parseFloat(cercaCheck.lng)));
-    const raio=parseFloat(cercaCheck.raio||150);
-    if(distanciaLoja>raio) foraDoLocal=true;
-  } else if(cercaCheck && cercaCheck.lat && cercaCheck.lng && !gps){
-    foraDoLocal=true;
-  }
-
+  // Mostra "Salvando..." IMEDIATAMENTE — antes de qualquer espera
   setOv(true,'Salvando...');
-  const now=new Date();
-  const rec={
-    store:ST.store,storeName:STORES[ST.store],
-    type:ST.type,typeName:CL[ST.type].name,
-    operator:ST.user.name,userLogin:ST.user.login,
-    done,total,pct:Math.round(done/total*100),
-    totalPhotos:ST.items.reduce((a,i)=>a+i.photos.length,0),
-    itensList:ST.items.map(i=>({text:i.t,done:i.done,photo:i.p,photoCount:i.photos.length,obs:i.obs||'',photos:i.photos||[],count:i.count||false,qty:i.qty||'',min:i.min||0})),
-    timeStr:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
-    dateStr:now.toLocaleDateString('pt-BR'),
-    ts:now.toISOString(),
-    gps: gps,
-    foraDoLocal: foraDoLocal,
-    fotoRepetida: ST.items.some(i=>i.fotoRepetida===true),
-    distanciaLoja: distanciaLoja,
-    createdAt:new Date()
-  };
 
-  // Salva localmente como backup imediato
-  const localHist = JSON.parse(localStorage.getItem('cb_hist')||'[]');
-  localHist.unshift({...rec, id: Date.now()});
-  localStorage.setItem('cb_hist', JSON.stringify(localHist.slice(0,100)));
+  try{
+    // Captura GPS — timeout curto (5s) para não travar
+    let gps = null;
+    try {
+      if(navigator.geolocation){
+        gps = await new Promise((res)=>{
+          // Garante que SEMPRE resolve em 5s, com ou sem GPS
+          const timer = setTimeout(()=>res(null), 5000);
+          navigator.geolocation.getCurrentPosition(
+            p=>{ clearTimeout(timer); res({lat:p.coords.latitude.toFixed(6),lng:p.coords.longitude.toFixed(6),acc:Math.round(p.coords.accuracy)}); },
+            ()=>{ clearTimeout(timer); res(null); },
+            {enableHighAccuracy:false,timeout:5000,maximumAge:60000}
+          );
+        });
+      }
+    }catch(e){ console.warn('GPS:',e.message); }
 
-  // Firebase — só tenta se estiver pronto
-  let fbId=null;
-  if(fbReady && db){
-    try{
-      const fbPromise = ST.editingId
-        ? updateDoc(doc(db,'checklists',ST.editingId),rec).then(()=>ST.editingId)
-        : addDoc(collection(db,'checklists'),rec).then(r=>r.id);
-      const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000));
-      fbId = await Promise.race([fbPromise, timeoutPromise]);
-      if(ST.editingId) ST.editingId=null;
-    }catch(e){console.warn('Firebase sendCL:',e.message);}
-  }
+    // Verifica cerca virtual da loja — registra silenciosamente
+    let foraDoLocal=false;
+    let distanciaLoja=null;
+    const cercasCheck=JSON.parse(localStorage.getItem('cb_cercas')||'{}');
+    const cercaCheck=cercasCheck[ST.store];
+    if(cercaCheck && cercaCheck.lat && cercaCheck.lng && gps){
+      distanciaLoja=Math.round(distanciaGPS(parseFloat(gps.lat),parseFloat(gps.lng),parseFloat(cercaCheck.lat),parseFloat(cercaCheck.lng)));
+      // Raio + margem do erro de GPS (acc): perdoa imprecisão do celular
+      const raio=parseFloat(cercaCheck.raio||500);
+      const margemGps=gps.acc||0; // ex: GPS com ±80m de erro adiciona 80m
+      const limiteEfetivo=raio+margemGps;
+      if(distanciaLoja>limiteEfetivo) foraDoLocal=true;
+    } else if(cercaCheck && cercaCheck.lat && cercaCheck.lng && !gps){
+      foraDoLocal=true;
+    }
 
-  setOv(false);
+    const now=new Date();
+    const rec={
+      store:ST.store,storeName:STORES[ST.store],
+      type:ST.type,typeName:CL[ST.type].name,
+      operator:ST.user.name,userLogin:ST.user.login,
+      done,total,pct:Math.round(done/total*100),
+      totalPhotos:ST.items.reduce((a,i)=>a+i.photos.length,0),
+      itensList:ST.items.map(i=>({text:i.t,done:i.done,photo:i.p,photoCount:i.photos.length,obs:i.obs||'',photos:i.photos||[],count:i.count||false,qty:i.qty||'',min:i.min||0})),
+      timeStr:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+      dateStr:now.toLocaleDateString('pt-BR'),
+      ts:now.toISOString(),
+      gps: gps,
+      foraDoLocal: foraDoLocal,
+      fotoRepetida: ST.items.some(i=>i.fotoRepetida===true),
+      distanciaLoja: distanciaLoja,
+      createdAt:new Date()
+    };
 
-  // Sheets e WhatsApp em background — não bloqueiam a tela
-  const payload={id:fbId||Date.now(),data:rec.dateStr,hora:rec.timeStr,loja:rec.storeName,responsavel:rec.operator,checklist:rec.typeName,itens_concluidos:rec.done,total_itens:rec.total,conformidade_pct:rec.pct,total_fotos:rec.totalPhotos,status:rec.pct===100?'COMPLETO':'PARCIAL',itens_detalhes:rec.itensList.map(i=>`${i.done?'✓':'✗'} ${i.text}${i.photo?` [📸${i.photoCount}]`:''}${i.obs?` — ${i.obs}`:''}`).join('\n')};
-  fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
-  enviarWpp(rec);
+    // Salva localmente como backup IMEDIATO (mesmo se Firebase falhar)
+    const localHist = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+    localHist.unshift({...rec, id: Date.now()});
+    localStorage.setItem('cb_hist', JSON.stringify(localHist.slice(0,100)));
 
-  document.getElementById('okd').innerHTML=`
-    <div class="ok-row"><span>Loja</span><span>${rec.storeName}</span></div>
-    <div class="ok-row"><span>Checklist</span><span>${CL[rec.type].icon} ${rec.typeName}</span></div>
-    <div class="ok-row"><span>Responsável</span><span>${rec.operator}</span></div>
-    <div class="ok-row"><span>Conformidade</span><span>${rec.done}/${rec.total} (${rec.pct}%)</span></div>
-    <div class="ok-row"><span>Fotos</span><span>${rec.totalPhotos}</span></div>
-    <div class="ok-row"><span>Horário</span><span>${rec.timeStr} · ${rec.dateStr}</span></div>
+    // Firebase — com timeout de 10s (não 15)
+    let fbId=null;
+    if(fbReady && db){
+      try{
+        const fbPromise = ST.editingId
+          ? updateDoc(doc(db,'checklists',ST.editingId),rec).then(()=>ST.editingId)
+          : addDoc(collection(db,'checklists'),rec).then(r=>r.id);
+        const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+        fbId = await Promise.race([fbPromise, timeoutPromise]);
+        if(ST.editingId) ST.editingId=null;
+      }catch(e){
+        console.warn('Firebase sendCL:',e.message);
+        // Falhou? Marca para sincronizar depois
+        const pendentes = JSON.parse(localStorage.getItem('cb_pendentes')||'[]');
+        pendentes.push(rec);
+        localStorage.setItem('cb_pendentes', JSON.stringify(pendentes));
+      }
+    }
+
+    // Sheets e WhatsApp em background — NÃO bloqueiam a tela
+    const payload={id:fbId||Date.now(),data:rec.dateStr,hora:rec.timeStr,loja:rec.storeName,responsavel:rec.operator,checklist:rec.typeName,itens_concluidos:rec.done,total_itens:rec.total,conformidade_pct:rec.pct,total_fotos:rec.totalPhotos,status:rec.pct===100?'COMPLETO':'PARCIAL',itens_detalhes:rec.itensList.map(i=>`${i.done?'✓':'✗'} ${i.text}${i.photo?` [📸${i.photoCount}]`:''}${i.obs?` — ${i.obs}`:''}`).join('\n')};
+    fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
+    enviarWpp(rec).catch(e=>console.warn('Wpp:',e.message)); // não bloqueia
+
+    document.getElementById('okd').innerHTML=`
+      <div class="ok-row"><span>Loja</span><span>${rec.storeName}</span></div>
+      <div class="ok-row"><span>Checklist</span><span>${CL[rec.type].icon} ${rec.typeName}</span></div>
+      <div class="ok-row"><span>Responsável</span><span>${rec.operator}</span></div>
+      <div class="ok-row"><span>Conformidade</span><span>${rec.done}/${rec.total} (${rec.pct}%)</span></div>
+      <div class="ok-row"><span>Fotos</span><span>${rec.totalPhotos}</span></div>
+      <div class="ok-row"><span>Horário</span><span>${rec.timeStr} · ${rec.dateStr}</span></div>
     <div class="ok-row"><span>Firebase</span><span style="color:${fbId?'var(--gn)':'var(--or)'}">${fbId?'✅ Salvo na nuvem':'⚠️ Salvo localmente'}</span></div>`;
-  showAllScr('ok');
+    showAllScr('ok');
+  }catch(e){
+    // Erro inesperado: avisa e libera a tela
+    console.error('Erro no sendCL:', e);
+    toast('⚠️ Erro ao salvar: '+(e.message||'desconhecido'));
+  }finally{
+    // GARANTIDO: sempre esconde "Salvando..."
+    setOv(false);
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -2907,12 +2939,13 @@ async function syncZApiFromFirebase(){
 // Versão que aguarda o Firebase ficar pronto (usada antes de enviar checklist)
 async function syncZApiAguardando(){
   let tentativas=0;
-  while((!fbReady || !db) && tentativas<20){
+  // Aguarda no máximo 3s (6 × 500ms) — não trava o app por muito tempo
+  while((!fbReady || !db) && tentativas<6){
     await new Promise(r=>setTimeout(r,500));
     tentativas++;
   }
   if(!fbReady || !db){
-    console.warn('Z-API sync: Firebase não ficou pronto a tempo');
+    console.warn('Z-API sync: Firebase não ficou pronto a tempo (usando cache local)');
     return;
   }
   await syncZApiFromFirebase();
@@ -3465,6 +3498,15 @@ Analise esta foto de estoque e conte os itens visíveis.
 ITEM A CONTAR: ${itemNome}
 UNIDADE: ${unidade}
 
+INSTRUÇÕES IMPORTANTES:
+- Conte APENAS os itens visíveis na foto
+- NÃO chute o que pode estar escondido atrás/embaixo
+- Se houver sobreposição, conte só os que dá pra ver claramente
+- Confiança "alta" = você está certo da contagem
+- Confiança "media" = pode haver +/- 2-3 unidades
+- Confiança "baixa" = foto ruim, sobreposição forte, ou item difícil de contar
+- Se a foto estiver ruim (escura, longe, embaçada, fora de foco), marque confiança BAIXA e explique
+
 Retorne APENAS um JSON válido:
 {
   "quantidade_contada": número inteiro,
@@ -3472,10 +3514,10 @@ Retorne APENAS um JSON válido:
   "observacoes": "o que você viu na foto",
   "itens_visiveis": "descrição do que está visível",
   "alertas": ["alerta 1 se houver"],
-  "recomendacao": "recomendação sobre o estoque"
-}
-
-Se não conseguir contar com precisão, estime e indique confiança baixa.`;
+  "recomendacao": "recomendação sobre o estoque",
+  "qualidade_foto": "boa/regular/ruim",
+  "motivo_baixa_confianca": "se confiança baixa, explique o motivo"
+}`;
 
   try{
     const res = await fetch('https://casadebolos-proxy.vercel.app/api/claude',{
@@ -3483,7 +3525,7 @@ Se não conseguir contar com precisão, estime e indique confiança baixa.`;
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-5',
-        max_tokens:600,
+        max_tokens:700,
         messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:'image/jpeg',data:estFotoBase64}},
           {type:'text',text:prompt}
@@ -3495,7 +3537,11 @@ Se não conseguir contar com precisão, estime e indique confiança baixa.`;
     const clean = text.replace(/```json|```/g,'').trim();
     const resultado = JSON.parse(clean);
 
-    // Salva no histórico
+    // Carimba a foto antes de salvar (data/hora/loja/operador)
+    const fotoDataUrl = 'data:image/jpeg;base64,'+estFotoBase64;
+    const fotoCarimbada = await carimbarFoto(fotoDataUrl, 700, 0.7);
+
+    // Salva no histórico (com foto carimbada)
     const hist = JSON.parse(localStorage.getItem('cb_est_hist')||'[]');
     hist.unshift({
       id:Date.now().toString(),
@@ -3503,7 +3549,7 @@ Se não conseguir contar com precisão, estime e indique confiança baixa.`;
       quantidade:resultado.quantidade_contada,
       confianca:resultado.confianca,
       observacoes:resultado.observacoes,
-      foto:'data:image/jpeg;base64,'+estFotoBase64,
+      foto:fotoCarimbada,
       data:new Date().toLocaleDateString('pt-BR'),
       hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
       operador:ST.user.name
@@ -3512,7 +3558,8 @@ Se não conseguir contar com precisão, estime e indique confiança baixa.`;
 
     // Renderiza resultado
     const confCor = resultado.confianca==='alta'?'var(--gn)':resultado.confianca==='media'?'var(--or)':'var(--rd)';
-    const confLabel = resultado.confianca==='alta'?'✅ Alta':'⚠️ Média';
+    const confLabel = resultado.confianca==='alta'?'✅ Alta':resultado.confianca==='media'?'⚠️ Média':'🔴 Baixa';
+    const confBaixa = resultado.confianca==='baixa';
 
     document.getElementById('est-resultado-conteudo').innerHTML=`
       <div style="text-align:center;padding:12px 0;border-bottom:1px solid #E8D8C8;margin-bottom:12px;">
@@ -3522,27 +3569,36 @@ Se não conseguir contar com precisão, estime e indique confiança baixa.`;
         <div style="font-size:.72rem;font-weight:700;color:${confCor};margin-top:4px;">Confiança: ${confLabel}</div>
       </div>
 
+      ${confBaixa?`<div style="background:#FDEDEC;border:1.5px solid #F5B7B1;border-radius:var(--rs);padding:12px;margin-bottom:12px;">
+        <div style="font-size:.78rem;font-weight:700;color:var(--rd);margin-bottom:4px;">🔴 Confiança baixa — recomendamos tirar outra foto</div>
+        ${resultado.motivo_baixa_confianca?`<div style="font-size:.74rem;color:var(--md);line-height:1.5;margin-bottom:8px;">${resultado.motivo_baixa_confianca}</div>`:''}
+        <div style="font-size:.7rem;color:var(--lt);line-height:1.5;">💡 Dicas: tire de cima · evite sobreposição · use boa luz · enquadre só o item</div>
+      </div>`:''}
+
       <div style="margin-bottom:10px;">
         <div style="font-size:.7rem;font-weight:700;color:var(--md);margin-bottom:4px;">👁️ O que a IA viu:</div>
-        <div style="font-size:.8rem;color:var(--br);line-height:1.5;">${resultado.itens_visiveis}</div>
+        <div style="font-size:.8rem;color:var(--br);line-height:1.5;">${resultado.itens_visiveis||''}</div>
       </div>
 
       <div style="margin-bottom:10px;">
         <div style="font-size:.7rem;font-weight:700;color:var(--md);margin-bottom:4px;">📝 Observações:</div>
-        <div style="font-size:.8rem;color:var(--br);line-height:1.5;">${resultado.observacoes}</div>
+        <div style="font-size:.8rem;color:var(--br);line-height:1.5;">${resultado.observacoes||''}</div>
       </div>
 
       ${resultado.alertas?.length?`<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--rs);padding:8px 10px;margin-bottom:10px;">
         ${resultado.alertas.map(a=>`<div style="font-size:.78rem;color:var(--or);">⚠️ ${a}</div>`).join('')}
       </div>`:''}
 
-      <div style="background:#EAF5EE;border:1px solid #B8EFD0;border-radius:var(--rs);padding:8px 10px;margin-bottom:12px;">
+      ${resultado.recomendacao?`<div style="background:#EAF5EE;border:1px solid #B8EFD0;border-radius:var(--rs);padding:8px 10px;margin-bottom:12px;">
         <div style="font-size:.78rem;color:var(--gn);">💡 ${resultado.recomendacao}</div>
-      </div>
+      </div>`:''}
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button onclick="usarQtdContagem(${resultado.quantidade_contada},'${itemNome}')" class="btn" style="flex:2;font-size:.8rem;">✅ Usar essa quantidade</button>
-        <button onclick="estNovaFoto()" style="flex:1;padding:10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.8rem;cursor:pointer;">📷 Nova foto</button>
+        ${confBaixa
+          ? `<button onclick="estNovaFoto()" class="btn" style="flex:2;font-size:.8rem;">📷 Tirar nova foto</button>
+             <button onclick="usarQtdContagem(${resultado.quantidade_contada},'${itemNome.replace(/'/g,"\\'")}')" style="flex:1;padding:10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.8rem;cursor:pointer;">Usar assim mesmo</button>`
+          : `<button onclick="usarQtdContagem(${resultado.quantidade_contada},'${itemNome.replace(/'/g,"\\'")}')" class="btn" style="flex:2;font-size:.8rem;">✅ Usar essa quantidade</button>
+             <button onclick="estNovaFoto()" style="flex:1;padding:10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.8rem;cursor:pointer;">📷 Nova foto</button>`}
       </div>`;
 
     document.getElementById('est-resultado').style.display='block';
@@ -4374,9 +4430,13 @@ async function baterPonto(){
   const cerca=cercas[ST.user.store];
   if(cerca&&cerca.lat&&cerca.lng){
     const dist=distanciaGPS(gps.lat,gps.lng,parseFloat(cerca.lat),parseFloat(cerca.lng));
-    if(dist>parseFloat(cerca.raio||100)){
+    // Raio + margem do erro de GPS (perdoa imprecisão do celular)
+    const raio=parseFloat(cerca.raio||500);
+    const margemGps=gps.acc||0;
+    const limiteEfetivo=raio+margemGps;
+    if(dist>limiteEfetivo){
       btn.disabled=false; btn.innerHTML='⏰ Bater Ponto';
-      alert(`❌ Você está a ${Math.round(dist)}m da loja.\nO ponto só pode ser batido em até ${cerca.raio}m.`);
+      alert(`❌ Você está a ${Math.round(dist)}m da loja.\nO ponto só pode ser batido em até ${raio}m (margem GPS: ${Math.round(margemGps)}m).`);
       return;
     }
   }
@@ -5675,7 +5735,7 @@ function carregarCerca(){
   const c=cercas[loja]||{};
   document.getElementById('cv-lat').value=c.lat||'';
   document.getElementById('cv-lng').value=c.lng||'';
-  document.getElementById('cv-raio').value=c.raio||150;
+  document.getElementById('cv-raio').value=c.raio||500;
   document.getElementById('cv-endereco').value=c.endereco||'';
   document.getElementById('cv-endereco-result').style.display='none';
 }
