@@ -2449,7 +2449,7 @@ function compressPhoto(dataUrl, maxSize=400, quality=0.5){
 }
 
 // Carimba data/hora/loja/usuário na foto (anti-fraude)
-function carimbarFoto(dataUrl, maxSize=600, quality=0.6){
+function carimbarFoto(dataUrl, maxSize=500, quality=0.5){
   return new Promise(resolve=>{
     const img=new Image();
     img.onload=()=>{
@@ -2619,27 +2619,46 @@ async function sendCL(){
       createdAt:new Date()
     };
 
-    // Salva localmente como backup IMEDIATO (mesmo se Firebase falhar)
-    const localHist = JSON.parse(localStorage.getItem('cb_hist')||'[]');
-    localHist.unshift({...rec, id: Date.now()});
-    localStorage.setItem('cb_hist', JSON.stringify(localHist.slice(0,100)));
+    // Salva localmente como backup IMEDIATO — SEM as fotos (economiza espaço)
+    // As fotos pesadas só vão para o Firebase; o backup local é leve
+    try{
+      const recLeve = {...rec, id: Date.now(),
+        itensList: rec.itensList.map(i=>({text:i.text,done:i.done,photo:i.photo,photoCount:i.photoCount,obs:i.obs,count:i.count,qty:i.qty,min:i.min,photos:[]}))
+      };
+      const localHist = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+      localHist.unshift(recLeve);
+      localStorage.setItem('cb_hist', JSON.stringify(localHist.slice(0,50)));
+    }catch(err){
+      // localStorage cheio: limpa históricos antigos e tenta de novo
+      console.warn('localStorage cheio, limpando:', err.message);
+      try{
+        localStorage.setItem('cb_hist','[]');
+        localStorage.removeItem('cb_fotos_hashes');
+      }catch(e2){}
+    }
 
-    // Firebase — com timeout de 10s (não 15)
+    // Firebase — com timeout de 12s
     let fbId=null;
     if(fbReady && db){
       try{
+        // Protege contra limite de 1MB do Firebase: se o doc for muito grande,
+        // reduz as fotos guardadas (mantém no máximo 1 foto por item)
+        let recParaSalvar = rec;
+        const tamanho = JSON.stringify(rec).length;
+        if(tamanho > 900000){ // perto de 1MB
+          console.warn('Checklist grande ('+Math.round(tamanho/1024)+'KB), reduzindo fotos');
+          recParaSalvar = {...rec,
+            itensList: rec.itensList.map(i=>({...i, photos: (i.photos||[]).slice(0,1)}))
+          };
+        }
         const fbPromise = ST.editingId
-          ? updateDoc(doc(db,'checklists',ST.editingId),rec).then(()=>ST.editingId)
-          : addDoc(collection(db,'checklists'),rec).then(r=>r.id);
-        const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+          ? updateDoc(doc(db,'checklists',ST.editingId),recParaSalvar).then(()=>ST.editingId)
+          : addDoc(collection(db,'checklists'),recParaSalvar).then(r=>r.id);
+        const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),12000));
         fbId = await Promise.race([fbPromise, timeoutPromise]);
         if(ST.editingId) ST.editingId=null;
       }catch(e){
         console.warn('Firebase sendCL:',e.message);
-        // Falhou? Marca para sincronizar depois
-        const pendentes = JSON.parse(localStorage.getItem('cb_pendentes')||'[]');
-        pendentes.push(rec);
-        localStorage.setItem('cb_pendentes', JSON.stringify(pendentes));
       }
     }
 
