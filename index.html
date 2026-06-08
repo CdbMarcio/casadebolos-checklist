@@ -2626,17 +2626,17 @@ async function sendCL(){
   setOv(true,'Salvando...');
 
   try{
-    // Captura GPS — timeout curto (5s) para não travar
+    // Captura GPS de ALTA PRECISÃO (satélite) — timeout de segurança em 11s para não travar
     let gps = null;
     try {
       if(navigator.geolocation){
         gps = await new Promise((res)=>{
-          // Garante que SEMPRE resolve em 5s, com ou sem GPS
-          const timer = setTimeout(()=>res(null), 5000);
+          // Garante que SEMPRE resolve (timeout de segurança um pouco acima do nativo)
+          const timer = setTimeout(()=>res(null), 11000);
           navigator.geolocation.getCurrentPosition(
             p=>{ clearTimeout(timer); res({lat:p.coords.latitude.toFixed(6),lng:p.coords.longitude.toFixed(6),acc:Math.round(p.coords.accuracy)}); },
             ()=>{ clearTimeout(timer); res(null); },
-            {enableHighAccuracy:false,timeout:5000,maximumAge:60000}
+            {enableHighAccuracy:true, timeout:10000, maximumAge:0} // satélite, sem cache, leitura nova
           );
         });
       }
