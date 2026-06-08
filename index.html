@@ -447,6 +447,19 @@ select:focus,input:focus{border-color:var(--gd);}
     <div id="aud-resultado" style="margin-bottom:14px;"></div>
 
     <button class="btn" onclick="iniciarAuditoria()">🔍 Iniciar Auditoria Surpresa</button>
+
+    <!-- RELATÓRIOS DE INTELIGÊNCIA -->
+    <div style="margin-top:20px;border-top:1px solid #E8D8C8;padding-top:16px;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📊 Relatórios de Gestão</div>
+
+      <button class="btn" style="background:#5B8FF9;color:white;margin-bottom:8px;" onclick="gerarRelatorioMelhorias()">🤖 Relatório de Melhorias (IA)</button>
+      <p style="font-size:.68rem;color:var(--lt);margin:0 0 12px;line-height:1.4;">Cruza as auditorias com os checklists das lojas e gera um plano de ação imediato.</p>
+
+      <button class="btn" style="background:#A0303C;color:white;" onclick="gerarRelatorioSemanal()">🚨 Pontos Críticos da Semana</button>
+      <p style="font-size:.68rem;color:var(--lt);margin:6px 0 0;line-height:1.4;">Resumo rápido dos problemas recorrentes nas 5 lojas nos últimos 7 dias.</p>
+    </div>
+
+    <div id="aud-relatorio" style="margin-top:14px;"></div>
   </div>
   </div>
 
@@ -2253,6 +2266,50 @@ async function doLogin(){
   buildStoreSelect(user);
   showPage('pg-app');
   goTab(ehPonto?'ponto':ehAuditor?'auditoria':'sel');
+
+  // Relatório semanal automático (só admin, 1x por semana)
+  if(user.role==='admin'){
+    setTimeout(()=>verificarRelatorioSemanal(), 8000);
+  }
+}
+
+// Verifica se deve disparar o relatório semanal automático
+async function verificarRelatorioSemanal(){
+  const ultimo = localStorage.getItem('cb_ultimo_rel_semanal');
+  const agora = Date.now();
+  const umaSemavaMs = 7*24*60*60*1000;
+
+  if(ultimo && (agora - parseInt(ultimo)) < umaSemavaMs){
+    return; // ainda não passou 1 semana
+  }
+
+  // Garante que tem dados carregados
+  if(!historyCache.length) await loadHistSilent();
+  const dados = coletarDadosGestao(7);
+  if(dados.totalChecklists===0 && dados.totalAuditorias===0) return;
+
+  // Monta o texto (mesma lógica do relatório semanal)
+  let textoWpp = `🚨 *RELATÓRIO SEMANAL AUTOMÁTICO*\nCasa de Bolos · últimos 7 dias\n━━━━━━━━━━━━━━━\n\n`;
+  const lojas = Object.values(dados.porLoja).sort((a,b)=>(a.mediaChecklist??100)-(b.mediaChecklist??100));
+  lojas.forEach(l=>{
+    if(l.totalChecklists===0 && l.totalAuditorias===0){ textoWpp += `⚪ ${l.nome}: sem atividade\n\n`; return; }
+    textoWpp += `🏪 *${l.nome}* — ${l.mediaChecklist??'N/A'}%\n`;
+    if(l.foraDoLocal>0) textoWpp += `   ⚠️ ${l.foraDoLocal} fora do local\n`;
+    const topNaoFeitos = Object.entries(l.itensNaoFeitos).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    topNaoFeitos.forEach(([t,n])=>{ textoWpp += `   ❌ ${t} (${n}x)\n`; });
+    if(l.divergencias.length) textoWpp += `   🔴 ${l.divergencias.length} divergência(s)\n`;
+    textoWpp += `\n`;
+  });
+  textoWpp += `_Relatório automático semanal · Gestão_`;
+
+  const config=getZApiConfig();
+  if(config.ativo!==false && config.destinatarios && config.destinatarios.length>0){
+    try{
+      await enviarZApi(textoWpp, null, true); // só gestores
+      localStorage.setItem('cb_ultimo_rel_semanal', agora.toString());
+      console.log('✅ Relatório semanal automático enviado');
+    }catch(e){ console.warn('Erro relatório semanal:', e.message); }
+  }
 }
 
 function doLogout(){ST.user=null;showAllScr('sel');showPage('pg-login');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';}
@@ -6242,6 +6299,234 @@ async function salvarAuditoria(loja){
 }
 
 // ═══════════════════════════════════════════════
+//  RELATÓRIOS DE GESTÃO (auditoria + checklists)
+// ═══════════════════════════════════════════════
+
+// Coleta e cruza os dados das auditorias e checklists dos últimos N dias
+function coletarDadosGestao(dias=7){
+  const limite = new Date();
+  limite.setDate(limite.getDate()-dias);
+
+  // Checklists do período
+  const checklists = (historyCache||[]).filter(r=>{
+    const d = r.ts ? new Date(r.ts) : null;
+    return d && d>=limite;
+  });
+
+  // Auditorias do período
+  const audits = JSON.parse(localStorage.getItem('cb_audits')||'[]').filter(a=>{
+    if(!a.data) return false;
+    const p = a.data.split('/');
+    const d = new Date(`${p[2]}-${p[1]}-${p[0]}`);
+    return d>=limite;
+  });
+
+  // Agrupa por loja
+  const porLoja = {};
+  Object.keys(STORES).forEach(loja=>{
+    if(loja==='todas') return;
+    const clLoja = checklists.filter(r=>r.store===loja);
+    const audLoja = audits.filter(a=>a.loja===loja);
+
+    // Itens não conformes nos checklists
+    const itensNaoFeitos = {};
+    clLoja.forEach(r=>{
+      (r.itensList||[]).filter(i=>!i.done).forEach(i=>{
+        itensNaoFeitos[i.text] = (itensNaoFeitos[i.text]||0)+1;
+      });
+    });
+
+    // Divergências nas auditorias (loja disse feito, auditor achou não)
+    const divergencias = [];
+    audLoja.forEach(a=>{
+      (a.itens||[]).filter(i=>i.lojaReportou && !i.auditorAchou).forEach(i=>{
+        divergencias.push(i.texto);
+      });
+    });
+
+    // Médias
+    const mediaChecklist = clLoja.length ? Math.round(clLoja.reduce((s,r)=>s+r.pct,0)/clLoja.length) : null;
+    const mediaAuditoria = audLoja.length ? Math.round(audLoja.reduce((s,a)=>s+a.nota,0)/audLoja.length) : null;
+    const foraDoLocal = clLoja.filter(r=>r.foraDoLocal).length;
+
+    porLoja[loja] = {
+      nome: STORES[loja],
+      totalChecklists: clLoja.length,
+      totalAuditorias: audLoja.length,
+      mediaChecklist, mediaAuditoria,
+      itensNaoFeitos,
+      divergencias,
+      foraDoLocal
+    };
+  });
+
+  return {porLoja, totalChecklists:checklists.length, totalAuditorias:audits.length, dias};
+}
+
+// RELATÓRIO DE MELHORIAS (com IA)
+async function gerarRelatorioMelhorias(){
+  const el = document.getElementById('aud-relatorio');
+  el.innerHTML = '<div style="padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">🤖 Analisando dados das lojas com IA...</div>';
+
+  if(!historyCache.length) await loadHistSilent();
+  const dados = coletarDadosGestao(7);
+
+  if(dados.totalChecklists===0 && dados.totalAuditorias===0){
+    el.innerHTML = '<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--or);">Não há checklists nem auditorias nos últimos 7 dias para analisar.</div>';
+    return;
+  }
+
+  // Monta resumo dos dados para a IA
+  let resumoDados = `Dados operacionais dos últimos 7 dias da rede Casa de Bolos (5 lojas de confeitaria):\n\n`;
+  Object.values(dados.porLoja).forEach(l=>{
+    resumoDados += `LOJA: ${l.nome}\n`;
+    resumoDados += `- Checklists feitos: ${l.totalChecklists} (média ${l.mediaChecklist??'N/A'}%)\n`;
+    resumoDados += `- Auditorias: ${l.totalAuditorias} (média ${l.mediaAuditoria??'N/A'}/100)\n`;
+    if(l.foraDoLocal>0) resumoDados += `- ⚠️ ${l.foraDoLocal} checklists feitos FORA do local\n`;
+    const topNaoFeitos = Object.entries(l.itensNaoFeitos).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if(topNaoFeitos.length) resumoDados += `- Itens mais deixados de fazer: ${topNaoFeitos.map(([t,n])=>`"${t}" (${n}x)`).join(', ')}\n`;
+    if(l.divergencias.length) resumoDados += `- Divergências em auditoria (disse feito mas não estava): ${l.divergencias.slice(0,5).join(', ')}\n`;
+    resumoDados += `\n`;
+  });
+
+  const prompt = `Você é um consultor de operações de food service experiente.
+
+Analise estes dados operacionais e gere um RELATÓRIO DE MELHORIAS PARA ATUAÇÃO IMEDIATA.
+
+${resumoDados}
+
+Gere um relatório prático e direto em português, com:
+1. DIAGNÓSTICO GERAL (2-3 frases sobre a situação da rede)
+2. PONTOS CRÍTICos (os 3-5 problemas mais urgentes, por loja quando relevante)
+3. AÇÕES IMEDIATAS (lista de 4-6 ações concretas que o gestor deve tomar JÁ)
+4. LOJA QUE PRECISA DE MAIS ATENÇÃO (qual e por quê)
+
+Seja específico, use os dados reais. Foco em ação, não em teoria. Máximo 400 palavras.
+Formate com emojis e seções claras. NÃO use markdown com asteriscos, use texto simples com quebras de linha.`;
+
+  try{
+    const res = await fetch('https://casadebolos-proxy.vercel.app/api/claude',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:1200,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const texto = data.content?.[0]?.text||'Não foi possível gerar o relatório.';
+
+    // Guarda para enviar no WhatsApp
+    window._ultimoRelatorioMelhorias = texto;
+
+    el.innerHTML = `
+      <div style="background:white;border:1px solid #E8D8C8;border-radius:var(--r);padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:.85rem;font-weight:700;color:var(--br);">🤖 Relatório de Melhorias</div>
+          <span style="font-size:.65rem;color:var(--lt);">Últimos 7 dias</span>
+        </div>
+        <div style="font-size:.8rem;color:var(--br);line-height:1.6;white-space:pre-wrap;">${texto}</div>
+        <button class="btn" style="margin-top:14px;background:#25D366;color:white;" onclick="enviarRelatorioWpp('melhorias')">📲 Enviar no WhatsApp da gestão</button>
+      </div>`;
+    el.scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    el.innerHTML = `<div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Erro ao gerar relatório: ${e.message}. Verifique a conexão.</div>`;
+  }
+}
+
+// RELATÓRIO SEMANAL DE PONTOS CRÍTICOS (cálculo, sem IA)
+function gerarRelatorioSemanal(){
+  const el = document.getElementById('aud-relatorio');
+
+  if(!historyCache.length){
+    loadHistSilent().then(()=>gerarRelatorioSemanal());
+    el.innerHTML='<div style="padding:14px;text-align:center;font-size:.82rem;color:var(--lt);">Carregando...</div>';
+    return;
+  }
+
+  const dados = coletarDadosGestao(7);
+
+  let html = `<div style="background:white;border:1px solid #E8D8C8;border-radius:var(--r);padding:16px;">
+    <div style="font-size:.85rem;font-weight:700;color:var(--br);margin-bottom:4px;">🚨 Pontos Críticos da Semana</div>
+    <div style="font-size:.65rem;color:var(--lt);margin-bottom:12px;">Últimos 7 dias · ${dados.totalChecklists} checklists · ${dados.totalAuditorias} auditorias</div>`;
+
+  // Ordena lojas por pior desempenho
+  const lojas = Object.values(dados.porLoja).sort((a,b)=>(a.mediaChecklist??100)-(b.mediaChecklist??100));
+
+  let textoWpp = `🚨 *PONTOS CRÍTICOS DA SEMANA*\nCasa de Bolos · últimos 7 dias\n━━━━━━━━━━━━━━━\n\n`;
+
+  lojas.forEach(l=>{
+    if(l.totalChecklists===0 && l.totalAuditorias===0){
+      html += `<div style="border-top:1px solid #F0E8DC;padding:10px 0;">
+        <div style="font-size:.82rem;font-weight:700;color:var(--lt);">${l.nome}</div>
+        <div style="font-size:.74rem;color:var(--lt);">Sem atividade registrada</div>
+      </div>`;
+      textoWpp += `⚪ ${l.nome}: sem atividade\n\n`;
+      return;
+    }
+    const topNaoFeitos = Object.entries(l.itensNaoFeitos).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const corMedia = (l.mediaChecklist??100)>=80?'var(--gn)':(l.mediaChecklist??100)>=60?'var(--or)':'var(--rd)';
+
+    html += `<div style="border-top:1px solid #F0E8DC;padding:10px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:.82rem;font-weight:700;color:var(--br);">${l.nome}</div>
+        <div style="font-size:.76rem;font-weight:700;color:${corMedia};">${l.mediaChecklist??'N/A'}%</div>
+      </div>
+      <div style="font-size:.7rem;color:var(--lt);margin:2px 0;">${l.totalChecklists} checklists · ${l.totalAuditorias} auditorias${l.foraDoLocal>0?` · ⚠️ ${l.foraDoLocal} fora do local`:''}</div>`;
+
+    textoWpp += `🏪 *${l.nome}* — ${l.mediaChecklist??'N/A'}%\n`;
+    if(l.foraDoLocal>0) textoWpp += `   ⚠️ ${l.foraDoLocal} checklist(s) fora do local\n`;
+
+    if(topNaoFeitos.length){
+      html += `<div style="font-size:.72rem;color:var(--rd);margin-top:4px;">❌ Mais deixados de fazer:</div>`;
+      topNaoFeitos.forEach(([t,n])=>{
+        html += `<div style="font-size:.72rem;color:var(--md);margin-left:8px;">• ${t} (${n}x)</div>`;
+        textoWpp += `   ❌ ${t} (${n}x)\n`;
+      });
+    }
+    if(l.divergencias.length){
+      html += `<div style="font-size:.72rem;color:var(--or);margin-top:4px;">🔴 ${l.divergencias.length} divergência(s) em auditoria</div>`;
+      textoWpp += `   🔴 ${l.divergencias.length} divergência(s) em auditoria\n`;
+    }
+    html += `</div>`;
+    textoWpp += `\n`;
+  });
+
+  html += `<button class="btn" style="margin-top:14px;background:#25D366;color:white;" onclick="enviarRelatorioWpp('semanal')">📲 Enviar no WhatsApp da gestão</button>
+  </div>`;
+
+  window._ultimoRelatorioSemanal = textoWpp + '_Casa de Bolos - Gestão_';
+  el.innerHTML = html;
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+// Envia o relatório no WhatsApp (só gestores)
+async function enviarRelatorioWpp(tipo){
+  const texto = tipo==='melhorias' ? window._ultimoRelatorioMelhorias : window._ultimoRelatorioSemanal;
+  if(!texto){toast('Gere o relatório primeiro!');return;}
+
+  let msg;
+  if(tipo==='melhorias'){
+    msg = '🤖 *RELATÓRIO DE MELHORIAS*\nCasa de Bolos\n━━━━━━━━━━━━━━━\n\n'+texto+'\n\n_Gerado por IA · Gestão_';
+  } else {
+    msg = texto;
+  }
+
+  const config=getZApiConfig();
+  if(config.ativo!==false && config.destinatarios && config.destinatarios.length>0){
+    try{
+      await enviarZApi(msg, null, true); // true = só gestores
+      toast('✅ Relatório enviado no WhatsApp!');
+    }catch(e){
+      toast('⚠️ Erro ao enviar. Verifique a conexão Z-API.');
+    }
+  } else {
+    toast('⚠️ Configure o Z-API primeiro.');
+  }
+}
+
+// ═══════════════════════════════════════════════
 //  ALERTAS E EMAIL
 // ═══════════════════════════════════════════════
 function salvarAlertas(){
@@ -6808,6 +7093,9 @@ window.copiarRelatorio=copiarRelatorio;
 window.exportarPDF=exportarPDF;
 window.exportarExcel=exportarExcel;
 window.iniciarAuditoria=iniciarAuditoria;
+window.gerarRelatorioMelhorias=gerarRelatorioMelhorias;
+window.gerarRelatorioSemanal=gerarRelatorioSemanal;
+window.enviarRelatorioWpp=enviarRelatorioWpp;
 window.marcarAudItem=marcarAudItem;
 window.fotoAudItem=fotoAudItem;
 window.removerFotoAudItem=removerFotoAudItem;
