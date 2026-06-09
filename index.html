@@ -11,41 +11,98 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --cr:#FDF6EC;--wm:#FEFCF8;--br:#2C1810;--md:#6B3D2E;--lt:#C17F5A;
-  --gd:#D4A843;--gn:#27AE60;--gnb:#EAFAF1;--rd:#C0392B;--or:#E67E22;
+  /* TEMA ESCURO FINTECH — variáveis remapeadas */
+  --cr:#0E1116;    /* fundo principal (era creme) */
+  --wm:#161B22;    /* superfícies/cards (era branco quente) */
+  --br:#E6EAF0;    /* texto principal (era marrom escuro) */
+  --md:#A9B2C0;    /* texto secundário (era marrom médio) */
+  --lt:#8B95A5;    /* texto terciário (era marrom claro) */
+  --gd:#E0B450;    /* dourado (mantido, levemente ajustado) */
+  --gn:#22C55E;--gnb:#16271C;--rd:#EF4444;--or:#F59E0B;
+  /* tons de apoio do tema escuro */
+  --bg2:#161B22;--bg3:#1F262F;--line:#262E38;--ac:#3B82F6;
   --r:14px;--rs:10px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{background:var(--cr);font-family:'DM Sans',sans-serif;color:var(--br);min-height:100vh;}
-.page{display:none;min-height:100vh;}
+/* Atmosfera sutil de fundo */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(1200px 600px at 50% -10%, rgba(59,130,246,.06), transparent 60%);pointer-events:none;z-index:0;}
+.page{display:none;min-height:100vh;position:relative;z-index:1;}
+/* Inputs e selects no tema escuro */
+input,select,textarea{background:var(--bg3)!important;color:var(--br)!important;border-color:var(--line)!important;}
+input::placeholder,textarea::placeholder{color:#5A6472!important;}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)!important;outline:none;}
+select option{background:var(--bg2);color:var(--br);}
 .page.on{display:block;animation:fu .3s ease;}
 @keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.hdr{background:var(--br);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+.hdr{background:var(--wm);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3);}
 .logo{font-family:'DM Serif Display',serif;color:var(--gd);font-size:1.15rem;}
-.logo small{color:rgba(255,255,255,.4);font-size:.6rem;display:block;letter-spacing:1.5px;}
+.logo small{color:var(--lt);font-size:.6rem;display:block;letter-spacing:1.5px;}
 .hdr-right{display:flex;align-items:center;gap:10px;}
-.hdr-user{color:rgba(255,255,255,.7);font-size:.75rem;}
-.hdr-logout{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);padding:5px 10px;border-radius:20px;font-size:.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
-.tabs{display:flex;background:var(--wm);border-bottom:2px solid #E8D8C8;position:sticky;top:52px;z-index:99;}
-.tab{flex:1;padding:10px 4px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:.65rem;font-weight:600;color:var(--lt);cursor:pointer;text-transform:uppercase;letter-spacing:.5px;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;}
-.tab.on{color:var(--br);border-bottom-color:var(--gd);}
+.hdr-user{color:var(--md);font-size:.75rem;}
+.hdr-logout{background:var(--bg3);border:1px solid var(--line);color:var(--md);padding:5px 10px;border-radius:20px;font-size:.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+/* Botão hambúrguer (menu) */
+.menu-btn{display:none;background:var(--bg3);border:1px solid var(--line);color:var(--br);width:40px;height:40px;border-radius:10px;font-size:1.2rem;cursor:pointer;align-items:center;justify-content:center;}
+
+/* ===== SIDEBAR (menu lateral retrátil) ===== */
+.tabs{
+  position:fixed;top:0;left:0;height:100vh;width:58px;
+  background:var(--wm);border-right:1px solid var(--line);
+  z-index:90;display:flex;flex-direction:column;
+  overflow-x:hidden;overflow-y:auto;padding-top:14px;
+  transition:width .28s cubic-bezier(.4,0,.2,1);scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none;}
+.tabs:hover{width:230px;box-shadow:8px 0 40px rgba(0,0,0,.5);}
+.tab{
+  flex:0 0 auto;
+  padding:14px 0;border:none;background:transparent;
+  font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;
+  color:var(--md);cursor:pointer;white-space:nowrap;text-align:left;
+  border-left:3px solid transparent;transition:all .15s;
+  text-transform:none;letter-spacing:0;width:230px;
+  display:flex;align-items:center;gap:13px;
+}
+.tab-ic{flex:0 0 auto;width:36px;text-align:center;font-size:1.15rem;}
+.tab-tx{opacity:0;transition:opacity .2s;}
+.tabs:hover .tab-tx{opacity:1;}
+.tab:hover{background:var(--bg3);color:var(--br);}
+.tab.on{color:var(--gd);border-left-color:var(--gd);background:rgba(224,180,80,.08);}
+
+/* Conteúdo deslocado para a direita da sidebar */
+.app-content{margin-left:58px;transition:margin-left .28s;}
+
+/* Overlay para mobile */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:80;}
+.sb-overlay.show{display:block;}
+
+/* ===== MOBILE ===== */
+@media(max-width:768px){
+  .menu-btn{display:flex;}
+  .tabs{width:230px;transform:translateX(-100%);transition:transform .28s;z-index:200;}
+  .tabs.open{transform:translateX(0);box-shadow:8px 0 40px rgba(0,0,0,.6);}
+  .tabs:hover{width:230px;}
+  .tab-tx{opacity:1;}
+  .app-content{margin-left:0;}
+  .sb-overlay{z-index:150;}
+}
 
 /* LOGIN */
-#pg-login{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;background:var(--br);}
+#pg-login{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;background:var(--cr);min-height:100vh;width:100%;}
 .login-card{background:var(--wm);border-radius:20px;padding:28px 24px;width:100%;max-width:380px;}
 .login-title{font-family:'DM Serif Display',serif;font-size:1.3rem;margin-bottom:20px;}
 .lf-group{margin-bottom:14px;}
 .lf-label{font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--md);margin-bottom:6px;display:block;}
-.lf-input{width:100%;padding:12px 14px;border-radius:var(--rs);border:2px solid #E8D8C8;background:#FFF;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--br);outline:none;transition:border .2s;}
+.lf-input{width:100%;padding:12px 14px;border-radius:var(--rs);border:2px solid var(--line);background:var(--bg2);font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--br);outline:none;transition:border .2s;}
 .lf-input:focus{border-color:var(--gd);}
 .login-err{color:var(--rd);font-size:.78rem;margin-bottom:12px;display:none;}
 .login-err.show{display:block;}
 
 /* BUTTONS */
-.btn{display:block;width:100%;background:var(--br);color:var(--gd);border:none;border-radius:var(--rs);padding:14px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn{display:block;width:100%;background:var(--gd);color:#1A1206;border:none;border-radius:var(--rs);padding:14px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:700;cursor:pointer;transition:all .2s;}
 .btn:hover{background:var(--md);}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
-.btn-outline{background:transparent;color:var(--md);border:2px solid #E8D8C8;border-radius:var(--rs);padding:11px 16px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;}
+.btn-outline{background:transparent;color:var(--md);border:2px solid var(--line);border-radius:var(--rs);padding:11px 16px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;}
 
 /* BODY */
 .body-wrap{padding:20px 16px 100px;max-width:540px;margin:0 auto;}
@@ -53,7 +110,7 @@ body{background:var(--cr);font-family:'DM Sans',sans-serif;color:var(--br);min-h
 .pg-sub{color:var(--lt);font-size:.83rem;margin-bottom:20px;}
 .fg{margin-bottom:14px;}
 .fl{font-size:.68rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--md);margin-bottom:6px;display:block;}
-select,input[type=text],input[type=password],input[type=tel]{width:100%;padding:11px 13px;border-radius:var(--rs);border:2px solid #E8D8C8;background:var(--wm);font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--br);outline:none;transition:border .2s;-webkit-appearance:none;}
+select,input[type=text],input[type=password],input[type=tel]{width:100%;padding:11px 13px;border-radius:var(--rs);border:2px solid var(--line);background:var(--wm);font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--br);outline:none;transition:border .2s;-webkit-appearance:none;}
 select:focus,input:focus{border-color:var(--gd);}
 .sw{position:relative;}
 .sw::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--lt);pointer-events:none;}
@@ -61,17 +118,17 @@ select:focus,input:focus{border-color:var(--gd);}
 /* CARDS */
 .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;}
 @media(max-width:360px){.cards{grid-template-columns:1fr 1fr;}}
-.card{border:2px solid #E8D8C8;border-radius:var(--rs);padding:11px 8px;cursor:pointer;background:var(--wm);transition:all .2s;text-align:center;}
+.card{border:2px solid var(--line);border-radius:var(--rs);padding:11px 8px;cursor:pointer;background:var(--wm);transition:all .2s;text-align:center;}
 .card:hover{border-color:var(--gd);}
 .card.sel{border-color:var(--gd);background:linear-gradient(135deg,#FFF9E6,#FEF3D0);box-shadow:0 0 0 3px rgba(212,168,67,.15);}
 .cbar{height:4px;border-radius:99px;margin-bottom:7px;}
 .cicon{font-size:1.4rem;margin-bottom:3px;}
 .cname{font-size:.68rem;font-weight:600;color:var(--br);line-height:1.3;}
 .ccnt{font-size:.58rem;color:var(--lt);margin-top:2px;}
-.cat-lbl{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--md);margin:14px 0 7px;padding:3px 9px;background:#F0E4D4;border-radius:20px;display:inline-block;}
+.cat-lbl{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--md);margin:14px 0 7px;padding:3px 9px;background:var(--bg3);border-radius:20px;display:inline-block;}
 
 /* STATUS BAR */
-.sheets-bar{display:flex;align-items:center;gap:8px;background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--rs);padding:9px 13px;margin-bottom:14px;font-size:.75rem;}
+.sheets-bar{display:flex;align-items:center;gap:8px;background:var(--wm);border:1px solid var(--line);border-radius:var(--rs);padding:9px 13px;margin-bottom:14px;font-size:.75rem;}
 .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .dg{background:var(--gn);}.dr{background:var(--rd);}.do{background:var(--or);}
 .stext{flex:1;color:var(--md);}
@@ -82,9 +139,9 @@ select:focus,input:focus{border-color:var(--gd);}
 .cl-back{border:none;background:rgba(255,255,255,.15);color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .cl-name{font-family:'DM Serif Display',serif;color:var(--gd);font-size:1.1rem;}
 .cl-sub{color:rgba(255,255,255,.5);font-size:.7rem;margin-top:1px;}
-.prog-wrap{background:var(--wm);padding:11px 18px;border-bottom:1px solid #E8D8C8;}
+.prog-wrap{background:var(--wm);padding:11px 18px;border-bottom:1px solid var(--line);}
 .prog-row{display:flex;justify-content:space-between;font-size:.68rem;font-weight:600;color:var(--md);margin-bottom:5px;text-transform:uppercase;letter-spacing:.7px;}
-.prog-track{height:5px;background:#E8D8C8;border-radius:99px;overflow:hidden;}
+.prog-track{height:5px;background:var(--line);border-radius:99px;overflow:hidden;}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--lt),var(--gd));border-radius:99px;transition:width .4s ease;}
 .ibody{padding:14px 13px 120px;}
 .stitle{font-family:'DM Serif Display',serif;font-size:.95rem;color:var(--md);margin:18px 0 9px;padding-left:9px;border-left:3px solid var(--gd);}
@@ -95,21 +152,21 @@ select:focus,input:focus{border-color:var(--gd);}
 .item.done .ichk{background:var(--gn);border-color:var(--gn);color:white;}
 .itxt{flex:1;font-size:.83rem;line-height:1.4;color:var(--br);}
 .itxt.alrt{font-weight:700;color:var(--rd);}
-.pbadge{font-size:.6rem;background:#FFF3E0;color:var(--lt);border:1px solid #F0D8C0;border-radius:20px;padding:2px 6px;font-weight:600;flex-shrink:0;margin-top:2px;}
-.item.done .pbadge{background:var(--gnb);color:var(--gn);border-color:#B8EFD0;}
-.item-extras{border-top:1px dashed #DDD;padding:10px 12px;background:#FAFAF8;display:none;}
+.pbadge{font-size:.6rem;background:var(--bg2)3E0;color:var(--lt);border:1px solid #F0D8C0;border-radius:20px;padding:2px 6px;font-weight:600;flex-shrink:0;margin-top:2px;}
+.item.done .pbadge{background:var(--gnb);color:var(--gn);border-color:rgba(34,197,94,.35);}
+.item-extras{border-top:1px dashed #DDD;padding:10px 12px;background:var(--bg3);display:none;}
 .item-extras.show{display:block;}
 .ex-lbl{font-size:.65rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
-.obs-input{width:100%;padding:9px 11px;border-radius:8px;border:2px solid #E8D8C8;background:#FFF;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--br);outline:none;resize:none;transition:border .2s;min-height:60px;}
+.obs-input{width:100%;padding:9px 11px;border-radius:8px;border:2px solid var(--line);background:var(--bg2);font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--br);outline:none;resize:none;transition:border .2s;min-height:60px;}
 .obs-input:focus{border-color:var(--gd);}
-.count-row{display:flex;align-items:center;gap:10px;margin-top:8px;background:#FFF9F0;border-radius:8px;padding:10px 12px;border:1px solid #F0D8A0;}
+.count-row{display:flex;align-items:center;gap:10px;margin-top:8px;background:var(--bg2)9F0;border-radius:8px;padding:10px 12px;border:1px solid #F0D8A0;}
 .count-label{font-size:.78rem;color:var(--md);flex:1;font-weight:500;}
-.count-input{width:80px;padding:7px 10px;border-radius:8px;border:2px solid #E8D8C8;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;color:var(--br);text-align:center;outline:none;}
+.count-input{width:80px;padding:7px 10px;border-radius:8px;border:2px solid var(--line);font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;color:var(--br);text-align:center;outline:none;}
 .count-input:focus{border-color:var(--gd);}
 .count-unit{font-size:.72rem;color:var(--lt);font-weight:600;}
 .count-alert{font-size:.68rem;color:var(--rd);font-weight:700;margin-top:4px;display:none;}
 .count-alert.show{display:block;}
-.uarea{border:2px dashed var(--gd);border-radius:var(--rs);padding:13px;text-align:center;cursor:pointer;background:#FFFDF5;position:relative;margin-top:10px;}
+.uarea{border:2px dashed var(--gd);border-radius:var(--rs);padding:13px;text-align:center;cursor:pointer;background:var(--bg2)DF5;position:relative;margin-top:10px;}
 .uarea input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .uicon{font-size:1.3rem;margin-bottom:2px;}
 .utxt{font-size:.7rem;color:var(--md);}
@@ -117,7 +174,7 @@ select:focus,input:focus{border-color:var(--gd);}
 .thumb{aspect-ratio:1;border-radius:7px;overflow:hidden;position:relative;border:2px solid var(--gn);}
 .thumb img{width:100%;height:100%;object-fit:cover;}
 .thrm{position:absolute;top:2px;right:2px;background:rgba(192,57,43,.85);color:white;border:none;border-radius:50%;width:17px;height:17px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.botbar{position:fixed;bottom:0;left:0;right:0;background:var(--wm);border-top:1px solid #E8D8C8;padding:11px 15px;box-shadow:0 -4px 16px rgba(44,24,16,.1);display:flex;gap:8px;max-width:540px;margin:0 auto;z-index:150;}
+.botbar{position:fixed;bottom:0;left:0;right:0;background:var(--wm);border-top:1px solid var(--line);padding:11px 15px;box-shadow:0 -4px 16px rgba(44,24,16,.1);display:flex;gap:8px;max-width:540px;margin:0 auto;z-index:150;}
 
 /* SUCCESS */
 .ok-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:36px 20px;}
@@ -125,17 +182,17 @@ select:focus,input:focus{border-color:var(--gd);}
 @keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 .ok-title{font-family:'DM Serif Display',serif;font-size:1.7rem;margin-bottom:7px;}
 .ok-sub{color:var(--lt);font-size:.83rem;line-height:1.5;max-width:260px;margin-bottom:14px;}
-.ok-details{background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:13px 17px;margin:8px 0;text-align:left;width:100%;max-width:360px;}
-.ok-row{display:flex;justify-content:space-between;font-size:.8rem;padding:4px 0;border-bottom:1px solid #F0E8DC;}
+.ok-details{background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:13px 17px;margin:8px 0;text-align:left;width:100%;max-width:360px;}
+.ok-row{display:flex;justify-content:space-between;font-size:.8rem;padding:4px 0;border-bottom:1px solid var(--line);}
 .ok-row:last-child{border:none;}
 .ok-row span:first-child{color:var(--md);}
 .ok-row span:last-child{font-weight:600;}
 
 /* HISTÓRICO */
 .hist-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
-.hf{padding:6px 12px;border-radius:20px;border:1.5px solid #E8D8C8;background:var(--wm);font-size:.7rem;font-weight:600;cursor:pointer;color:var(--md);font-family:'DM Sans',sans-serif;}
-.hf.on{background:var(--br);color:var(--gd);border-color:var(--br);}
-.hist-item{background:var(--wm);border-radius:var(--rs);border:1px solid #E8D8C8;margin-bottom:8px;overflow:hidden;}
+.hf{padding:6px 12px;border-radius:20px;border:1.5px solid var(--line);background:var(--wm);font-size:.7rem;font-weight:600;cursor:pointer;color:var(--md);font-family:'DM Sans',sans-serif;}
+.hf.on{background:var(--wm);color:var(--gd);border-color:var(--br);}
+.hist-item{background:var(--wm);border-radius:var(--rs);border:1px solid var(--line);margin-bottom:8px;overflow:hidden;}
 .hi-top{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;}
 .hi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .hi-info{flex:1;}
@@ -145,7 +202,7 @@ select:focus,input:focus{border-color:var(--gd);}
 .hi-pct.g{color:var(--gn);}.hi-pct.y{color:var(--or);}.hi-pct.r{color:var(--rd);}
 .hi-chevron{color:var(--lt);font-size:.8rem;transition:transform .2s;}
 .hi-chevron.open{transform:rotate(180deg);}
-.hi-detail{display:none;border-top:1px solid #F0E8DC;padding:12px 13px;background:#FAFAF8;}
+.hi-detail{display:none;border-top:1px solid var(--line);padding:12px 13px;background:var(--bg3);}
 .hi-detail.show{display:block;}
 .hid-row{display:flex;gap:8px;padding:5px 0;font-size:.78rem;border-bottom:1px solid #F5EFE8;align-items:flex-start;}
 .hid-row:last-child{border:none;}
@@ -158,22 +215,22 @@ select:focus,input:focus{border-color:var(--gd);}
 .loading-hist{text-align:center;color:var(--lt);font-size:.83rem;padding:32px 16px;}
 
 /* ADMIN */
-.admin-section{background:var(--wm);border-radius:var(--r);border:1px solid #E8D8C8;padding:18px;margin-bottom:16px;}
+.admin-section{background:var(--wm);border-radius:var(--r);border:1px solid var(--line);padding:18px;margin-bottom:16px;}
 .admin-section-title{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:14px;}
-.user-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F0E8DC;}
+.user-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
 .user-row:last-child{border:none;}
 .user-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:white;flex-shrink:0;}
 .user-info{flex:1;}
 .user-name{font-size:.85rem;font-weight:600;}
 .user-meta{font-size:.7rem;color:var(--lt);}
 .user-role{font-size:.65rem;padding:2px 8px;border-radius:20px;font-weight:700;}
-.role-admin{background:#FFF9E6;color:var(--gd);border:1px solid #F0D8A0;}
-.role-user{background:var(--gnb);color:var(--gn);border:1px solid #B8EFD0;}
+.role-admin{background:var(--bg2)9E6;color:var(--gd);border:1px solid #F0D8A0;}
+.role-user{background:var(--gnb);color:var(--gn);border:1px solid rgba(34,197,94,.35);}
 .user-del{background:none;border:none;color:var(--rd);cursor:pointer;font-size:.85rem;padding:4px;}
-.add-user-form{border-top:1px solid #E8D8C8;padding-top:14px;margin-top:4px;}
+.add-user-form{border-top:1px solid var(--line);padding-top:14px;margin-top:4px;}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
-.badge-red{background:#FDEDEC;color:var(--rd);border:1px solid #F5B7B1;border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;}
-.badge-green{background:var(--gnb);color:var(--gn);border:1px solid #B8EFD0;border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;}
+.badge-red{background:rgba(239,68,68,.12);color:var(--rd);border:1px solid rgba(239,68,68,.35);border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;}
+.badge-green{background:var(--gnb);color:var(--gn);border:1px solid rgba(34,197,94,.35);border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;}
 
 /* MODAL / OVERLAY */
 .modal-bg{position:fixed;inset:0;background:rgba(44,24,16,.6);z-index:8000;display:none;align-items:flex-end;justify-content:center;}
@@ -183,9 +240,9 @@ select:focus,input:focus{border-color:var(--gd);}
 .overlay{position:fixed;inset:0;background:rgba(44,24,16,.55);display:none;align-items:center;justify-content:center;z-index:9999;}
 .overlay.on{display:flex;}
 .ov-box{background:var(--wm);border-radius:var(--r);padding:26px 22px;text-align:center;max-width:250px;}
-.spinner{width:42px;height:42px;border:4px solid #E8D8C8;border-top-color:var(--gd);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 13px;}
+.spinner{width:42px;height:42px;border:4px solid var(--line);border-top-color:var(--gd);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 13px;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--br);color:var(--gd);padding:9px 18px;border-radius:99px;font-size:.76rem;font-weight:600;opacity:0;transition:all .3s;white-space:nowrap;z-index:9999;}
+.toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--wm);color:var(--gd);padding:9px 18px;border-radius:99px;font-size:.76rem;font-weight:600;opacity:0;transition:all .3s;white-space:nowrap;z-index:9999;}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
@@ -207,9 +264,9 @@ select:focus,input:focus{border-color:var(--gd);}
 
 <!-- ════ LOGIN ════ -->
 <div class="page on" id="pg-login">
-  <div style="background:var(--br);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;">
+  <div style="background:var(--cr);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;">
     <div style="font-family:'DM Serif Display',serif;color:var(--gd);font-size:2rem;text-align:center;margin-bottom:4px;">🎂 Casa de Bolos</div>
-    <div style="color:rgba(255,255,255,.4);font-size:.72rem;letter-spacing:2px;margin-bottom:32px;">CONTROLE OPERACIONAL</div>
+    <div style="color:var(--lt);font-size:.72rem;letter-spacing:2px;margin-bottom:32px;">CONTROLE OPERACIONAL</div>
     <div class="login-card">
       <div class="login-title">Entrar no sistema</div>
       <div class="lf-group"><span class="lf-label">👤 Usuário</span><input class="lf-input" type="text" id="login-user" placeholder="Digite seu usuário" autocomplete="username"></div>
@@ -223,28 +280,33 @@ select:focus,input:focus{border-color:var(--gd);}
 <!-- ════ APP ════ -->
 <div class="page" id="pg-app">
   <div class="hdr">
-    <div class="logo" id="app-logo">Casa de Bolos<small>CONTROLE OPERACIONAL</small></div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-btn" onclick="toggleMenu()">☰</button>
+      <div class="logo" id="app-logo">Casa de Bolos<small>CONTROLE OPERACIONAL</small></div>
+    </div>
     <div class="hdr-right">
       <span class="hdr-user" id="hdr-user-name"></span>
       <button class="hdr-logout" onclick="doLogout()">Sair</button>
     </div>
   </div>
+  <div class="sb-overlay" id="sb-overlay" onclick="closeMenu()"></div>
   <div class="tabs" id="main-tabs">
-    <button class="tab on" onclick="goTab('sel')" id="tab-sel">📋 Checklist</button>
-    <button class="tab" onclick="goTab('hist')" id="tab-hist">📂 Histórico</button>
-    <button class="tab" onclick="goTab('painel')" id="tab-painel" style="display:none">🏠 Painel</button>
-    <button class="tab" onclick="goTab('score')" id="tab-score" style="display:none">🏆 Score</button>
-    <button class="tab" onclick="goTab('ia')" id="tab-ia" style="display:none">🤖 IA</button>
-    <button class="tab" onclick="goTab('auditoria')" id="tab-auditoria" style="display:none">🔍 Auditoria</button>
-    <button class="tab" onclick="goTab('padrao')" id="tab-padrao" style="display:none">📸 Padrão IA</button>
-    <button class="tab" onclick="goTab('estoque-ia')" id="tab-estoque-ia">🔢 Estoque IA</button>
-    <button class="tab" onclick="goTab('ponto')" id="tab-ponto">⏰ Meu Ponto</button>
-    <button class="tab" onclick="goTab('ponto-eq')" id="tab-ponto-eq" style="display:none">👥 Ponto Equipe</button>
-    <button class="tab" onclick="goTab('funcionarios')" id="tab-funcionarios" style="display:none">🪪 Funcionários</button>
-    <button class="tab" onclick="goTab('financeiro')" id="tab-financeiro" style="display:none">💰 Financeiro</button>
-    <button class="tab" onclick="goTab('segmento')" id="tab-segmento" style="display:none">🎯 Segmento</button>
-    <button class="tab" onclick="goTab('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
+    <button class="tab on" onclick="goTab('sel');closeMenu()" id="tab-sel"><span class="tab-ic">📋</span><span class="tab-tx">Checklist</span></button>
+    <button class="tab" onclick="goTab('hist');closeMenu()" id="tab-hist"><span class="tab-ic">📂</span><span class="tab-tx">Histórico</span></button>
+    <button class="tab" onclick="goTab('painel');closeMenu()" id="tab-painel" style="display:none"><span class="tab-ic">🏠</span><span class="tab-tx">Painel</span></button>
+    <button class="tab" onclick="goTab('score');closeMenu()" id="tab-score" style="display:none"><span class="tab-ic">🏆</span><span class="tab-tx">Score</span></button>
+    <button class="tab" onclick="goTab('ia');closeMenu()" id="tab-ia" style="display:none"><span class="tab-ic">🤖</span><span class="tab-tx">IA</span></button>
+    <button class="tab" onclick="goTab('auditoria');closeMenu()" id="tab-auditoria" style="display:none"><span class="tab-ic">🔍</span><span class="tab-tx">Auditoria</span></button>
+    <button class="tab" onclick="goTab('padrao');closeMenu()" id="tab-padrao" style="display:none"><span class="tab-ic">📸</span><span class="tab-tx">Padrão IA</span></button>
+    <button class="tab" onclick="goTab('estoque-ia');closeMenu()" id="tab-estoque-ia"><span class="tab-ic">🔢</span><span class="tab-tx">Estoque IA</span></button>
+    <button class="tab" onclick="goTab('ponto');closeMenu()" id="tab-ponto"><span class="tab-ic">⏰</span><span class="tab-tx">Meu Ponto</span></button>
+    <button class="tab" onclick="goTab('ponto-eq');closeMenu()" id="tab-ponto-eq" style="display:none"><span class="tab-ic">👥</span><span class="tab-tx">Ponto Equipe</span></button>
+    <button class="tab" onclick="goTab('funcionarios');closeMenu()" id="tab-funcionarios" style="display:none"><span class="tab-ic">🪪</span><span class="tab-tx">Funcionários</span></button>
+    <button class="tab" onclick="goTab('financeiro');closeMenu()" id="tab-financeiro" style="display:none"><span class="tab-ic">💰</span><span class="tab-tx">Financeiro</span></button>
+    <button class="tab" onclick="goTab('segmento');closeMenu()" id="tab-segmento" style="display:none"><span class="tab-ic">🎯</span><span class="tab-tx">Segmento</span></button>
+    <button class="tab" onclick="goTab('admin');closeMenu()" id="tab-admin" style="display:none"><span class="tab-ic">⚙️</span><span class="tab-tx">Admin</span></button>
   </div>
+  <div class="app-content">
 
   <!-- SELEÇÃO -->
   <div style="display:none" id="scr-sel">
@@ -275,7 +337,7 @@ select:focus,input:focus{border-color:var(--gd);}
   <!-- CHECKLIST -->
   <div style="display:none" id="scr-cl">
   <div id="pg-cl-wrap">
-    <div class="cl-hdr" id="cl-hdr" style="background:var(--br);">
+    <div class="cl-hdr" id="cl-hdr" style="background:var(--wm);">
       <button class="cl-back" onclick="goBack()">←</button>
       <div><div class="cl-name" id="cl-title">—</div><div class="cl-sub" id="cl-sub">—</div></div>
     </div>
@@ -317,12 +379,12 @@ select:focus,input:focus{border-color:var(--gd);}
   <div class="body-wrap">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
       <h1 class="pg-title" style="margin:0;">Painel do Dono</h1>
-      <button onclick="loadPainel()" style="background:transparent;border:1px solid #E8D8C8;border-radius:99px;padding:5px 12px;font-size:.7rem;color:var(--md);cursor:pointer;font-family:inherit;">🔄 Atualizar</button>
+      <button onclick="loadPainel()" style="background:transparent;border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:.7rem;color:var(--md);cursor:pointer;font-family:inherit;">🔄 Atualizar</button>
     </div>
     <p class="pg-sub" id="painel-data">Carregando...</p>
 
     <!-- ALERTAS CRÍTICOS — aparecem primeiro se houver -->
-    <div style="background:#FDEDEC;border:1.5px solid #F5B7B1;border-radius:var(--r);padding:14px;margin-bottom:14px;display:none;" id="painel-alertas-box">
+    <div style="background:rgba(239,68,68,.12);border:1.5px solid rgba(239,68,68,.35);border-radius:var(--r);padding:14px;margin-bottom:14px;display:none;" id="painel-alertas-box">
       <div style="font-size:.75rem;font-weight:700;color:var(--rd);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;">🚨 Alertas Críticos</div>
       <div id="painel-alertas"></div>
     </div>
@@ -332,19 +394,19 @@ select:focus,input:focus{border-color:var(--gd);}
     <div id="painel-lojas" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
 
     <!-- RANKING -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">🏆 Ranking geral das lojas</div>
       <div id="painel-ranking"></div>
     </div>
 
     <!-- REINCIDÊNCIAS -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">🔁 Falhas recorrentes</div>
       <div id="painel-reincidencias"><div style="font-size:.8rem;color:var(--lt);">Calculando...</div></div>
     </div>
 
     <!-- COBRAR AGORA -->
-    <div style="background:#FEF9E7;border:1.5px solid #F9E79F;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:rgba(245,158,11,.12);border:1.5px solid rgba(245,158,11,.35);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--or);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">⚡ O que cobrar agora</div>
       <div id="painel-cobrar"></div>
     </div>
@@ -359,34 +421,34 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- SCORE GERAL -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;text-align:center;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:center;">
         <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:var(--gn);" id="score-rede">—</div>
         <div style="font-size:.65rem;color:var(--lt);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;">Score Rede</div>
       </div>
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;text-align:center;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:center;">
         <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:var(--or);" id="score-pendencias">—</div>
         <div style="font-size:.65rem;color:var(--lt);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;">Pendências</div>
       </div>
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;text-align:center;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:center;">
         <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:var(--rd);" id="score-criticos">—</div>
         <div style="font-size:.65rem;color:var(--lt);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;">Críticos</div>
       </div>
     </div>
 
     <!-- SCORE POR LOJA -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Score por Loja</div>
       <div id="score-lojas"></div>
     </div>
 
     <!-- REINCIDÊNCIAS DETALHADAS -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">🔁 Reincidências 30 dias</div>
       <div id="score-reincidencias"><div style="font-size:.8rem;color:var(--lt);">Calculando...</div></div>
     </div>
 
     <!-- PLANOS DE AÇÃO ABERTOS -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">📋 Planos de Ação Abertos</div>
       <div id="score-acoes"><div style="font-size:.8rem;color:var(--lt);">Nenhum plano de ação aberto.</div></div>
     </div>
@@ -394,10 +456,10 @@ select:focus,input:focus{border-color:var(--gd);}
     <button class="btn" onclick="loadScore()">🔄 Atualizar score</button>
 
     <!-- EXPORTAÇÃO -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-top:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">📤 Exportar Relatórios</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <select id="exp-tipo" style="font-size:.8rem;padding:8px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;">
+        <select id="exp-tipo" style="font-size:.8rem;padding:8px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;">
           <option value="diario">Relatório Diário</option>
           <option value="semanal">Relatório Semanal</option>
           <option value="mensal">Relatório Mensal</option>
@@ -405,7 +467,7 @@ select:focus,input:focus{border-color:var(--gd);}
           <option value="nao_conformidades">Não Conformidades</option>
           <option value="plano_acao">Plano de Ação</option>
         </select>
-        <select id="exp-loja" style="font-size:.8rem;padding:8px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;">
+        <select id="exp-loja" style="font-size:.8rem;padding:8px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;">
           <option value="todas">Todas as lojas</option>
           <option value="meier">Méier</option>
           <option value="tijuca">Tijuca</option>
@@ -428,12 +490,12 @@ select:focus,input:focus{border-color:var(--gd);}
     <h1 class="pg-title">Modo Auditoria</h1>
     <p class="pg-sub">Auditoria surpresa — compare com o que a loja reportou</p>
 
-    <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--or);margin-bottom:6px;">⚡ Auditoria Surpresa</div>
       <p style="font-size:.82rem;color:var(--br);line-height:1.5;">Você está em modo auditor. Os dados do checklist da equipe serão comparados com o que você encontrar agora.</p>
     </div>
 
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <span class="fl">Loja a auditar</span>
       <div class="sw"><select id="aud-loja">
         <option value="meier">Méier</option>
@@ -449,7 +511,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <button class="btn" onclick="iniciarAuditoria()">🔍 Iniciar Auditoria Surpresa</button>
 
     <!-- RELATÓRIOS DE INTELIGÊNCIA -->
-    <div style="margin-top:20px;border-top:1px solid #E8D8C8;padding-top:16px;">
+    <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px;">
       <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📊 Relatórios de Gestão</div>
 
       <button class="btn" style="background:#5B8FF9;color:white;margin-bottom:8px;" onclick="gerarRelatorioMelhorias()">🤖 Relatório de Melhorias (IA)</button>
@@ -470,37 +532,37 @@ select:focus,input:focus{border-color:var(--gd);}
     <p class="pg-sub">Análise automática da sua operação com Claude AI</p>
 
     <!-- CHAT IA -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);overflow:hidden;margin-bottom:14px;">
-      <div style="background:var(--br);padding:12px 16px;display:flex;align-items:center;gap:8px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px;">
+      <div style="background:var(--wm);padding:12px 16px;display:flex;align-items:center;gap:8px;">
         <div style="width:8px;height:8px;background:var(--gn);border-radius:50%;animation:pulse 2s infinite;"></div>
         <span style="color:var(--gd);font-size:.85rem;font-weight:600;">Assistente IA — Online</span>
         <span style="color:rgba(255,255,255,.3);font-size:.65rem;margin-left:auto;">Claude</span>
       </div>
       <div style="padding:14px;min-height:220px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;" id="ia-messages">
-        <div style="background:#F0E8DC;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:.82rem;line-height:1.5;max-width:88%;color:var(--br);">
+        <div style="background:var(--line);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:.82rem;line-height:1.5;max-width:88%;color:var(--br);">
           Olá! Sou a IA do sistema Casa de Bolos. Posso analisar conformidade, identificar padrões de risco e gerar relatórios inteligentes.<br><br>Como posso ajudar?
         </div>
       </div>
       <!-- Quick prompts -->
-      <div style="padding:8px 14px;border-top:1px solid #E8D8C8;display:flex;gap:6px;flex-wrap:wrap;">
-        <button onclick="iaQuick('Qual loja está com pior desempenho?')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🏪 Pior loja</button>
-        <button onclick="iaQuick('Quais itens são mais esquecidos nos checklists?')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">⚠️ Mais esquecidos</button>
-        <button onclick="iaQuick('Gere recomendações para melhorar a operação')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">💡 Recomendações</button>
-        <button onclick="iaQuick('Analise as reincidências de falhas')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔁 Reincidências</button>
+      <div style="padding:8px 14px;border-top:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="iaQuick('Qual loja está com pior desempenho?')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🏪 Pior loja</button>
+        <button onclick="iaQuick('Quais itens são mais esquecidos nos checklists?')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">⚠️ Mais esquecidos</button>
+        <button onclick="iaQuick('Gere recomendações para melhorar a operação')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">💡 Recomendações</button>
+        <button onclick="iaQuick('Analise as reincidências de falhas')" style="font-size:.65rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔁 Reincidências</button>
       </div>
-      <div style="padding:10px 14px;border-top:1px solid #E8D8C8;display:flex;gap:8px;">
-        <input id="ia-input" style="flex:1;padding:9px 14px;border-radius:99px;border:2px solid #E8D8C8;font-family:inherit;font-size:.83rem;color:var(--br);outline:none;" placeholder="Pergunte sobre a operação..." onkeydown="if(event.key==='Enter')iaEnviar()">
-        <button onclick="iaEnviar()" style="background:var(--br);color:var(--gd);border:none;border-radius:50%;width:38px;height:38px;font-size:1rem;cursor:pointer;flex-shrink:0;">→</button>
+      <div style="padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:8px;">
+        <input id="ia-input" style="flex:1;padding:9px 14px;border-radius:99px;border:2px solid var(--line);font-family:inherit;font-size:.83rem;color:var(--br);outline:none;" placeholder="Pergunte sobre a operação..." onkeydown="if(event.key==='Enter')iaEnviar()">
+        <button onclick="iaEnviar()" style="background:var(--wm);color:var(--gd);border:none;border-radius:50%;width:38px;height:38px;font-size:1rem;cursor:pointer;flex-shrink:0;">→</button>
       </div>
     </div>
 
     <!-- GERAR RELATÓRIO IA -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">📊 Relatório Automático com IA</div>
-      <select id="ia-rel-periodo" style="width:100%;margin-bottom:8px;padding:9px 12px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+      <select id="ia-rel-periodo" style="width:100%;margin-bottom:8px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         <option>Hoje</option><option>Esta semana</option><option>Este mês</option>
       </select>
-      <select id="ia-rel-tipo" style="width:100%;margin-bottom:8px;padding:9px 12px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+      <select id="ia-rel-tipo" style="width:100%;margin-bottom:8px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         <option value="geral">Relatório geral</option>
         <option value="sanitario">Relatório sanitário</option>
         <option value="nao_conformidades">Não conformidades</option>
@@ -512,7 +574,7 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
 
     <!-- ALERTAS AUTOMÁTICOS -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">🔔 Configurar Alertas</div>
       <div style="font-size:.8rem;color:var(--md);margin-bottom:10px;">Alertas automáticos por WhatsApp e Email</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
@@ -537,13 +599,13 @@ select:focus,input:focus{border-color:var(--gd);}
       </div>
       <div style="margin-top:10px;">
         <span class="fl">Email para alertas</span>
-        <input type="email" id="alerta-email" placeholder="gerente@casadebolos.com.br" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+        <input type="email" id="alerta-email" placeholder="gerente@casadebolos.com.br" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
       </div>
       <button class="btn" style="margin-top:10px;" onclick="salvarAlertas()">💾 Salvar configurações</button>
     </div>
 
     <!-- APROVAÇÃO DE PLANOS DE AÇÃO -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">✅ Aprovar Planos de Ação</div>
       <div id="aprovacao-lista"><div style="font-size:.8rem;color:var(--lt);">Nenhum plano aguardando aprovação.</div></div>
       <button class="btn" style="margin-top:10px;" onclick="carregarAprovacoes()">🔄 Atualizar</button>
@@ -557,7 +619,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <p class="pg-sub">Cadastre fotos padrão e compare automaticamente com fotos enviadas</p>
 
     <!-- ABAS INTERNAS -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid #E8D8C8;padding-bottom:0;">
+    <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--line);padding-bottom:0;">
       <button onclick="padraTab('cadastrar')" id="ptab-cadastrar" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.75rem;font-weight:700;color:var(--gd);border-bottom:2px solid var(--gd);margin-bottom:-2px;cursor:pointer;">📸 Cadastrar Padrão</button>
       <button onclick="padraTab('comparar')" id="ptab-comparar" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--lt);cursor:pointer;">🔍 Comparar Foto</button>
       <button onclick="padraTab('historico')" id="ptab-historico" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--lt);cursor:pointer;">📊 Histórico</button>
@@ -565,7 +627,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- CADASTRAR PADRÃO -->
     <div id="padrao-cadastrar">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
         <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Novo padrão de referência</div>
 
         <div style="margin-bottom:12px;">
@@ -584,12 +646,12 @@ select:focus,input:focus{border-color:var(--gd);}
 
         <div style="margin-bottom:12px;">
           <span class="fl">Nome descritivo</span>
-          <input type="text" id="pad-nome" placeholder="Ex: Vitrine de abertura — segunda a sexta" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:2px solid #E8D8C8;font-family:inherit;font-size:.88rem;color:var(--br);outline:none;">
+          <input type="text" id="pad-nome" placeholder="Ex: Vitrine de abertura — segunda a sexta" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:2px solid var(--line);font-family:inherit;font-size:.88rem;color:var(--br);outline:none;">
         </div>
 
         <div style="margin-bottom:12px;">
           <span class="fl">Critérios do padrão ideal</span>
-          <textarea id="pad-criterios" placeholder="Descreva o que deve estar correto nesta foto:&#10;- Balcão limpo e organizado&#10;- Todos os produtos identificados&#10;- Sem sujeira ou resíduos visíveis&#10;- Iluminação adequada" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:2px solid #E8D8C8;font-family:inherit;font-size:.83rem;color:var(--br);outline:none;resize:vertical;min-height:90px;line-height:1.5;"></textarea>
+          <textarea id="pad-criterios" placeholder="Descreva o que deve estar correto nesta foto:&#10;- Balcão limpo e organizado&#10;- Todos os produtos identificados&#10;- Sem sujeira ou resíduos visíveis&#10;- Iluminação adequada" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:2px solid var(--line);font-family:inherit;font-size:.83rem;color:var(--br);outline:none;resize:vertical;min-height:90px;line-height:1.5;"></textarea>
         </div>
 
         <div style="margin-bottom:12px;">
@@ -637,7 +699,7 @@ select:focus,input:focus{border-color:var(--gd);}
       </div>
 
       <!-- PADRÕES CADASTRADOS -->
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;">
         <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Padrões cadastrados</div>
         <div id="pad-lista"><div style="font-size:.82rem;color:var(--lt);">Nenhum padrão cadastrado ainda.</div></div>
       </div>
@@ -645,7 +707,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- COMPARAR FOTO -->
     <div id="padrao-comparar" style="display:none;">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
         <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Analisar conformidade</div>
 
         <div style="margin-bottom:12px;">
@@ -658,7 +720,7 @@ select:focus,input:focus{border-color:var(--gd);}
         <div id="comp-padrao-preview" style="display:none;margin-bottom:12px;">
           <div style="font-size:.7rem;font-weight:600;color:var(--md);margin-bottom:6px;">FOTOS PADRÃO (REFERÊNCIA)</div>
           <div id="comp-padrao-fotos" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-          <div id="comp-padrao-criterios" style="font-size:.78rem;color:var(--md);margin-top:8px;padding:8px;background:#F5EDE0;border-radius:var(--rs);line-height:1.5;"></div>
+          <div id="comp-padrao-criterios" style="font-size:.78rem;color:var(--md);margin-top:8px;padding:8px;background:var(--bg3);border-radius:var(--rs);line-height:1.5;"></div>
         </div>
 
         <div style="margin-bottom:12px;">
@@ -683,7 +745,7 @@ select:focus,input:focus{border-color:var(--gd);}
               <option value="botafogo">Botafogo</option>
               <option value="ilha">Ilha do Governador</option>
             </select></div>
-            <input type="text" id="comp-responsavel" placeholder="Nome do responsável" style="padding:10px 13px;border-radius:var(--rs);border:2px solid #E8D8C8;font-family:inherit;font-size:.85rem;outline:none;">
+            <input type="text" id="comp-responsavel" placeholder="Nome do responsável" style="padding:10px 13px;border-radius:var(--rs);border:2px solid var(--line);font-family:inherit;font-size:.85rem;outline:none;">
           </div>
         </div>
 
@@ -692,17 +754,17 @@ select:focus,input:focus{border-color:var(--gd);}
 
       <!-- RESULTADO DA ANÁLISE -->
       <div id="comp-resultado" style="display:none;">
-        <div style="background:var(--wm);border:2px solid #E8D8C8;border-radius:var(--r);padding:16px;margin-bottom:14px;" id="comp-resultado-card">
+        <div style="background:var(--wm);border:2px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;" id="comp-resultado-card">
         </div>
       </div>
     </div>
 
     <!-- HISTÓRICO DE ANÁLISES -->
     <div id="padrao-historico" style="display:none;">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <div style="font-size:.75rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;">Histórico de análises IA</div>
-          <button onclick="loadPadraoHist()" style="font-size:.7rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔄 Atualizar</button>
+          <button onclick="loadPadraoHist()" style="font-size:.7rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔄 Atualizar</button>
         </div>
         <div id="pad-historico-lista"><div style="font-size:.82rem;color:var(--lt);">Nenhuma análise registrada.</div></div>
       </div>
@@ -717,7 +779,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <p class="pg-sub">Tire foto do estoque e a IA conta os itens automaticamente</p>
 
     <!-- INSTRUÇÃO -->
-    <div style="background:#EAF5EE;border:1px solid #B8EFD0;border-radius:var(--r);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
+    <div style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
       <span style="font-size:1.2rem;">💡</span>
       <div style="font-size:.8rem;color:var(--br);line-height:1.6;">
         <strong>Como funciona:</strong> tire uma foto do estoque de um item específico (ex: prateleira de embalagens 32). A IA vai contar visualmente e preencher a quantidade automaticamente no checklist.
@@ -725,7 +787,7 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
 
     <!-- SELEÇÃO DO ITEM -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">1. Selecionar item do estoque</div>
 
       <div style="margin-bottom:10px;">
@@ -757,7 +819,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
       <div id="est-item-custom" style="display:none;margin-bottom:10px;">
         <span class="fl">Nome do item</span>
-        <input type="text" id="est-item-custom-val" placeholder="Ex: Farinha de trigo sem fermento" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:2px solid #E8D8C8;font-family:inherit;font-size:.85rem;outline:none;">
+        <input type="text" id="est-item-custom-val" placeholder="Ex: Farinha de trigo sem fermento" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:2px solid var(--line);font-family:inherit;font-size:.85rem;outline:none;">
       </div>
 
       <div style="margin-bottom:10px;">
@@ -774,11 +836,11 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
 
     <!-- FOTO -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;">2. Tirar foto do estoque</div>
 
       <!-- DICAS PARA MELHOR FOTO -->
-      <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--rs);padding:10px;margin-bottom:12px;">
+      <div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:var(--rs);padding:10px;margin-bottom:12px;">
         <div style="font-size:.7rem;font-weight:700;color:var(--or);margin-bottom:6px;">📸 Como tirar a melhor foto:</div>
         <div style="font-size:.72rem;color:var(--md);line-height:1.6;">
           ✅ Foto <strong>de cima</strong>, mostrando todos os itens<br>
@@ -796,27 +858,27 @@ select:focus,input:focus{border-color:var(--gd);}
       </div>
 
       <div id="est-preview" style="display:none;margin-top:10px;">
-        <img id="est-img" style="width:100%;border-radius:var(--rs);max-height:260px;object-fit:cover;border:2px solid #E8D8C8;">
+        <img id="est-img" style="width:100%;border-radius:var(--rs);max-height:260px;object-fit:cover;border:2px solid var(--line);">
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button onclick="analisarEstoque()" id="btn-est-analisar" class="btn" style="flex:2;">🔢 Contar com IA</button>
-          <button onclick="estNovaFoto()" style="flex:1;padding:10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">📷 Nova foto</button>
+          <button onclick="estNovaFoto()" style="flex:1;padding:10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">📷 Nova foto</button>
         </div>
       </div>
     </div>
 
     <!-- RESULTADO -->
     <div id="est-resultado" style="display:none;">
-      <div style="background:var(--wm);border:2px solid #E8D8C8;border-radius:var(--r);padding:16px;margin-bottom:14px;">
+      <div style="background:var(--wm);border:2px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;">
         <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">📊 Resultado da contagem</div>
         <div id="est-resultado-conteudo"></div>
       </div>
     </div>
 
     <!-- HISTÓRICO DE CONTAGENS -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div style="font-size:.75rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;">📋 Últimas contagens</div>
-        <button onclick="loadEstHist()" style="font-size:.68rem;padding:4px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔄</button>
+        <button onclick="loadEstHist()" style="font-size:.68rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔄</button>
       </div>
       <div id="est-hist"><div style="font-size:.82rem;color:var(--lt);">Nenhuma contagem registrada.</div></div>
     </div>
@@ -829,17 +891,17 @@ select:focus,input:focus{border-color:var(--gd);}
     <p class="pg-sub" id="fin-periodo-label">Acompanhamento de receitas, despesas e lucro</p>
 
     <!-- SELETOR DE PERÍODO -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:12px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <input type="month" id="fin-mes" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;" onchange="loadFinanceiro()">
-        <select id="fin-loja" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;" onchange="loadFinanceiro()">
+        <input type="month" id="fin-mes" style="padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;" onchange="loadFinanceiro()">
+        <select id="fin-loja" style="padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;" onchange="loadFinanceiro()">
           <option value="todas">Todas as lojas</option>
         </select>
       </div>
     </div>
 
     <!-- ABAS INTERNAS -->
-    <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid #E8D8C8;overflow-x:auto;">
+    <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid var(--line);overflow-x:auto;">
       <button onclick="finTab('resumo')" id="ft-resumo" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:700;color:var(--gd);border-bottom:2px solid var(--gd);margin-bottom:-2px;cursor:pointer;white-space:nowrap;">📊 Resumo</button>
       <button onclick="finTab('lancar')" id="ft-lancar" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;white-space:nowrap;">➕ Lançar</button>
       <button onclick="finTab('dre')" id="ft-dre" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;white-space:nowrap;">📋 DRE</button>
@@ -851,38 +913,38 @@ select:focus,input:focus{border-color:var(--gd);}
     <div id="fin-resumo">
       <!-- CARDS DE TOTAIS -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div style="background:#EAFAF1;border:1px solid #B8EFD0;border-radius:var(--r);padding:12px;">
+        <div style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:var(--r);padding:12px;">
           <div style="font-size:.65rem;color:var(--gn);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">💰 Receita</div>
           <div id="fin-receita" style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--gn);line-height:1.1;margin-top:4px;">R$ 0</div>
         </div>
-        <div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:12px;">
+        <div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:var(--r);padding:12px;">
           <div style="font-size:.65rem;color:var(--rd);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">💸 Despesa</div>
           <div id="fin-despesa" style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--rd);line-height:1.1;margin-top:4px;">R$ 0</div>
         </div>
-        <div style="background:#EAF2F8;border:1px solid #AED6F1;border-radius:var(--r);padding:12px;">
+        <div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);border-radius:var(--r);padding:12px;">
           <div style="font-size:.65rem;color:#1A5276;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">📦 CMV</div>
           <div id="fin-cmv" style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1A5276;line-height:1.1;margin-top:4px;">0%</div>
         </div>
-        <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:12px;">
+        <div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:var(--r);padding:12px;">
           <div style="font-size:.65rem;color:var(--or);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">🎯 Lucro</div>
           <div id="fin-lucro" style="font-family:'DM Serif Display',serif;font-size:1.6rem;line-height:1.1;margin-top:4px;">R$ 0</div>
         </div>
       </div>
 
       <!-- COMPARATIVO ENTRE LOJAS -->
-      <div id="fin-comparativo-lojas" style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div id="fin-comparativo-lojas" style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🏆 Performance por loja</div>
         <div id="fin-lojas-rank"></div>
       </div>
 
       <!-- TOP DESPESAS -->
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📊 Despesas por categoria</div>
         <div id="fin-cat-despesas"></div>
       </div>
 
       <!-- ALERTAS FINANCEIROS -->
-      <div id="fin-alertas-box" style="background:#FEF9E7;border:1.5px solid #F9E79F;border-radius:var(--r);padding:14px;display:none;">
+      <div id="fin-alertas-box" style="background:rgba(245,158,11,.12);border:1.5px solid rgba(245,158,11,.35);border-radius:var(--r);padding:14px;display:none;">
         <div style="font-size:.72rem;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">⚠️ Alertas</div>
         <div id="fin-alertas"></div>
       </div>
@@ -890,7 +952,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- ABA LANÇAR -->
     <div id="fin-lancar" style="display:none;">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">➕ Novo lançamento</div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
@@ -903,7 +965,7 @@ select:focus,input:focus{border-color:var(--gd);}
           </div>
           <div>
             <span class="fl">Data</span>
-            <input type="date" id="lc-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+            <input type="date" id="lc-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
           </div>
         </div>
 
@@ -937,7 +999,7 @@ select:focus,input:focus{border-color:var(--gd);}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
           <div>
             <span class="fl">Valor (R$)</span>
-            <input type="number" id="lc-valor" step="0.01" placeholder="0,00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+            <input type="number" id="lc-valor" step="0.01" placeholder="0,00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
           </div>
           <div>
             <span class="fl">Loja</span>
@@ -947,14 +1009,14 @@ select:focus,input:focus{border-color:var(--gd);}
 
         <div style="margin-bottom:14px;">
           <span class="fl">Descrição (opcional)</span>
-          <input type="text" id="lc-desc" placeholder="Ex: Pagamento fornecedor ABC" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="text" id="lc-desc" placeholder="Ex: Pagamento fornecedor ABC" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         </div>
 
         <button onclick="salvarLancamento()" class="btn">💾 Salvar lançamento</button>
       </div>
 
       <!-- ATALHOS DE LANÇAMENTO RÁPIDO -->
-      <div style="background:#EAF5EE;border:1px solid #B8EFD0;border-radius:var(--r);padding:12px;">
+      <div style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:var(--r);padding:12px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--gn);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">⚡ Lançamentos rápidos</div>
         <p style="font-size:.75rem;color:var(--md);margin-bottom:10px;line-height:1.5;">Cadastre seus lançamentos recorrentes (aluguel, energia, internet) e use com 1 toque.</p>
         <div id="lc-rapidos"></div>
@@ -964,7 +1026,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- ABA DRE -->
     <div id="fin-dre" style="display:none;">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">📋 Demonstração do Resultado (DRE)</div>
         <div id="dre-content"></div>
         <button onclick="exportarDRE()" style="width:100%;margin-top:14px;padding:11px;border-radius:99px;border:1px solid var(--gn);background:transparent;color:var(--gn);font-family:inherit;font-size:.82rem;cursor:pointer;font-weight:600;">📊 Exportar CSV</button>
@@ -973,10 +1035,10 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- ABA HISTÓRICO -->
     <div id="fin-historico" style="display:none;">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;">📜 Lançamentos do período</div>
-          <select id="fin-hist-filter" onchange="loadHistoricoFin()" style="padding:5px 10px;border-radius:99px;border:1px solid #E8D8C8;font-family:inherit;font-size:.7rem;">
+          <select id="fin-hist-filter" onchange="loadHistoricoFin()" style="padding:5px 10px;border-radius:99px;border:1px solid var(--line);font-family:inherit;font-size:.7rem;">
             <option value="todos">Todos</option>
             <option value="receita">Só receitas</option>
             <option value="despesa">Só despesas</option>
@@ -988,23 +1050,23 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- ABA METAS -->
     <div id="fin-metas" style="display:none;">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🎯 Metas mensais</div>
         <p style="font-size:.75rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">Defina sua meta de faturamento e o app calcula automaticamente quanto falta atingir.</p>
 
         <div style="margin-bottom:10px;">
           <span class="fl">Meta de faturamento mensal (R$)</span>
-          <input type="number" id="meta-receita" placeholder="50000" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="number" id="meta-receita" placeholder="50000" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         </div>
 
         <div style="margin-bottom:10px;">
           <span class="fl">CMV máximo desejado (%)</span>
-          <input type="number" id="meta-cmv" placeholder="35" min="0" max="100" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="number" id="meta-cmv" placeholder="35" min="0" max="100" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         </div>
 
         <div style="margin-bottom:14px;">
           <span class="fl">Margem de lucro desejada (%)</span>
-          <input type="number" id="meta-margem" placeholder="20" min="0" max="100" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="number" id="meta-margem" placeholder="20" min="0" max="100" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         </div>
 
         <button onclick="salvarMetas()" class="btn">💾 Salvar metas</button>
@@ -1023,7 +1085,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <p class="pg-sub">Escolha o tipo de estabelecimento — os checklists serão adaptados</p>
 
     <!-- INFO ATUAL -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.7rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">📌 Segmento atual</div>
       <div style="display:flex;align-items:center;gap:10px;">
         <div id="seg-atual-icone" style="font-size:1.8rem;">🍰</div>
@@ -1035,9 +1097,9 @@ select:focus,input:focus{border-color:var(--gd);}
     </div>
 
     <!-- NOME DA EMPRESA -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <span class="fl">Nome da empresa</span>
-      <input type="text" id="seg-empresa-nome" placeholder="Casa de Bolos" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.88rem;outline:none;">
+      <input type="text" id="seg-empresa-nome" placeholder="Casa de Bolos" style="width:100%;padding:10px 13px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.88rem;outline:none;">
       <button class="btn" style="margin-top:8px;" onclick="salvarNomeEmpresa()">💾 Salvar nome</button>
     </div>
 
@@ -1119,15 +1181,15 @@ select:focus,input:focus{border-color:var(--gd);}
       <!-- DESTINATÁRIOS -->
       <div style="font-size:.75rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-top:18px;margin-bottom:10px;">📬 Destinatários</div>
 
-      <div style="background:#EAF5EE;border:1px solid #B8EFD0;border-radius:var(--rs);padding:10px;margin-bottom:12px;">
+      <div style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:var(--rs);padding:10px;margin-bottom:12px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
           <div class="sw"><select id="dest-tipo" onchange="updDestTipo()">
             <option value="numero">📱 Número</option>
             <option value="grupo">👥 Grupo</option>
           </select></div>
-          <input type="text" id="dest-nome" placeholder="Nome/Apelido" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.78rem;">
+          <input type="text" id="dest-nome" placeholder="Nome/Apelido" style="padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.78rem;">
         </div>
-        <input type="text" id="dest-valor" placeholder="55219... (com DDI e DDD)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.78rem;margin-bottom:6px;">
+        <input type="text" id="dest-valor" placeholder="55219... (com DDI e DDD)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.78rem;margin-bottom:6px;">
         <button onclick="addDestinatarioZApi()" style="width:100%;background:var(--gn);color:white;border:none;border-radius:99px;padding:8px;font-family:inherit;font-size:.75rem;cursor:pointer;font-weight:600;">+ Adicionar destinatário</button>
       </div>
 
@@ -1147,34 +1209,34 @@ select:focus,input:focus{border-color:var(--gd);}
     <p class="pg-sub" id="ponto-data">Hoje</p>
 
     <!-- STATUS HOJE -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="font-size:.7rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📅 Batidas de hoje</div>
       <div id="ponto-batidas-hoje"></div>
     </div>
 
     <!-- BOTÃO BATER PONTO -->
-    <button id="btn-bater-ponto" onclick="baterPonto()" style="width:100%;padding:22px;border-radius:var(--r);border:none;background:var(--br);color:var(--gd);font-family:'DM Serif Display',serif;font-size:1.4rem;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .2s;">
+    <button id="btn-bater-ponto" onclick="baterPonto()" style="width:100%;padding:22px;border-radius:var(--r);border:none;background:var(--wm);color:var(--gd);font-family:'DM Serif Display',serif;font-size:1.4rem;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .2s;">
       ⏰ Bater Ponto
     </button>
 
     <!-- SALDO BANCO DE HORAS -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;text-align:center;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;text-align:center;">
       <div style="font-size:.7rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">💰 Banco de Horas</div>
       <div id="ponto-saldo" style="font-family:'DM Serif Display',serif;font-size:2.4rem;line-height:1;">--:--</div>
       <div id="ponto-saldo-label" style="font-size:.78rem;color:var(--lt);margin-top:4px;">Saldo do mês</div>
     </div>
 
     <!-- HISTÓRICO PESSOAL -->
-    <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div style="font-size:.7rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;">📜 Histórico do mês</div>
-        <button onclick="loadPonto()" style="font-size:.65rem;padding:3px 10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔄</button>
+        <button onclick="loadPonto()" style="font-size:.65rem;padding:3px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">🔄</button>
       </div>
       <div id="ponto-historico"></div>
     </div>
 
     <!-- SOLICITAR AJUSTE -->
-    <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;">
+    <div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:var(--r);padding:14px;">
       <div style="font-size:.7rem;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">⚠️ Errou o ponto?</div>
       <p style="font-size:.8rem;color:var(--br);line-height:1.5;margin-bottom:10px;">Solicite ajuste com justificativa. O admin vai analisar e aprovar.</p>
       <button onclick="abrirAjustePonto()" style="background:var(--or);color:white;border:none;border-radius:99px;padding:9px 18px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Solicitar ajuste</button>
@@ -1182,12 +1244,12 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- MODAL AJUSTE (escondido por padrão) -->
     <div id="modal-ajuste" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:20px;">
-      <div style="background:white;border-radius:var(--r);padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;">
+      <div style="background:var(--bg2);border-radius:var(--r);padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;">
         <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:14px;">Solicitar Ajuste de Ponto</div>
 
         <div style="margin-bottom:10px;">
           <span class="fl">Data</span>
-          <input type="date" id="aj-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="date" id="aj-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         </div>
 
         <div style="margin-bottom:10px;">
@@ -1204,27 +1266,27 @@ select:focus,input:focus{border-color:var(--gd);}
 
         <div style="margin-bottom:10px;">
           <span class="fl">Horário correto</span>
-          <input type="time" id="aj-hora" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="time" id="aj-hora" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         </div>
 
         <div style="margin-bottom:14px;">
           <span class="fl">Justificativa</span>
-          <textarea id="aj-just" placeholder="Explique o motivo (ex: esqueci de bater, celular sem bateria...)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:80px;resize:vertical;"></textarea>
+          <textarea id="aj-just" placeholder="Explique o motivo (ex: esqueci de bater, celular sem bateria...)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;min-height:80px;resize:vertical;"></textarea>
         </div>
 
         <div style="margin-bottom:14px;">
           <span class="fl">Anexar documento (opcional)</span>
           <p style="font-size:.7rem;color:var(--lt);margin:2px 0 6px;">Atestado médico, declaração, comprovante. Foto ou PDF.</p>
           <input type="file" id="aj-doc" accept="image/*,application/pdf" onchange="previewAjusteDoc()" style="width:100%;font-size:.78rem;font-family:inherit;">
-          <div id="aj-doc-preview" style="display:none;margin-top:8px;padding:8px;background:#EAFAF1;border:1px solid #B8EFD0;border-radius:8px;font-size:.76rem;color:var(--gn);align-items:center;gap:8px;">
+          <div id="aj-doc-preview" style="display:none;margin-top:8px;padding:8px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:8px;font-size:.76rem;color:var(--gn);align-items:center;gap:8px;">
             <span id="aj-doc-nome"></span>
             <button onclick="removerAjusteDoc()" type="button" style="background:transparent;border:none;color:var(--rd);cursor:pointer;font-size:.85rem;margin-left:auto;">🗑</button>
           </div>
         </div>
 
         <div style="display:flex;gap:8px;">
-          <button onclick="fecharAjuste()" style="flex:1;padding:11px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">Cancelar</button>
-          <button onclick="enviarAjuste()" id="btn-enviar-ajuste" style="flex:2;padding:11px;border-radius:99px;border:none;background:var(--br);color:var(--gd);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Enviar solicitação</button>
+          <button onclick="fecharAjuste()" style="flex:1;padding:11px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">Cancelar</button>
+          <button onclick="enviarAjuste()" id="btn-enviar-ajuste" style="flex:2;padding:11px;border-radius:99px;border:none;background:var(--wm);color:var(--gd);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Enviar solicitação</button>
         </div>
       </div>
     </div>
@@ -1238,7 +1300,7 @@ select:focus,input:focus{border-color:var(--gd);}
     <p class="pg-sub">Controle e aprovações de ponto</p>
 
     <!-- ABAS INTERNAS -->
-    <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid #E8D8C8;">
+    <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid var(--line);">
       <button onclick="pontoEqTab('hoje')" id="pet-hoje" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:700;color:var(--gd);border-bottom:2px solid var(--gd);margin-bottom:-2px;cursor:pointer;">📅 Hoje</button>
       <button onclick="pontoEqTab('ajustes')" id="pet-ajustes" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;">⚠️ Ajustes <span id="badge-ajustes" style="background:var(--rd);color:white;font-size:.6rem;padding:1px 5px;border-radius:99px;margin-left:4px;display:none;">0</span></button>
       <button onclick="pontoEqTab('relatorio')" id="pet-relatorio" style="padding:8px 14px;border:none;background:transparent;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--lt);cursor:pointer;">📊 Relatório</button>
@@ -1258,10 +1320,10 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- ABA RELATÓRIO -->
     <div id="peq-relatorio" style="display:none;">
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-          <input type="month" id="rep-mes" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
-          <select id="rep-loja" style="padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="month" id="rep-mes" style="padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
+          <select id="rep-loja" style="padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
             <option value="todas">Todas as lojas</option>
             <option value="meier">Méier</option>
             <option value="tijuca">Tijuca</option>
@@ -1279,20 +1341,20 @@ select:focus,input:focus{border-color:var(--gd);}
     <!-- ABA CONFIG -->
     <div id="peq-config" style="display:none;">
       <!-- HORÁRIO DE TRABALHO -->
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">⏱️ Jornada Padrão</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div><span class="fl">Entrada</span><input type="time" id="jor-entrada" value="08:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
-          <div><span class="fl">Saída almoço</span><input type="time" id="jor-saida-almoco" value="12:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
-          <div><span class="fl">Retorno almoço</span><input type="time" id="jor-retorno-almoco" value="13:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
-          <div><span class="fl">Saída</span><input type="time" id="jor-saida" value="17:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Entrada</span><input type="time" id="jor-entrada" value="08:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Saída almoço</span><input type="time" id="jor-saida-almoco" value="12:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Retorno almoço</span><input type="time" id="jor-retorno-almoco" value="13:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Saída</span><input type="time" id="jor-saida" value="17:00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;"></div>
         </div>
         <div style="font-size:.7rem;color:var(--lt);margin-bottom:8px;">Total: <strong id="jor-total">8h/dia</strong></div>
         <button onclick="salvarJornada()" class="btn">💾 Salvar jornada</button>
       </div>
 
       <!-- CERCAS VIRTUAIS -->
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📍 Cercas Virtuais (GPS das lojas)</div>
         <p style="font-size:.75rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">Cadastre as coordenadas de cada loja. O ponto só será aceito dentro do raio definido.</p>
 
@@ -1307,22 +1369,22 @@ select:focus,input:focus{border-color:var(--gd);}
           </select></div>
         </div>
 
-        <div style="background:#EAF2F8;border:1px solid #AED6F1;border-radius:var(--rs);padding:10px;margin-bottom:10px;">
+        <div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);border-radius:var(--rs);padding:10px;margin-bottom:10px;">
           <span class="fl">📍 Endereço da loja</span>
           <p style="font-size:.68rem;color:var(--lt);margin:2px 0 6px;">Digite o endereço completo e clique em buscar. O app gera a cerca virtual automaticamente.</p>
-          <input type="text" id="cv-endereco" placeholder="Ex: Rua Dias da Cruz 100, Méier, Rio de Janeiro" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;margin-bottom:6px;">
+          <input type="text" id="cv-endereco" placeholder="Ex: Rua Dias da Cruz 100, Méier, Rio de Janeiro" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;margin-bottom:6px;">
           <button onclick="buscarEnderecoLoja()" id="btn-buscar-endereco" style="width:100%;background:#5B8FF9;color:white;border:none;border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;font-weight:600;">🔍 Buscar endereço e gerar cerca</button>
           <div id="cv-endereco-result" style="display:none;margin-top:8px;font-size:.74rem;padding:8px;border-radius:6px;"></div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div><span class="fl">Latitude</span><input type="text" id="cv-lat" placeholder="-22.9068" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
-          <div><span class="fl">Longitude</span><input type="text" id="cv-lng" placeholder="-43.1729" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Latitude</span><input type="text" id="cv-lat" placeholder="-22.9068" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;"></div>
+          <div><span class="fl">Longitude</span><input type="text" id="cv-lng" placeholder="-43.1729" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;"></div>
         </div>
 
         <div style="margin-bottom:10px;">
           <span class="fl">Raio (metros)</span>
-          <input type="number" id="cv-raio" value="500" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.85rem;">
+          <input type="number" id="cv-raio" value="500" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.85rem;">
         </div>
 
         <button onclick="capturarLocalLoja()" style="width:100%;background:transparent;border:1px dashed var(--gd);color:var(--gd);border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;margin-bottom:8px;">📍 Ou capturar GPS atual (estou na loja)</button>
@@ -1330,13 +1392,13 @@ select:focus,input:focus{border-color:var(--gd);}
       </div>
 
       <!-- FERIADOS -->
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-top:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🎉 Feriados</div>
         <p style="font-size:.75rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">Os feriados nacionais já estão pré-configurados. Adicione aqui feriados municipais do Rio (ex: São Jorge, Dia do Comerciário) e pontos facultativos. Quem trabalhar no feriado tem as horas contadas como <strong>extra 100%</strong> automaticamente.</p>
 
-        <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--rs);padding:10px;margin-bottom:12px;">
+        <div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:var(--rs);padding:10px;margin-bottom:12px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-            <div><span class="fl">Data</span><input type="date" id="fer-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+            <div><span class="fl">Data</span><input type="date" id="fer-data" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
             <div><span class="fl">Tipo</span>
               <div class="sw"><select id="fer-tipo">
                 <option value="municipal">Municipal</option>
@@ -1345,7 +1407,7 @@ select:focus,input:focus{border-color:var(--gd);}
               </select></div>
             </div>
           </div>
-          <input type="text" id="fer-nome" placeholder="Nome do feriado (ex: Dia de São Jorge)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;margin-bottom:6px;">
+          <input type="text" id="fer-nome" placeholder="Nome do feriado (ex: Dia de São Jorge)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;margin-bottom:6px;">
           <label style="display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--md);margin-bottom:8px;cursor:pointer;">
             <input type="checkbox" id="fer-recorrente" style="cursor:pointer;"> Repete todo ano (mesmo dia/mês)
           </label>
@@ -1356,11 +1418,11 @@ select:focus,input:focus{border-color:var(--gd);}
       </div>
 
       <!-- FÉRIAS E AFASTAMENTOS -->
-      <div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
+      <div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-top:14px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🏖️ Férias e Afastamentos</div>
         <p style="font-size:.75rem;color:var(--lt);margin-bottom:12px;line-height:1.5;">Cadastre os períodos de férias, atestados longos e afastamentos. Durante esses períodos o funcionário <strong>não precisa bater ponto</strong> e os dias <strong>não contam no banco de horas</strong>.</p>
 
-        <div style="background:#EAF2F8;border:1px solid #AED6F1;border-radius:var(--rs);padding:10px;margin-bottom:12px;">
+        <div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);border-radius:var(--rs);padding:10px;margin-bottom:12px;">
           <div style="margin-bottom:6px;">
             <span class="fl">Funcionário</span>
             <div class="sw"><select id="fe-user"><option value="">Selecione...</option></select></div>
@@ -1376,10 +1438,10 @@ select:focus,input:focus{border-color:var(--gd);}
             </select></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-            <div><span class="fl">Início</span><input type="date" id="fe-inicio" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
-            <div><span class="fl">Fim</span><input type="date" id="fe-fim" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+            <div><span class="fl">Início</span><input type="date" id="fe-inicio" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
+            <div><span class="fl">Fim</span><input type="date" id="fe-fim" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
           </div>
-          <input type="text" id="fe-obs" placeholder="Observação (opcional)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;margin-bottom:6px;">
+          <input type="text" id="fe-obs" placeholder="Observação (opcional)" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;margin-bottom:6px;">
           <button onclick="addFerias()" style="width:100%;background:#5B8FF9;color:white;border:none;border-radius:99px;padding:9px;font-family:inherit;font-size:.78rem;cursor:pointer;font-weight:600;">+ Registrar período</button>
         </div>
 
@@ -1400,7 +1462,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
     <!-- FILTRO -->
     <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <select id="func-filtro-loja" onchange="renderFuncionarios()" style="flex:1;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.8rem;">
+      <select id="func-filtro-loja" onchange="renderFuncionarios()" style="flex:1;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.8rem;">
         <option value="todas">Todas as lojas</option>
         <option value="meier">Méier</option>
         <option value="tijuca">Tijuca</option>
@@ -1408,7 +1470,7 @@ select:focus,input:focus{border-color:var(--gd);}
         <option value="botafogo">Botafogo</option>
         <option value="ilha">Ilha do Governador</option>
       </select>
-      <select id="func-filtro-equipe" onchange="renderFuncionarios()" style="flex:1;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.8rem;">
+      <select id="func-filtro-equipe" onchange="renderFuncionarios()" style="flex:1;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.8rem;">
         <option value="todas">Todas as equipes</option>
         <option value="cozinha">Cozinha</option>
         <option value="atendimento">Atendimento</option>
@@ -1424,7 +1486,7 @@ select:focus,input:focus{border-color:var(--gd);}
 
   <!-- MODAL FICHA FUNCIONÁRIO -->
   <div id="modal-ficha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:16px;">
-    <div style="background:white;border-radius:var(--r);padding:20px;max-width:440px;width:100%;max-height:88vh;overflow-y:auto;">
+    <div style="background:var(--bg2);border-radius:var(--r);padding:20px;max-width:440px;width:100%;max-height:88vh;overflow-y:auto;">
       <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:4px;" id="ficha-titulo">Cadastrar Funcionário</div>
       <p style="font-size:.72rem;color:var(--lt);margin-bottom:14px;">Preencha os dados do funcionário</p>
 
@@ -1434,26 +1496,26 @@ select:focus,input:focus{border-color:var(--gd);}
       <div style="font-size:.68rem;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">👤 Dados Pessoais</div>
       <div style="margin-bottom:8px;">
         <span class="fl">Nome completo *</span>
-        <input type="text" id="ficha-nome" placeholder="João da Silva" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;">
+        <input type="text" id="ficha-nome" placeholder="João da Silva" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div><span class="fl">CPF</span><input type="text" id="ficha-cpf" placeholder="000.000.000-00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
-        <div><span class="fl">RG</span><input type="text" id="ficha-rg" placeholder="00.000.000-0" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">CPF</span><input type="text" id="ficha-cpf" placeholder="000.000.000-00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">RG</span><input type="text" id="ficha-rg" placeholder="00.000.000-0" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div><span class="fl">Nascimento</span><input type="date" id="ficha-nasc" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
-        <div><span class="fl">Telefone</span><input type="text" id="ficha-tel" placeholder="(21) 99999-9999" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">Nascimento</span><input type="date" id="ficha-nasc" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">Telefone</span><input type="text" id="ficha-tel" placeholder="(21) 99999-9999" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
       </div>
       <div style="margin-bottom:14px;">
         <span class="fl">Endereço</span>
-        <input type="text" id="ficha-endereco" placeholder="Rua, número, bairro" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;">
+        <input type="text" id="ficha-endereco" placeholder="Rua, número, bairro" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;">
       </div>
 
       <!-- DADOS TRABALHISTAS -->
       <div style="font-size:.68rem;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">💼 Dados Trabalhistas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div><span class="fl">Data de contratação</span><input type="date" id="ficha-contratacao" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
-        <div><span class="fl">Cargo/Função</span><input type="text" id="ficha-cargo" placeholder="Ex: Atendente" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">Data de contratação</span><input type="date" id="ficha-contratacao" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">Cargo/Função</span><input type="text" id="ficha-cargo" placeholder="Ex: Atendente" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
         <div>
@@ -1477,9 +1539,9 @@ select:focus,input:focus{border-color:var(--gd);}
           </select></div>
         </div>
       </div>
-      <div id="ficha-aviso-mudanca" style="display:none;background:#FEF9E7;border:1px solid #F9E79F;border-radius:8px;padding:8px;font-size:.72rem;color:var(--or);margin-bottom:8px;"></div>
+      <div id="ficha-aviso-mudanca" style="display:none;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:8px;font-size:.72rem;color:var(--or);margin-bottom:8px;"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div><span class="fl">Salário (opcional)</span><input type="number" id="ficha-salario" placeholder="0,00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;"></div>
+        <div><span class="fl">Salário (opcional)</span><input type="number" id="ficha-salario" placeholder="0,00" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;"></div>
         <div>
           <span class="fl">Status</span>
           <div class="sw"><select id="ficha-status">
@@ -1504,12 +1566,13 @@ select:focus,input:focus{border-color:var(--gd);}
       </div>
 
       <div style="display:flex;gap:8px;">
-        <button onclick="fecharFicha()" style="flex:1;padding:11px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">Cancelar</button>
-        <button onclick="salvarFicha()" id="btn-salvar-ficha" style="flex:2;padding:11px;border-radius:99px;border:none;background:var(--br);color:var(--gd);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Salvar ficha</button>
+        <button onclick="fecharFicha()" style="flex:1;padding:11px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);font-family:inherit;font-size:.82rem;cursor:pointer;">Cancelar</button>
+        <button onclick="salvarFicha()" id="btn-salvar-ficha" style="flex:2;padding:11px;border-radius:99px;border:none;background:var(--wm);color:var(--gd);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Salvar ficha</button>
       </div>
     </div>
   </div>
 
+  </div><!-- fim app-content -->
 </div><!-- fim pg-app -->
 
 <script type="module">
@@ -2977,7 +3040,7 @@ function loadZApiLog(){
   el.innerHTML = log.slice(0,15).map(l=>{
     const cor = l.status==='sucesso'?'var(--gn)':'var(--rd)';
     const icon = l.status==='sucesso'?'✅':'❌';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F0E8DC;font-size:.75rem;">
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.75rem;">
       <span>${icon}</span>
       <div style="flex:1;min-width:0;">
         <div style="color:var(--br);font-weight:600;">${l.dest}</div>
@@ -3089,7 +3152,7 @@ function loadZApiConfig(){
   const dests = config.destinatarios||[];
   if(!dests.length){el.innerHTML='<div style="font-size:.78rem;color:var(--lt);padding:8px;">Nenhum destinatário cadastrado.</div>';return;}
   el.innerHTML = dests.map(d=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:8px;background:white;border-radius:8px;margin-bottom:5px;border:1px solid ${d.ativo?'#B8EFD0':'#E8D8C8'};">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg2);border-radius:8px;margin-bottom:5px;border:1px solid ${d.ativo?'rgba(34,197,94,.35)':'var(--line)'};">
       <div style="font-size:1.1rem;">${d.tipo==='grupo'?'👥':'📱'}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:.82rem;font-weight:700;color:var(--br);">${d.nome}</div>
@@ -3162,7 +3225,7 @@ async function loadHist(){
 
     if(snap && snap.size === 0){
       // Firebase conectou mas não tem dados ainda
-      listEl.innerHTML='<div class="empty-hist">Nenhum checklist encontrado no Firebase.<br><button onclick="loadHist()" style="margin-top:10px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button></div>';
+      listEl.innerHTML='<div class="empty-hist">Nenhum checklist encontrado no Firebase.<br><button onclick="loadHist()" style="margin-top:10px;background:var(--wm);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button></div>';
       subEl.textContent='0 registros';
       return;
     }
@@ -3175,16 +3238,16 @@ async function loadHist(){
   if(local.length > 0){
     renderHist();
     listEl.insertAdjacentHTML('afterbegin',`
-      <div style="background:#FEF9E7;border:1px solid var(--or);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--or);">
+      <div style="background:rgba(245,158,11,.12);border:1px solid var(--or);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--or);">
         ⚠️ Firebase offline — mostrando registros deste dispositivo.
-        <button onclick="loadHist()" style="display:block;margin-top:6px;background:var(--br);color:var(--gd);border:none;border-radius:99px;padding:5px 14px;font-size:.7rem;cursor:pointer;font-family:inherit;">🔄 Tentar Firebase novamente</button>
+        <button onclick="loadHist()" style="display:block;margin-top:6px;background:var(--wm);color:var(--gd);border:none;border-radius:99px;padding:5px 14px;font-size:.7rem;cursor:pointer;font-family:inherit;">🔄 Tentar Firebase novamente</button>
       </div>`);
   } else {
     listEl.innerHTML=`
       <div class="empty-hist">
         📶 Firebase não conectado e sem dados locais.<br>
         <small style="color:var(--lt);display:block;margin-top:4px;">Verifique sua conexão com a internet.</small>
-        <button onclick="reconectarFirebase()" style="margin-top:12px;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:10px 18px;font-size:.82rem;cursor:pointer;font-family:inherit;">🔄 Reconectar e tentar novamente</button>
+        <button onclick="reconectarFirebase()" style="margin-top:12px;background:var(--wm);color:var(--gd);border:none;border-radius:8px;padding:10px 18px;font-size:.82rem;cursor:pointer;font-family:inherit;">🔄 Reconectar e tentar novamente</button>
       </div>`;
     subEl.textContent='Offline';
   }
@@ -3240,7 +3303,7 @@ function renderHist(){
           <span class="badge-green">✅ ${r.done} feitos</span>
           ${r.total-r.done>0?`<span class="badge-red">❌ ${r.total-r.done} não feitos</span>`:''}
           ${r.totalPhotos>0?`<span style="font-size:.7rem;color:var(--md);">📸 ${r.totalPhotos} fotos</span>`:''}
-          ${isOwner?`<button onclick="editarChecklist('${r.id}',${i})" style="margin-left:auto;background:var(--br);color:var(--gd);border:none;border-radius:8px;padding:5px 12px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Editar</button>`:''}
+          ${isOwner?`<button onclick="editarChecklist('${r.id}',${i})" style="margin-left:auto;background:var(--wm);color:var(--gd);border:none;border-radius:8px;padding:5px 12px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Editar</button>`:''}
         </div>
         ${itensHtml}
       </div>
@@ -3318,8 +3381,8 @@ async function loadPainel(){
   if(lojasFaltando.length||lojasRisco.length){
     alertasBox.style.display='block';
     let html='';
-    lojasFaltando.forEach(l=>html+=`<div style="font-size:.82rem;color:var(--rd);padding:4px 0;border-bottom:1px solid #F5B7B1;">🚫 <strong>${l}</strong> — Sem checklist hoje</div>`);
-    lojasRisco.forEach(l=>html+=`<div style="font-size:.82rem;color:var(--or);padding:4px 0;border-bottom:1px solid #F5B7B1;">⚠️ <strong>${l}</strong> — Conformidade crítica</div>`);
+    lojasFaltando.forEach(l=>html+=`<div style="font-size:.82rem;color:var(--rd);padding:4px 0;border-bottom:1px solid rgba(239,68,68,.35);">🚫 <strong>${l}</strong> — Sem checklist hoje</div>`);
+    lojasRisco.forEach(l=>html+=`<div style="font-size:.82rem;color:var(--or);padding:4px 0;border-bottom:1px solid rgba(239,68,68,.35);">⚠️ <strong>${l}</strong> — Conformidade crítica</div>`);
     alertasEl.innerHTML=html;
   } else {
     alertasBox.style.display='none';
@@ -3339,7 +3402,7 @@ async function loadPainel(){
     const cor = l.pct>=80?'var(--gn)':l.pct>=60?'var(--or)':'var(--rd)';
     const tendencia = l.pctHoje!==null?(l.pctHoje>l.pct?'↑':'↓'):'—';
     const tendCor = l.pctHoje!==null?(l.pctHoje>l.pct?'var(--gn)':'var(--rd)'):'var(--lt)';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0E8DC;">
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
       <span style="font-size:.9rem;min-width:22px;">${medal}</span>
       <span style="flex:1;font-size:.85rem;font-weight:600;color:var(--br);">${l.nome}</span>
       <div style="width:90px;height:6px;background:#EEE;border-radius:99px;overflow:hidden;">
@@ -3468,14 +3531,14 @@ Seja específico, use os nomes reais das lojas e dos itens. Escreva como um rela
     const reply = data.content?.[0]?.text||'Erro ao gerar relatório.';
 
     resultado.innerHTML=`
-      <div style="border-top:1px solid #E8D8C8;padding-top:12px;margin-top:4px;">
+      <div style="border-top:1px solid var(--line);padding-top:12px;margin-top:4px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
           <div style="width:8px;height:8px;background:var(--gn);border-radius:50%;"></div>
           <span style="font-size:.72rem;font-weight:700;color:var(--md);text-transform:uppercase;letter-spacing:.8px;">Relatório IA — ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
         </div>
         <div style="font-size:.83rem;color:var(--br);line-height:1.8;white-space:pre-wrap;">${reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>
         <div style="margin-top:12px;display:flex;gap:8px;">
-          <button onclick="document.getElementById('rel-ia-resultado').style.display='none'" style="font-size:.72rem;padding:5px 14px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">Fechar</button>
+          <button onclick="document.getElementById('rel-ia-resultado').style.display='none'" style="font-size:.72rem;padding:5px 14px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);cursor:pointer;font-family:inherit;">Fechar</button>
           <button onclick="copiarRelatorio()" style="font-size:.72rem;padding:5px 14px;border-radius:99px;border:1px solid var(--gd);background:transparent;color:var(--gd);cursor:pointer;font-family:inherit;">📋 Copiar</button>
         </div>
       </div>`;
@@ -3638,14 +3701,14 @@ Retorne APENAS um JSON válido:
     const confBaixa = resultado.confianca==='baixa';
 
     document.getElementById('est-resultado-conteudo').innerHTML=`
-      <div style="text-align:center;padding:12px 0;border-bottom:1px solid #E8D8C8;margin-bottom:12px;">
+      <div style="text-align:center;padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:12px;">
         <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:4px;">${itemNome}</div>
         <div style="font-family:'DM Serif Display',serif;font-size:3.5rem;color:var(--br);line-height:1;">${resultado.quantidade_contada}</div>
         <div style="font-size:.82rem;color:var(--lt);">${unidade}</div>
         <div style="font-size:.72rem;font-weight:700;color:${confCor};margin-top:4px;">Confiança: ${confLabel}</div>
       </div>
 
-      ${confBaixa?`<div style="background:#FDEDEC;border:1.5px solid #F5B7B1;border-radius:var(--rs);padding:12px;margin-bottom:12px;">
+      ${confBaixa?`<div style="background:rgba(239,68,68,.12);border:1.5px solid rgba(239,68,68,.35);border-radius:var(--rs);padding:12px;margin-bottom:12px;">
         <div style="font-size:.78rem;font-weight:700;color:var(--rd);margin-bottom:4px;">🔴 Confiança baixa — recomendamos tirar outra foto</div>
         ${resultado.motivo_baixa_confianca?`<div style="font-size:.74rem;color:var(--md);line-height:1.5;margin-bottom:8px;">${resultado.motivo_baixa_confianca}</div>`:''}
         <div style="font-size:.7rem;color:var(--lt);line-height:1.5;">💡 Dicas: tire de cima · evite sobreposição · use boa luz · enquadre só o item</div>
@@ -3661,20 +3724,20 @@ Retorne APENAS um JSON válido:
         <div style="font-size:.8rem;color:var(--br);line-height:1.5;">${resultado.observacoes||''}</div>
       </div>
 
-      ${resultado.alertas?.length?`<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--rs);padding:8px 10px;margin-bottom:10px;">
+      ${resultado.alertas?.length?`<div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px;">
         ${resultado.alertas.map(a=>`<div style="font-size:.78rem;color:var(--or);">⚠️ ${a}</div>`).join('')}
       </div>`:''}
 
-      ${resultado.recomendacao?`<div style="background:#EAF5EE;border:1px solid #B8EFD0;border-radius:var(--rs);padding:8px 10px;margin-bottom:12px;">
+      ${resultado.recomendacao?`<div style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:var(--rs);padding:8px 10px;margin-bottom:12px;">
         <div style="font-size:.78rem;color:var(--gn);">💡 ${resultado.recomendacao}</div>
       </div>`:''}
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${confBaixa
           ? `<button onclick="estNovaFoto()" class="btn" style="flex:2;font-size:.8rem;">📷 Tirar nova foto</button>
-             <button onclick="usarQtdContagem(${resultado.quantidade_contada},'${itemNome.replace(/'/g,"\\'")}')" style="flex:1;padding:10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.8rem;cursor:pointer;">Usar assim mesmo</button>`
+             <button onclick="usarQtdContagem(${resultado.quantidade_contada},'${itemNome.replace(/'/g,"\\'")}')" style="flex:1;padding:10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);font-family:inherit;font-size:.8rem;cursor:pointer;">Usar assim mesmo</button>`
           : `<button onclick="usarQtdContagem(${resultado.quantidade_contada},'${itemNome.replace(/'/g,"\\'")}')" class="btn" style="flex:2;font-size:.8rem;">✅ Usar essa quantidade</button>
-             <button onclick="estNovaFoto()" style="flex:1;padding:10px;border-radius:99px;border:1px solid #E8D8C8;background:transparent;color:var(--md);font-family:inherit;font-size:.8rem;cursor:pointer;">📷 Nova foto</button>`}
+             <button onclick="estNovaFoto()" style="flex:1;padding:10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--md);font-family:inherit;font-size:.8rem;cursor:pointer;">📷 Nova foto</button>`}
       </div>`;
 
     document.getElementById('est-resultado').style.display='block';
@@ -3705,7 +3768,7 @@ function loadEstHist(){
   if(!hist.length){el.innerHTML='<div style="font-size:.82rem;color:var(--lt);">Nenhuma contagem registrada.</div>';return;}
   el.innerHTML = hist.slice(0,10).map(h=>{
     const confCor = h.confianca==='alta'?'var(--gn)':h.confianca==='media'?'var(--or)':'var(--rd)';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0E8DC;">
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
       ${h.foto?`<img src="${h.foto}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #DDD;flex-shrink:0;" onclick="openZoom('${h.foto}')">`:''}
       <div style="flex:1;min-width:0;">
         <div style="font-size:.82rem;font-weight:700;color:var(--br);">${h.item}</div>
@@ -3771,7 +3834,7 @@ async function loadScore(){
   document.getElementById('score-acoes').innerHTML = abertas.length
     ? abertas.map(a=>{
         const riskColor = a.risco==='critico'?'var(--rd)':a.risco==='alto'?'var(--rd)':a.risco==='medio'?'var(--or)':'var(--gd)';
-        return `<div style="background:#FDF6EC;border-left:3px solid ${riskColor};border-radius:0 var(--rs) var(--rs) 0;padding:10px 12px;margin-bottom:8px;">
+        return `<div style="background:var(--bg3);border-left:3px solid ${riskColor};border-radius:0 var(--rs) var(--rs) 0;padding:10px 12px;margin-bottom:8px;">
           <div style="font-size:.78rem;font-weight:700;color:var(--br);">${a.item}</div>
           <div style="font-size:.7rem;color:var(--lt);">Loja: ${STORES[a.store]||a.store} · Resp: ${a.responsavel} · Prazo: ${a.prazo}</div>
           <div style="font-size:.65rem;font-weight:700;color:${riskColor};margin-top:3px;text-transform:uppercase;">Risco: ${a.risco}</div>
@@ -3887,7 +3950,7 @@ function iaAddMsg(text, role){
   const msgs = document.getElementById('ia-messages');
   const div = document.createElement('div');
   const isUser = role==='user';
-  div.style.cssText=`background:${isUser?'var(--br)':'#F0E8DC'};color:${isUser?'var(--gd)':'var(--br)'};border-radius:${isUser?'12px 12px 4px 12px':'12px 12px 12px 4px'};padding:10px 14px;font-size:.82rem;line-height:1.5;max-width:88%;${isUser?'align-self:flex-end;margin-left:auto;':''}`;
+  div.style.cssText=`background:${isUser?'var(--br)':'var(--line)'};color:${isUser?'var(--gd)':'var(--br)'};border-radius:${isUser?'12px 12px 4px 12px':'12px 12px 12px 4px'};padding:10px 14px;font-size:.82rem;line-height:1.5;max-width:88%;${isUser?'align-self:flex-end;margin-left:auto;':''}`;
   div.innerHTML=text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
   msgs.appendChild(div);
   msgs.scrollTop=msgs.scrollHeight;
@@ -3897,7 +3960,7 @@ function iaAddTyping(){
   const msgs = document.getElementById('ia-messages');
   const div = document.createElement('div');
   div.id='ia-typing';
-  div.style.cssText='background:#F0E8DC;border-radius:12px 12px 12px 4px;padding:10px 14px;max-width:80px;';
+  div.style.cssText='background:var(--line);border-radius:12px 12px 12px 4px;padding:10px 14px;max-width:80px;';
   div.innerHTML='<span style="display:inline-flex;gap:4px;"><span style="width:6px;height:6px;background:var(--lt);border-radius:50%;animation:bounce .8s infinite;display:inline-block;"></span><span style="width:6px;height:6px;background:var(--lt);border-radius:50%;animation:bounce .8s .1s infinite;display:inline-block;"></span><span style="width:6px;height:6px;background:var(--lt);border-radius:50%;animation:bounce .8s .2s infinite;display:inline-block;"></span></span>';
   msgs.appendChild(div);
   msgs.scrollTop=msgs.scrollHeight;
@@ -4133,7 +4196,7 @@ function loadFinanceiro(){
   document.getElementById('fin-lojas-rank').innerHTML = rankData.map((l,i)=>{
     const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}º`;
     const cor = l.lucro>=0?'var(--gn)':'var(--rd)';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0E8DC;">
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
       <span style="font-size:.9rem;min-width:22px;">${medal}</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:.85rem;font-weight:700;color:var(--br);">${l.nome}</div>
@@ -4207,7 +4270,7 @@ function renderDRE(){
   const margemBruta = totalRec>0?(lucroBruto/totalRec*100):0;
   const margemLiq = totalRec>0?(lucroLiq/totalRec*100):0;
 
-  const linha=(label,val,pct,bold,cor)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #F0E8DC;${bold?'font-weight:700;':''}${cor?'color:'+cor+';':''}">
+  const linha=(label,val,pct,bold,cor)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);${bold?'font-weight:700;':''}${cor?'color:'+cor+';':''}">
     <span style="font-size:.82rem;">${label}</span>
     <div style="text-align:right;">
       <div style="font-size:.85rem;">R$ ${val<0?'(':''}${fmtMoney(val)}${val<0?')':''}</div>
@@ -4251,7 +4314,7 @@ function loadHistoricoFin(){
   el.innerHTML = lancs.map(l=>{
     const cor = l.tipo==='receita'?'var(--gn)':'var(--rd)';
     const sinal = l.tipo==='receita'?'+':'-';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F0E8DC;">
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);">
       <div style="flex:1;min-width:0;">
         <div style="font-size:.83rem;font-weight:600;color:var(--br);">${l.catNome||l.cat}</div>
         <div style="font-size:.68rem;color:var(--lt);">${l.data.split('-').reverse().join('/')} · ${l.lojaNome||l.loja}${l.desc?' · '+l.desc:''}</div>
@@ -4299,7 +4362,7 @@ function loadMetas(){
   if(metas.receita){
     const pct = Math.min((totalRec/parseFloat(metas.receita))*100, 100);
     const cor = pct>=100?'var(--gn)':pct>=70?'var(--or)':'var(--rd)';
-    html += `<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:10px;">
+    html += `<div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
         <span style="font-size:.8rem;font-weight:700;color:var(--br);">💰 Meta de receita</span>
         <span style="font-size:.8rem;font-weight:700;color:${cor};">${pct.toFixed(0)}%</span>
@@ -4319,7 +4382,7 @@ function loadLancRapidos(){
   const rapidos = JSON.parse(localStorage.getItem('cb_lanc_rapidos')||'[]');
   const el = document.getElementById('lc-rapidos');
   if(!rapidos.length){el.innerHTML='';return;}
-  el.innerHTML = rapidos.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px;background:white;border-radius:8px;margin-bottom:5px;border:1px solid #B8EFD0;">
+  el.innerHTML = rapidos.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px;background:var(--bg2);border-radius:8px;margin-bottom:5px;border:1px solid rgba(34,197,94,.35);">
     <div style="flex:1;font-size:.78rem;">
       <strong>${r.nome}</strong>
       <div style="font-size:.65rem;color:var(--lt);">${CAT_NOMES[r.cat]} · R$ ${fmtMoney(r.valor)}</div>
@@ -4383,7 +4446,7 @@ function loadSegmento(){
   const grid = document.getElementById('seg-grid');
   grid.innerHTML = Object.entries(SEGMENTOS).map(([key, s]) => {
     const ativo = key === segAtivoKey;
-    return `<div onclick="trocarSegmento('${key}')" style="background:${ativo?s.cor:'var(--wm)'};color:${ativo?'white':'var(--br)'};border:2px solid ${ativo?s.cor:'#E8D8C8'};border-radius:var(--r);padding:14px;cursor:pointer;transition:all .2s;text-align:center;">
+    return `<div onclick="trocarSegmento('${key}')" style="background:${ativo?s.cor:'var(--wm)'};color:${ativo?'white':'var(--br)'};border:2px solid ${ativo?s.cor:'var(--line)'};border-radius:var(--r);padding:14px;cursor:pointer;transition:all .2s;text-align:center;">
       <div style="font-size:2rem;margin-bottom:6px;">${s.icone}</div>
       <div style="font-size:.82rem;font-weight:700;line-height:1.2;">${s.nome}</div>
       <div style="font-size:.65rem;opacity:.8;margin-top:4px;line-height:1.3;">${Object.keys(s.checklists).length} checklists</div>
@@ -4912,7 +4975,7 @@ function renderFerias(){
     const ativo = hoje>=f.inicio && hoje<=f.fim;
     const futuro = f.inicio>hoje;
     const statusTxt = ativo?'🟢 EM ANDAMENTO':futuro?'🔵 AGENDADO':'⚪ FINALIZADO';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:9px;background:white;border-radius:8px;margin-bottom:5px;border-left:3px solid ${t.cor};">
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px;background:var(--bg2);border-radius:8px;margin-bottom:5px;border-left:3px solid ${t.cor};">
       <span style="font-size:1.2rem;">${t.icon}</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:.82rem;font-weight:700;color:var(--br);">${f.userName}</div>
@@ -5019,7 +5082,7 @@ function renderHistoricoLojas(func){
   if(!hist.length){ box.style.display='none'; return; }
   box.style.display='block';
   el.innerHTML=hist.slice().reverse().map(h=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#F8F8F8;border-radius:6px;margin-bottom:4px;">
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg3);border-radius:6px;margin-bottom:4px;">
       <span style="font-size:.85rem;">📍</span>
       <div style="flex:1;font-size:.75rem;color:var(--br);">
         <strong>${STORES[h.loja]||h.loja}</strong>
@@ -5131,7 +5194,7 @@ function renderFuncionarios(){
 
   const el=document.getElementById('func-lista');
   if(!lista.length){
-    el.innerHTML='<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:24px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhum funcionário cadastrado.<br>Clique em "+ Cadastrar funcionário" para começar.</div>';
+    el.innerHTML='<div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:24px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhum funcionário cadastrado.<br>Clique em "+ Cadastrar funcionário" para começar.</div>';
     return;
   }
 
@@ -5144,7 +5207,7 @@ function renderFuncionarios(){
     const idade=calcularIdade(f.nascimento);
     const tempo=calcularTempoCasa(f.contratacao);
 
-    return`<div style="background:var(--wm);border:1px solid #E8D8C8;border-left:3px solid ${eq.cor};border-radius:var(--rs);padding:13px;margin-bottom:8px;">
+    return`<div style="background:var(--wm);border:1px solid var(--line);border-left:3px solid ${eq.cor};border-radius:var(--rs);padding:13px;margin-bottom:8px;">
       <div style="display:flex;align-items:flex-start;gap:10px;">
         <div style="width:42px;height:42px;border-radius:50%;background:${eq.cor};color:white;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:1.1rem;flex-shrink:0;">${f.nome.charAt(0).toUpperCase()}</div>
         <div style="flex:1;min-width:0;">
@@ -5158,7 +5221,7 @@ function renderFuncionarios(){
       </div>
       <div style="display:flex;gap:6px;margin-top:10px;">
         <button onclick="abrirFichaFuncionario('${f.id}')" style="flex:1;background:transparent;border:1px solid var(--gd);color:var(--gd);border-radius:99px;padding:6px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;">✏️ Editar ficha</button>
-        <button onclick="excluirFuncionario('${f.id}')" style="background:transparent;border:1px solid #E8D8C8;color:var(--rd);border-radius:99px;padding:6px 12px;font-size:.72rem;cursor:pointer;font-family:inherit;">🗑</button>
+        <button onclick="excluirFuncionario('${f.id}')" style="background:transparent;border:1px solid var(--line);color:var(--rd);border-radius:99px;padding:6px 12px;font-size:.72rem;cursor:pointer;font-family:inherit;">🗑</button>
       </div>
     </div>`;
   }).join('');
@@ -5213,7 +5276,7 @@ function renderFeriados(){
   // Feriados nacionais (fixos, não removíveis)
   let html='<div style="font-size:.68rem;font-weight:700;color:var(--lt);text-transform:uppercase;margin-bottom:6px;">Nacionais (fixos)</div>';
   html+=FERIADOS_NACIONAIS.map(f=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#F8F8F8;border-radius:6px;margin-bottom:4px;">
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg3);border-radius:6px;margin-bottom:4px;">
       <span style="font-size:.9rem;">🇧🇷</span>
       <div style="flex:1;font-size:.78rem;color:var(--br);"><strong>${f.dia}</strong> · ${f.nome}</div>
     </div>`).join('');
@@ -5223,7 +5286,7 @@ function renderFeriados(){
   if(custom.length){
     html+='<div style="font-size:.68rem;font-weight:700;color:var(--lt);text-transform:uppercase;margin:10px 0 6px;">Adicionados por você</div>';
     html+=custom.sort((a,b)=>a.data.localeCompare(b.data)).map(f=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#FEF9E7;border-radius:6px;margin-bottom:4px;border:1px solid #F9E79F;">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(245,158,11,.12);border-radius:6px;margin-bottom:4px;border:1px solid rgba(245,158,11,.35);">
         <span style="font-size:.9rem;">🎉</span>
         <div style="flex:1;font-size:.78rem;color:var(--br);">
           <strong>${f.data}</strong> · ${f.nome}
@@ -5253,7 +5316,7 @@ async function loadPonto(){
       avisoFerias.id='aviso-ferias';
       btnPonto.parentNode.insertBefore(avisoFerias, btnPonto);
     }
-    avisoFerias.style.cssText='background:#EAF2F8;border:1.5px solid #AED6F1;border-radius:var(--r);padding:16px;margin-bottom:14px;text-align:center;';
+    avisoFerias.style.cssText='background:rgba(59,130,246,.12);border:1.5px solid rgba(59,130,246,.35);border-radius:var(--r);padding:16px;margin-bottom:14px;text-align:center;';
     avisoFerias.innerHTML=`<div style="font-size:2rem;">${t.icon}</div>
       <div style="font-family:'DM Serif Display',serif;font-size:1.1rem;color:#1A5276;margin:6px 0;">Você está de ${t.nome}</div>
       <div style="font-size:.78rem;color:var(--md);">Período: ${fmtDataBR(feriasHoje.inicio)} a ${fmtDataBR(feriasHoje.fim)}</div>
@@ -5270,7 +5333,7 @@ async function loadPonto(){
   TIPOS_BATIDA.forEach((tipo,i)=>{
     const b=batidas[i];
     if(b){
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0E8DC;">
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
         <div style="font-size:1.3rem;">${ICONES_BATIDA[tipo]}</div>
         <div style="flex:1;">
           <div style="font-size:.85rem;font-weight:600;color:var(--br);">${NOMES_BATIDA[tipo]}</div>
@@ -5280,7 +5343,7 @@ async function loadPonto(){
         <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--gn);">${b.hora}</div>
       </div>`;
     }else{
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0E8DC;opacity:.4;">
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);opacity:.4;">
         <div style="font-size:1.3rem;">${ICONES_BATIDA[tipo]}</div>
         <div style="flex:1;">
           <div style="font-size:.85rem;font-weight:600;color:var(--lt);">${NOMES_BATIDA[tipo]}</div>
@@ -5362,17 +5425,17 @@ function renderHistoricoPonto(datas,todasMes){
       const t=TIPOS_AUSENCIA[ferias.tipo]||TIPOS_AUSENCIA.ferias;
       saldoDia=0;
       saldoCor='var(--lt)';
-      badgeFeriado=`<span style="background:#EAF2F8;color:#1A5276;font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:99px;margin-left:6px;">${t.icon} ${t.nome.toUpperCase()}</span>`;
+      badgeFeriado=`<span style="background:rgba(59,130,246,.12);color:#1A5276;font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:99px;margin-left:6px;">${t.icon} ${t.nome.toUpperCase()}</span>`;
     } else if(feriado){
       saldoDia=Math.round(trabMin*2);
       saldoCor='var(--gn)';
-      badgeFeriado=`<span style="background:#FEF9E7;color:var(--or);font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:99px;margin-left:6px;">🎉 ${feriado.nome} · EXTRA 100%</span>`;
+      badgeFeriado=`<span style="background:rgba(245,158,11,.12);color:var(--or);font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:99px;margin-left:6px;">🎉 ${feriado.nome} · EXTRA 100%</span>`;
     } else {
       saldoDia=Math.round(trabMin-jornadaMin);
       saldoCor=saldoDia>=0?'var(--gn)':'var(--rd)';
     }
 
-    return`<div style="border-bottom:1px solid #F0E8DC;padding:8px 0;">
+    return`<div style="border-bottom:1px solid var(--line);padding:8px 0;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div style="font-size:.82rem;font-weight:600;">${data}${badgeFeriado}</div>
         <div style="font-size:.72rem;color:${saldoCor};font-weight:700;">${ferias?'—':(saldoDia>=0?'+':'')+formatMinutos(saldoDia)}</div>
@@ -5553,7 +5616,7 @@ async function syncAjustesFromFirebase(){
 
 async function loadPontoEquipe(){
   const el=document.getElementById('peq-hoje-content');
-  if(el) el.innerHTML='<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">⏳ Sincronizando batidas...</div>';
+  if(el) el.innerHTML='<div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">⏳ Sincronizando batidas...</div>';
 
   // Sincroniza do Firebase antes de exibir
   await syncPontoFromFirebase();
@@ -5582,11 +5645,11 @@ function renderPontoHoje(){
 
   const el=document.getElementById('peq-hoje-content');
   const users=Object.entries(porUser);
-  if(!users.length){el.innerHTML='<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhum funcionário bateu ponto hoje.</div>';return;}
+  if(!users.length){el.innerHTML='<div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhum funcionário bateu ponto hoje.</div>';return;}
 
   el.innerHTML=users.map(([login,d])=>{
     const bs=d.batidas.sort((a,b)=>a.ts.localeCompare(b.ts));
-    return`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-bottom:10px;">
+    return`<div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
         <div style="font-size:.9rem;font-weight:700;color:var(--br);">${d.userName}</div>
         <div style="font-size:.7rem;color:var(--lt);">${d.storeName}</div>
@@ -5609,9 +5672,9 @@ function renderDocAnexo(a){
   if(!a.documento) return '';
   const ehPdf = a.documentoTipo && a.documentoTipo.includes('pdf');
   if(ehPdf){
-    return '<div style="margin-bottom:8px;"><a href="'+a.documento+'" download="atestado_'+a.userName+'.pdf" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #E8D8C8;border-radius:8px;padding:8px 12px;font-size:.76rem;color:var(--br);text-decoration:none;">📄 Ver documento anexado (PDF)</a></div>';
+    return '<div style="margin-bottom:8px;"><a href="'+a.documento+'" download="atestado_'+a.userName+'.pdf" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:.76rem;color:var(--br);text-decoration:none;">📄 Ver documento anexado (PDF)</a></div>';
   }
-  return '<div style="margin-bottom:8px;"><img src="'+a.documento+'" onclick="openZoom(\''+a.documento+'\')" style="max-width:120px;border-radius:8px;border:1px solid #E8D8C8;cursor:pointer;" title="Clique para ampliar"><div style="font-size:.65rem;color:var(--lt);margin-top:2px;">📎 Documento anexado — clique para ampliar</div></div>';
+  return '<div style="margin-bottom:8px;"><img src="'+a.documento+'" onclick="openZoom(\''+a.documento+'\')" style="max-width:120px;border-radius:8px;border:1px solid var(--line);cursor:pointer;" title="Clique para ampliar"><div style="font-size:.65rem;color:var(--lt);margin-top:2px;">📎 Documento anexado — clique para ampliar</div></div>';
 }
 
 // Resumo do dia — envia panorama de todos os funcionários para o admin
@@ -5710,7 +5773,7 @@ function renderAjustesPendentes(){
   const ajustes=JSON.parse(localStorage.getItem('cb_ajustes_ponto')||'[]');
   const el=document.getElementById('peq-ajustes-content');
 
-  if(!ajustes.length){el.innerHTML='<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhuma solicitação de ajuste.</div>';return;}
+  if(!ajustes.length){el.innerHTML='<div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:20px;text-align:center;font-size:.82rem;color:var(--lt);">Nenhuma solicitação de ajuste.</div>';return;}
 
   el.innerHTML=ajustes.map(a=>{
     const cor=a.status==='aprovado'?'var(--gn)':a.status==='reprovado'?'var(--rd)':'var(--or)';
@@ -5968,7 +6031,7 @@ async function gerarRelatorioPonto(){
       }
     });
     const cor=saldoTotal>=0?'var(--gn)':'var(--rd)';
-    return`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:12px;margin-bottom:8px;">
+    return`<div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:8px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div>
           <div style="font-size:.85rem;font-weight:700;color:var(--br);">${d.userName}</div>
@@ -6075,7 +6138,7 @@ async function iniciarAuditoria(){
   const ultimosCL=historyCache.filter(r=>r.store===loja).sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
 
   if(!ultimosCL.length){
-    el.innerHTML=`<div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Nenhum checklist encontrado para ${STORES[loja]}. A loja precisa ter feito ao menos um checklist para ser auditada.</div>`;
+    el.innerHTML=`<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Nenhum checklist encontrado para ${STORES[loja]}. A loja precisa ter feito ao menos um checklist para ser auditada.</div>`;
     return;
   }
 
@@ -6102,7 +6165,7 @@ async function iniciarAuditoria(){
   });
 
   if(!_audItens.length){
-    el.innerHTML=`<div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Os checklists de ${STORES[loja]} não têm itens para auditar.</div>`;
+    el.innerHTML=`<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Os checklists de ${STORES[loja]} não têm itens para auditar.</div>`;
     return;
   }
 
@@ -6113,7 +6176,7 @@ async function iniciarAuditoria(){
 function renderAuditoriaItens(loja){
   const el=document.getElementById('aud-resultado');
 
-  let html=`<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:12px;margin-bottom:12px;">
+  let html=`<div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:var(--r);padding:12px;margin-bottom:12px;">
     <div style="font-size:.8rem;font-weight:700;color:var(--or);">🔍 Auditando: ${STORES[loja]}</div>
     <div style="font-size:.72rem;color:var(--md);margin-top:3px;">Marque o que VOCÊ encontrou. Itens "Não conforme" exigem foto de evidência.</div>
   </div>`;
@@ -6125,36 +6188,36 @@ function renderAuditoriaItens(loja){
     _audItens.forEach((item,idx)=>{
       if(item.tipoChecklist!==tipo) return;
       const conforme=item.auditorAchou;
-      html+=`<div style="background:var(--wm);border:1px solid ${!conforme?'#F5B7B1':'#E8D8C8'};border-radius:var(--rs);padding:10px;margin-bottom:6px;">
+      html+=`<div style="background:var(--wm);border:1px solid ${!conforme?'rgba(239,68,68,.35)':'var(--line)'};border-radius:var(--rs);padding:10px;margin-bottom:6px;">
         <div style="font-size:.8rem;color:var(--br);margin-bottom:6px;">${item.crit?'🔴 ':''}${item.texto}</div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <button onclick="marcarAudItem(${idx},true)" style="flex:1;padding:7px;border-radius:99px;border:1.5px solid ${conforme?'var(--gn)':'#E8D8C8'};background:${conforme?'#EAFAF1':'transparent'};color:${conforme?'var(--gn)':'var(--lt)'};font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;">✅ Conforme</button>
-          <button onclick="marcarAudItem(${idx},false)" style="flex:1;padding:7px;border-radius:99px;border:1.5px solid ${!conforme?'var(--rd)':'#E8D8C8'};background:${!conforme?'#FDEDEC':'transparent'};color:${!conforme?'var(--rd)':'var(--lt)'};font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;">❌ Não conforme</button>
+          <button onclick="marcarAudItem(${idx},true)" style="flex:1;padding:7px;border-radius:99px;border:1.5px solid ${conforme?'var(--gn)':'var(--line)'};background:${conforme?'#EAFAF1':'transparent'};color:${conforme?'var(--gn)':'var(--lt)'};font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;">✅ Conforme</button>
+          <button onclick="marcarAudItem(${idx},false)" style="flex:1;padding:7px;border-radius:99px;border:1.5px solid ${!conforme?'var(--rd)':'var(--line)'};background:${!conforme?'#FDEDEC':'transparent'};color:${!conforme?'var(--rd)':'var(--lt)'};font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;">❌ Não conforme</button>
         </div>
         ${item.lojaReportou!==item.auditorAchou?`<div style="font-size:.66rem;color:var(--or);margin-top:5px;font-weight:600;">⚠️ DIVERGÊNCIA: loja reportou "${item.lojaReportou?'feito':'não feito'}"</div>`:''}
         ${!conforme?`
-        <div style="margin-top:8px;background:#FDEDEC;border:1px solid #F5B7B1;border-radius:8px;padding:8px;">
+        <div style="margin-top:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:8px;padding:8px;">
           <div style="font-size:.68rem;font-weight:700;color:var(--rd);margin-bottom:5px;">📷 Foto de evidência (obrigatória)</div>
           ${item.foto
             ? `<div style="display:flex;align-items:center;gap:8px;">
-                <img src="${item.foto}" onclick="openZoom('${item.foto}')" style="width:54px;height:54px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #E8D8C8;">
-                <button onclick="removerFotoAudItem(${idx})" style="background:transparent;border:1px solid #E8D8C8;color:var(--rd);border-radius:99px;padding:5px 12px;font-size:.7rem;cursor:pointer;font-family:inherit;">🗑 Trocar foto</button>
+                <img src="${item.foto}" onclick="openZoom('${item.foto}')" style="width:54px;height:54px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--line);">
+                <button onclick="removerFotoAudItem(${idx})" style="background:transparent;border:1px solid var(--line);color:var(--rd);border-radius:99px;padding:5px 12px;font-size:.7rem;cursor:pointer;font-family:inherit;">🗑 Trocar foto</button>
               </div>`
-            : `<label style="display:block;background:white;border:1px dashed var(--rd);border-radius:8px;padding:10px;text-align:center;cursor:pointer;">
+            : `<label style="display:block;background:var(--bg2);border:1px dashed var(--rd);border-radius:8px;padding:10px;text-align:center;cursor:pointer;">
                 <input type="file" accept="image/*" capture="environment" onchange="fotoAudItem(${idx},event)" style="display:none;">
                 <div style="font-size:1.3rem;">📷</div>
                 <div style="font-size:.7rem;color:var(--rd);">Tirar foto do problema</div>
               </label>`}
-          <textarea onchange="obsAudItem(${idx},this.value)" placeholder="O que você encontrou? (opcional)" style="width:100%;margin-top:6px;padding:7px;border-radius:6px;border:1px solid #E8D8C8;font-family:inherit;font-size:.74rem;min-height:44px;resize:vertical;">${item.obsItem||''}</textarea>
+          <textarea onchange="obsAudItem(${idx},this.value)" placeholder="O que você encontrou? (opcional)" style="width:100%;margin-top:6px;padding:7px;border-radius:6px;border:1px solid var(--line);font-family:inherit;font-size:.74rem;min-height:44px;resize:vertical;">${item.obsItem||''}</textarea>
         </div>`:''}
       </div>`;
     });
   });
 
   // Campo de avaliação
-  html+=`<div style="background:var(--wm);border:1px solid #E8D8C8;border-radius:var(--r);padding:14px;margin-top:14px;">
+  html+=`<div style="background:var(--wm);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-top:14px;">
     <div style="font-size:.75rem;font-weight:700;color:var(--md);margin-bottom:8px;">📝 Observações gerais do auditor</div>
-    <textarea id="aud-obs" placeholder="Resumo geral, recomendações..." style="width:100%;padding:10px;border-radius:var(--rs);border:1px solid #E8D8C8;font-family:inherit;font-size:.82rem;min-height:70px;resize:vertical;">${_audObsGeral||''}</textarea>
+    <textarea id="aud-obs" placeholder="Resumo geral, recomendações..." style="width:100%;padding:10px;border-radius:var(--rs);border:1px solid var(--line);font-family:inherit;font-size:.82rem;min-height:70px;resize:vertical;">${_audObsGeral||''}</textarea>
     <div class="uarea" style="margin-top:10px;">
       <input type="file" accept="image/*" capture="environment" onchange="audFotoUp(event)">
       <div class="uicon">📷</div><div class="utxt">Foto geral da auditoria (obrigatória)</div>
@@ -6282,7 +6345,7 @@ async function salvarAuditoria(loja){
   _audObsGeral='';
 
   // Tela de resultado
-  let resHtml=`<div style="background:${nota>=80?'#EAFAF1':nota>=60?'#FEF9E7':'#FDEDEC'};border:1px solid ${nota>=80?'#B8EFD0':nota>=60?'#F9E79F':'#F5B7B1'};border-radius:var(--r);padding:16px;text-align:center;">
+  let resHtml=`<div style="background:${nota>=80?'#EAFAF1':nota>=60?'#FEF9E7':'#FDEDEC'};border:1px solid ${nota>=80?'rgba(34,197,94,.35)':nota>=60?'rgba(245,158,11,.35)':'rgba(239,68,68,.35)'};border-radius:var(--r);padding:16px;text-align:center;">
     <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:${nota>=80?'var(--gn)':nota>=60?'var(--or)':'var(--rd)'};">${nota}/100</div>
     <div style="font-size:.85rem;font-weight:700;color:var(--br);margin:4px 0;">Auditoria registrada!</div>
     <div style="font-size:.75rem;color:var(--md);">${conformes} de ${total} itens conformes</div>`;
@@ -6372,7 +6435,7 @@ async function gerarRelatorioMelhorias(){
   const dados = coletarDadosGestao(7);
 
   if(dados.totalChecklists===0 && dados.totalAuditorias===0){
-    el.innerHTML = '<div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--or);">Não há checklists nem auditorias nos últimos 7 dias para analisar.</div>';
+    el.innerHTML = '<div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--or);">Não há checklists nem auditorias nos últimos 7 dias para analisar.</div>';
     return;
   }
 
@@ -6421,7 +6484,7 @@ Formate com emojis e seções claras. NÃO use markdown com asteriscos, use text
     window._ultimoRelatorioMelhorias = texto;
 
     el.innerHTML = `
-      <div style="background:white;border:1px solid #E8D8C8;border-radius:var(--r);padding:16px;">
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <div style="font-size:.85rem;font-weight:700;color:var(--br);">🤖 Relatório de Melhorias</div>
           <span style="font-size:.65rem;color:var(--lt);">Últimos 7 dias</span>
@@ -6431,7 +6494,7 @@ Formate com emojis e seções claras. NÃO use markdown com asteriscos, use text
       </div>`;
     el.scrollIntoView({behavior:'smooth'});
   }catch(e){
-    el.innerHTML = `<div style="background:#FDEDEC;border:1px solid #F5B7B1;border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Erro ao gerar relatório: ${e.message}. Verifique a conexão.</div>`;
+    el.innerHTML = `<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:var(--r);padding:14px;font-size:.82rem;color:var(--rd);">Erro ao gerar relatório: ${e.message}. Verifique a conexão.</div>`;
   }
 }
 
@@ -6447,7 +6510,7 @@ function gerarRelatorioSemanal(){
 
   const dados = coletarDadosGestao(7);
 
-  let html = `<div style="background:white;border:1px solid #E8D8C8;border-radius:var(--r);padding:16px;">
+  let html = `<div style="background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:16px;">
     <div style="font-size:.85rem;font-weight:700;color:var(--br);margin-bottom:4px;">🚨 Pontos Críticos da Semana</div>
     <div style="font-size:.65rem;color:var(--lt);margin-bottom:12px;">Últimos 7 dias · ${dados.totalChecklists} checklists · ${dados.totalAuditorias} auditorias</div>`;
 
@@ -6458,7 +6521,7 @@ function gerarRelatorioSemanal(){
 
   lojas.forEach(l=>{
     if(l.totalChecklists===0 && l.totalAuditorias===0){
-      html += `<div style="border-top:1px solid #F0E8DC;padding:10px 0;">
+      html += `<div style="border-top:1px solid var(--line);padding:10px 0;">
         <div style="font-size:.82rem;font-weight:700;color:var(--lt);">${l.nome}</div>
         <div style="font-size:.74rem;color:var(--lt);">Sem atividade registrada</div>
       </div>`;
@@ -6468,7 +6531,7 @@ function gerarRelatorioSemanal(){
     const topNaoFeitos = Object.entries(l.itensNaoFeitos).sort((a,b)=>b[1]-a[1]).slice(0,3);
     const corMedia = (l.mediaChecklist??100)>=80?'var(--gn)':(l.mediaChecklist??100)>=60?'var(--or)':'var(--rd)';
 
-    html += `<div style="border-top:1px solid #F0E8DC;padding:10px 0;">
+    html += `<div style="border-top:1px solid var(--line);padding:10px 0;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div style="font-size:.82rem;font-weight:700;color:var(--br);">${l.nome}</div>
         <div style="font-size:.76rem;font-weight:700;color:${corMedia};">${l.mediaChecklist??'N/A'}%</div>
@@ -6546,7 +6609,7 @@ function carregarAprovacoes(){
   if(!pendentes.length){el.innerHTML='<div style="font-size:.8rem;color:var(--lt);">Nenhum plano aguardando aprovação.</div>';return;}
   el.innerHTML=pendentes.map(a=>{
     const rc=a.risco==='critico'||a.risco==='alto'?'var(--rd)':a.risco==='medio'?'var(--or)':'var(--gd)';
-    return`<div style="background:var(--cr);border-left:3px solid ${rc};border-radius:0 var(--rs) var(--rs) 0;padding:10px 12px;margin-bottom:8px;"><div style="font-size:.78rem;font-weight:700;color:var(--br);">${a.item}</div><div style="font-size:.7rem;color:var(--lt);">${STORES[a.store]||a.store} · Resp: ${a.responsavel} · Prazo: ${a.prazo}</div><div style="font-size:.65rem;font-weight:700;color:${rc};text-transform:uppercase;margin:4px 0;">Risco: ${a.risco}</div><textarea placeholder="Observação..." style="width:100%;font-size:.75rem;padding:6px;border-radius:6px;border:1px solid #E8D8C8;font-family:inherit;min-height:40px;resize:none;margin-bottom:6px;" id="ap-obs-${a.id}"></textarea><div style="display:flex;gap:6px;"><button onclick="aprovarAcao('${a.id}','aprovado')" style="flex:1;font-size:.7rem;padding:5px;border-radius:99px;border:none;background:var(--gn);color:white;cursor:pointer;font-family:inherit;">✅ Aprovar</button><button onclick="aprovarAcao('${a.id}','reprovado')" style="flex:1;font-size:.7rem;padding:5px;border-radius:99px;border:none;background:var(--rd);color:white;cursor:pointer;font-family:inherit;">❌ Reprovar</button></div></div>`;
+    return`<div style="background:var(--cr);border-left:3px solid ${rc};border-radius:0 var(--rs) var(--rs) 0;padding:10px 12px;margin-bottom:8px;"><div style="font-size:.78rem;font-weight:700;color:var(--br);">${a.item}</div><div style="font-size:.7rem;color:var(--lt);">${STORES[a.store]||a.store} · Resp: ${a.responsavel} · Prazo: ${a.prazo}</div><div style="font-size:.65rem;font-weight:700;color:${rc};text-transform:uppercase;margin:4px 0;">Risco: ${a.risco}</div><textarea placeholder="Observação..." style="width:100%;font-size:.75rem;padding:6px;border-radius:6px;border:1px solid var(--line);font-family:inherit;min-height:40px;resize:none;margin-bottom:6px;" id="ap-obs-${a.id}"></textarea><div style="display:flex;gap:6px;"><button onclick="aprovarAcao('${a.id}','aprovado')" style="flex:1;font-size:.7rem;padding:5px;border-radius:99px;border:none;background:var(--gn);color:white;cursor:pointer;font-family:inherit;">✅ Aprovar</button><button onclick="aprovarAcao('${a.id}','reprovado')" style="flex:1;font-size:.7rem;padding:5px;border-radius:99px;border:none;background:var(--rd);color:white;cursor:pointer;font-family:inherit;">❌ Reprovar</button></div></div>`;
   }).join('');
 }
 
@@ -6775,7 +6838,7 @@ function renderPadLista(){
     const sevColor = p.sev==='critico'?'var(--rd)':p.sev==='alto'?'var(--or)':p.sev==='medio'?'var(--gd)':'var(--gn)';
     const sevLabel = p.sev==='critico'?'🔴 Crítico':p.sev==='alto'?'🟠 Alto':p.sev==='medio'?'🟡 Médio':'🟢 Baixo';
     const allFotos = [...(p.fotos.frontal||[]),...(p.fotos.lateral||[]),...(p.fotos.detalhe||[])];
-    return`<div style="border:1px solid #E8D8C8;border-radius:var(--rs);padding:12px;margin-bottom:10px;background:var(--cr);">
+    return`<div style="border:1px solid var(--line);border-radius:var(--rs);padding:12px;margin-bottom:10px;background:var(--cr);">
       <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
         <div style="flex:1;">
           <div style="font-size:.85rem;font-weight:700;color:var(--br);">${p.catNome}</div>
@@ -6791,7 +6854,7 @@ function renderPadLista(){
         ${allFotos.slice(0,4).map(f=>`<img src="${f}" style="width:52px;height:52px;object-fit:cover;border-radius:5px;border:1px solid #DDD;" onclick="openZoom('${f}')">`).join('')}
         ${allFotos.length>4?`<div style="width:52px;height:52px;background:#EEE;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--lt);">+${allFotos.length-4}</div>`:''}
       </div>
-      <div style="font-size:.72rem;color:var(--md);background:#F5EDE0;padding:7px 9px;border-radius:var(--rs);line-height:1.5;margin-bottom:8px;">${p.criterios.substring(0,120)}${p.criterios.length>120?'...':''}</div>
+      <div style="font-size:.72rem;color:var(--md);background:var(--bg3);padding:7px 9px;border-radius:var(--rs);line-height:1.5;margin-bottom:8px;">${p.criterios.substring(0,120)}${p.criterios.length>120?'...':''}</div>
       <button onclick="excluirPadrao('${p.id}')" style="font-size:.68rem;padding:4px 12px;border-radius:99px;border:1px solid var(--rd);color:var(--rd);background:transparent;cursor:pointer;font-family:inherit;">🗑 Excluir</button>
     </div>`;
   }).join('');
@@ -6977,7 +7040,7 @@ function renderCompResultado(r, padrao, rec){
 
   document.getElementById('comp-resultado-card').innerHTML=`
     <!-- SCORE -->
-    <div style="text-align:center;padding:16px 0;border-bottom:1px solid #E8D8C8;margin-bottom:14px;">
+    <div style="text-align:center;padding:16px 0;border-bottom:1px solid var(--line);margin-bottom:14px;">
       <div style="font-family:'DM Serif Display',serif;font-size:3rem;color:${scoreColor};line-height:1;">${r.score}%</div>
       <div style="font-size:.82rem;font-weight:700;color:${r.aprovado?'var(--gn)':'var(--rd)'};margin-top:4px;">${r.aprovado?'✅ APROVADO':'❌ REPROVADO'}</div>
       <div style="font-size:.72rem;color:var(--lt);margin-top:2px;">${padrao.catNome} — ${rec.lojaName} · ${rec.data}</div>
@@ -6985,14 +7048,14 @@ function renderCompResultado(r, padrao, rec){
     </div>
 
     <!-- COMPARAÇÃO -->
-    <div style="font-size:.82rem;color:var(--br);line-height:1.6;background:#F5EDE0;padding:10px 12px;border-radius:var(--rs);margin-bottom:12px;">
+    <div style="font-size:.82rem;color:var(--br);line-height:1.6;background:var(--bg3);padding:10px 12px;border-radius:var(--rs);margin-bottom:12px;">
       <strong>📊 Análise comparativa:</strong><br>${r.comparacao}
     </div>
 
     <!-- CONFORMIDADES -->
     ${r.conformidades?.length?`<div style="margin-bottom:12px;">
       <div style="font-size:.7rem;font-weight:700;color:var(--gn);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px;">✅ Em conformidade (${r.conformidades.length})</div>
-      ${r.conformidades.map(c=>`<div style="font-size:.78rem;padding:4px 0;color:var(--br);border-bottom:1px solid #F0E8DC;">• ${c}</div>`).join('')}
+      ${r.conformidades.map(c=>`<div style="font-size:.78rem;padding:4px 0;color:var(--br);border-bottom:1px solid var(--line);">• ${c}</div>`).join('')}
     </div>`:''}
 
     <!-- NÃO CONFORMIDADES -->
@@ -7004,13 +7067,13 @@ function renderCompResultado(r, padrao, rec){
     <!-- RECOMENDAÇÕES -->
     ${r.recomendacoes?.length?`<div style="margin-bottom:12px;">
       <div style="font-size:.7rem;font-weight:700;color:var(--md);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px;">💡 Ações corretivas</div>
-      ${r.recomendacoes.map((c,i)=>`<div style="font-size:.78rem;padding:6px 0;color:var(--br);border-bottom:1px solid #F0E8DC;"><strong>${i+1}.</strong> ${c}</div>`).join('')}
+      ${r.recomendacoes.map((c,i)=>`<div style="font-size:.78rem;padding:6px 0;color:var(--br);border-bottom:1px solid var(--line);"><strong>${i+1}.</strong> ${c}</div>`).join('')}
     </div>`:''}
 
     <!-- BOTÕES -->
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-      <button onclick="novaAnalise()" style="flex:1;padding:10px;border-radius:99px;background:var(--br);color:var(--gd);border:none;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;">Nova análise</button>
-      ${!r.aprovado?`<button onclick="padraTab('historico')" style="flex:1;padding:10px;border-radius:99px;background:transparent;color:var(--md);border:1px solid #E8D8C8;font-family:inherit;font-size:.8rem;cursor:pointer;">Ver histórico</button>`:''}
+      <button onclick="novaAnalise()" style="flex:1;padding:10px;border-radius:99px;background:var(--wm);color:var(--gd);border:none;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;">Nova análise</button>
+      ${!r.aprovado?`<button onclick="padraTab('historico')" style="flex:1;padding:10px;border-radius:99px;background:transparent;color:var(--md);border:1px solid var(--line);font-family:inherit;font-size:.8rem;cursor:pointer;">Ver histórico</button>`:''}
     </div>`;
 
   document.getElementById('comp-resultado').style.display='block';
@@ -7034,7 +7097,7 @@ function loadPadraoHist(){
 
   el.innerHTML = hist.map(h=>{
     const c = h.score>=80?'var(--gn)':h.score>=60?'var(--or)':'var(--rd)';
-    return`<div style="border:1px solid #E8D8C8;border-radius:var(--rs);padding:12px;margin-bottom:8px;background:var(--cr);">
+    return`<div style="border:1px solid var(--line);border-radius:var(--rs);padding:12px;margin-bottom:8px;background:var(--cr);">
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:44px;height:44px;border-radius:50%;background:${c}20;border:2px solid ${c};display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:${c};flex-shrink:0;">${h.score}%</div>
         <div style="flex:1;">
@@ -7067,6 +7130,16 @@ window.loadPadraoHist=loadPadraoHist;
 window.doLogin=doLogin;
 window.doLogout=doLogout;
 window.goTab=goTab;
+function toggleMenu(){
+  document.getElementById('main-tabs').classList.toggle('open');
+  document.getElementById('sb-overlay').classList.toggle('show');
+}
+function closeMenu(){
+  const t=document.getElementById('main-tabs'); if(t)t.classList.remove('open');
+  const o=document.getElementById('sb-overlay'); if(o)o.classList.remove('show');
+}
+window.toggleMenu=toggleMenu;
+window.closeMenu=closeMenu;
 window.goBack=goBack;
 window.newCL=newCL;
 window.pick=pick;
