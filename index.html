@@ -410,6 +410,7 @@ select:focus,input:focus{border-color:var(--gd);}
   <div class="body-wrap">
     <h1 class="pg-title">Histórico</h1>
     <p class="pg-sub" id="hist-sub">Carregando...</p>
+    <div class="hist-filters" id="hist-date-filters"></div>
     <div class="hist-filters" id="hist-filters"></div>
     <div id="hist-list"><div class="loading-hist">⏳ Carregando registros do Firebase...</div></div>
   </div>
@@ -423,6 +424,9 @@ select:focus,input:focus{border-color:var(--gd);}
       <button onclick="loadPainel()" style="background:transparent;border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:.7rem;color:var(--md);cursor:pointer;font-family:inherit;">🔄 Atualizar</button>
     </div>
     <p class="pg-sub" id="painel-data">Carregando...</p>
+
+    <!-- RELATÓRIO DO DIA (consolidado por loja) -->
+    <button onclick="enviarRelatorioDiaChecklists()" id="btn-rel-dia-cl" style="width:100%;background:var(--gd);color:#1A1206;border:none;border-radius:99px;padding:12px;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer;margin-bottom:14px;">📲 Enviar relatório do dia (checklists) no WhatsApp</button>
 
     <!-- ALERTAS CRÍTICOS — aparecem primeiro se houver -->
     <div style="background:rgba(239,68,68,.12);border:1.5px solid rgba(239,68,68,.35);border-radius:var(--r);padding:14px;margin-bottom:14px;display:none;" id="painel-alertas-box">
@@ -1634,6 +1638,10 @@ let db = null;
 let collection, addDoc, getDocs, getDoc, query, where, doc, updateDoc, setDoc, deleteDoc;
 let fbReady = false;
 let fbError = false;
+// Firebase Authentication
+let auth = null;
+let signInWithEmailAndPassword, createUserWithEmailAndPassword, signOutFn, getAuthFn, initializeAppFn;
+const AUTH_DOMINIO = '@casadebolos.app'; // e-mail sintético: login + este domínio
 
 async function initFirebase(){
   try{
@@ -1651,6 +1659,17 @@ async function initFirebase(){
     deleteDoc = fs.deleteDoc;
     const app = initializeApp(firebaseConfig);
     db = fs.getFirestore(app);
+    // Firebase Authentication
+    try{
+      const fa = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+      auth = fa.getAuth(app);
+      signInWithEmailAndPassword = fa.signInWithEmailAndPassword;
+      createUserWithEmailAndPassword = fa.createUserWithEmailAndPassword;
+      signOutFn = fa.signOut;
+      getAuthFn = fa.getAuth;
+      initializeAppFn = initializeApp;
+      console.log('✅ Firebase Auth pronto');
+    }catch(e){ console.warn('Auth não carregou:', e.message); }
     fbReady = true;
     console.log('✅ Firebase conectado');
     // Sincroniza usuários cadastrados (multi-dispositivo)
@@ -2207,45 +2226,45 @@ const CL={
   ]}]},
   estoque_sab:{cat:'semanal',name:'Estoque — Sábado',icon:'📦',color:'#784212',sections:[
     {title:'Contagem de Estoque Semanal',items:[
-      {t:'Achocolatado',p:false,count:true,min:1},
-      {t:'Açúcar cristal',p:false,count:true,min:1},
-      {t:'Açúcar mascavo',p:false,count:true,min:1},
-      {t:'Açúcar refinado',p:false,count:true,min:1},
-      {t:'Maizena',p:false,count:true,min:1},
-      {t:'Canela em pó',p:false,count:true,min:1},
-      {t:'Castanha do Pará',p:false,count:true,min:1},
-      {t:'Chocolate em barra meio amargo Harald Top',p:false,count:true,min:1},
-      {t:'Chocolate em pó',p:false,count:true,min:1},
-      {t:'Coco em flocos — úmido e adoçado',p:false,count:true,min:1},
-      {t:'Coco ralado — úmido e adoçado',p:false,count:true,min:1},
-      {t:'Creme de avelã Casa de Bolos',p:false,count:true,min:1},
-      {t:'Creme de leite',p:false,count:true,min:1},
-      {t:'Doce de leite Itambé',p:false,count:true,min:1},
-      {t:'Farinha de trigo com fermento',p:false,count:true,min:1},
-      {t:'Farinha de trigo integral',p:false,count:true,min:1},
-      {t:'Farinha de trigo sem fermento',p:false,count:true,min:1},
-      {t:'Fermento em pó',p:false,count:true,min:1},
-      {t:'Fubá',p:false,count:true,min:1},
-      {t:'Goiabada',p:false,count:true,min:1},
-      {t:'Gotas de chocolate',p:false,count:true,min:1},
-      {t:'Iogurte',p:false,count:true,min:1},
-      {t:'Leite condensado',p:false,count:true,min:1},
-      {t:'Leite de coco',p:false,count:true,min:1},
-      {t:'Leite em pó',p:false,count:true,min:1},
-      {t:'Margarina Sofiteli',p:false,count:true,min:1},
-      {t:'Milharina',p:false,count:true,min:1},
-      {t:'Milho em lata',p:false,count:true,min:1},
-      {t:'Óleo de soja',p:false,count:true,min:1},
-      {t:'Ovos',p:false,count:true,min:1},
-      {t:'Queijo',p:false,count:true,min:1},
-      {t:'Requeijão',p:false,count:true,min:1},
-      {t:'Embalagem 32',p:false,count:true,min:20},
-      {t:'Embalagem 50',p:false,count:true,min:20},
-      {t:'Embalagem 56',p:false,count:true,min:20},
-      {t:'Detergente louça',p:false,count:true,min:2},
-      {t:'Detergente clorado',p:false,count:true,min:2},
-      {t:'Desengordurante',p:false,count:true,min:2},
-      {t:'Sanitizante',p:false,count:true,min:2},
+      {t:'Achocolatado',p:true,count:true,min:1},
+      {t:'Açúcar cristal',p:true,count:true,min:1},
+      {t:'Açúcar mascavo',p:true,count:true,min:1},
+      {t:'Açúcar refinado',p:true,count:true,min:1},
+      {t:'Maizena',p:true,count:true,min:1},
+      {t:'Canela em pó',p:true,count:true,min:1},
+      {t:'Castanha do Pará',p:true,count:true,min:1},
+      {t:'Chocolate em barra meio amargo Harald Top',p:true,count:true,min:1},
+      {t:'Chocolate em pó',p:true,count:true,min:1},
+      {t:'Coco em flocos — úmido e adoçado',p:true,count:true,min:1},
+      {t:'Coco ralado — úmido e adoçado',p:true,count:true,min:1},
+      {t:'Creme de avelã Casa de Bolos',p:true,count:true,min:1},
+      {t:'Creme de leite',p:true,count:true,min:1},
+      {t:'Doce de leite Itambé',p:true,count:true,min:1},
+      {t:'Farinha de trigo com fermento',p:true,count:true,min:1},
+      {t:'Farinha de trigo integral',p:true,count:true,min:1},
+      {t:'Farinha de trigo sem fermento',p:true,count:true,min:1},
+      {t:'Fermento em pó',p:true,count:true,min:1},
+      {t:'Fubá',p:true,count:true,min:1},
+      {t:'Goiabada',p:true,count:true,min:1},
+      {t:'Gotas de chocolate',p:true,count:true,min:1},
+      {t:'Iogurte',p:true,count:true,min:1},
+      {t:'Leite condensado',p:true,count:true,min:1},
+      {t:'Leite de coco',p:true,count:true,min:1},
+      {t:'Leite em pó',p:true,count:true,min:1},
+      {t:'Margarina Sofiteli',p:true,count:true,min:1},
+      {t:'Milharina',p:true,count:true,min:1},
+      {t:'Milho em lata',p:true,count:true,min:1},
+      {t:'Óleo de soja',p:true,count:true,min:1},
+      {t:'Ovos',p:true,count:true,min:1},
+      {t:'Queijo',p:true,count:true,min:1},
+      {t:'Requeijão',p:true,count:true,min:1},
+      {t:'Embalagem 32',p:true,count:true,min:20},
+      {t:'Embalagem 50',p:true,count:true,min:20},
+      {t:'Embalagem 56',p:true,count:true,min:20},
+      {t:'Detergente louça',p:true,count:true,min:2},
+      {t:'Detergente clorado',p:true,count:true,min:2},
+      {t:'Desengordurante',p:true,count:true,min:2},
+      {t:'Sanitizante',p:true,count:true,min:2},
     ]},
   ]},
   sanitario:{cat:'geral',name:'Checklist Sanitário',icon:'🧼',color:'#1A5276',sections:[
@@ -2302,7 +2321,7 @@ const CATS={atend:'cards-atend',coz:'cards-coz',semanal:'cards-semanal',geral:'c
 // ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
-let ST={user:null,type:'',store:'',items:[],histFilter:'todos',editingId:null};
+let ST={user:null,type:'',store:'',items:[],histFilter:'todos',histPeriodo:'7',editingId:null};
 let historyCache=[];
 
 // ═══════════════════════════════════════════════
@@ -2327,22 +2346,81 @@ window.addEventListener('DOMContentLoaded',()=>{
 async function doLogin(){
   const login=document.getElementById('login-user').value.trim().toLowerCase();
   const pass=document.getElementById('login-pass').value;
-  let users=getUsers();
-  let user=users.find(u=>u.login===login&&u.pass===pass);
+  const errEl=document.getElementById('login-err');
+  errEl.textContent='Usuário ou senha incorretos';
+  errEl.classList.remove('show');
+  const btnLogin=document.querySelector('#pg-login button');
+  const setBusy=(b,txt)=>{ if(btnLogin){btnLogin.disabled=b; btnLogin.textContent= b ? (txt||'Entrando...') : 'Entrar →';} };
 
-  // Se não achou e Firebase está pronto, tenta sincronizar antes de recusar
-  if(!user && fbReady && db){
-    document.getElementById('login-err').classList.remove('show');
-    const btnLogin=document.querySelector('#pg-login button');
-    if(btnLogin){btnLogin.disabled=true;btnLogin.textContent='Verificando...';}
-    await syncUsersFromFirebase();
-    users=getUsers();
-    user=users.find(u=>u.login===login&&u.pass===pass);
-    if(btnLogin){btnLogin.disabled=false;btnLogin.textContent='Entrar →';}
+  if(!login || !pass){ errEl.classList.add('show'); return; }
+
+  // Espera o Firebase/Auth ficar pronto (até ~6s)
+  let t=0;
+  while((!fbReady || !auth) && !fbError && t<12){ await new Promise(r=>setTimeout(r,500)); t++; }
+
+  // ===== Caminho normal: Firebase Authentication =====
+  if(auth){
+    const email = login + AUTH_DOMINIO;
+    setBusy(true);
+    // 1) tenta entrar no Auth
+    try{
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      const perfil = await obterPerfil(cred.user.uid, login);
+      setBusy(false);
+      if(!perfil){ errEl.textContent='Perfil não encontrado. Fale com o administrador.'; errEl.classList.add('show'); return; }
+      entrarComPerfil(perfil);
+      return;
+    }catch(e){
+      // 2) ainda não migrado? confere o cadastro local e cria a conta no Auth automaticamente
+      let local = getUsers().find(u=>u.login===login && u.pass===pass);
+      if(!local && fbReady && db){ await syncUsersFromFirebase(); local = getUsers().find(u=>u.login===login && u.pass===pass); }
+      const credInvalida = ['auth/user-not-found','auth/invalid-credential','auth/invalid-login-credentials','auth/wrong-password'].includes(e.code);
+      if(local && credInvalida){
+        try{
+          const cred = await createUserWithEmailAndPassword(auth, email, pass);
+          await salvarPerfil(cred.user.uid, local);
+          setBusy(false);
+          entrarComPerfil(local);
+          return;
+        }catch(e2){
+          if(e2.code==='auth/email-already-in-use'){ setBusy(false); errEl.classList.add('show'); return; }
+          // erro ao criar (método ainda não habilitado, rede): não trava, entra pelo cadastro local
+          setBusy(false); entrarComPerfil(local); return;
+        }
+      }
+      // Auth indisponível/método desabilitado: se as credenciais locais batem, entra (sem travar a equipe)
+      if(local){ setBusy(false); entrarComPerfil(local); return; }
+      setBusy(false);
+      errEl.classList.add('show');
+      return;
+    }
   }
 
-  if(!user){document.getElementById('login-err').classList.add('show');return;}
-  document.getElementById('login-err').classList.remove('show');
+  // ===== Fallback offline (Firebase indisponível): login local como antes =====
+  const u = getUsers().find(x=>x.login===login && x.pass===pass);
+  if(!u){ errEl.classList.add('show'); return; }
+  entrarComPerfil(u);
+}
+
+// Lê o perfil do usuário (perfis/{uid}); se faltar, cria a partir do cadastro local
+async function obterPerfil(uid, login){
+  if(fbReady && db){
+    try{ const s=await getDoc(doc(db,'perfis',uid)); if(s && s.exists()) return {uid, ...s.data()}; }catch(e){ console.warn('obterPerfil:',e.message); }
+  }
+  const local = getUsers().find(u=>u.login===login);
+  if(local){ await salvarPerfil(uid, local); return {uid, ...local}; }
+  return null;
+}
+
+// Salva o perfil SEM senha (a senha fica só no Firebase Auth, com hash)
+async function salvarPerfil(uid, user){
+  const perfil = {login:user.login, name:user.name, role:user.role, store:user.store};
+  if(fbReady && db){ try{ await setDoc(doc(db,'perfis',uid), perfil); }catch(e){ console.warn('salvarPerfil:',e.message); } }
+  return perfil;
+}
+
+// Aplica o perfil na interface (visibilidade de abas etc.)
+function entrarComPerfil(user){
   ST.user=user;
   document.getElementById('hdr-user-name').textContent=user.name;
 
@@ -2360,7 +2438,6 @@ async function doLogin(){
   document.getElementById('tab-painel').style.display=ehAdmin?'':'none';
   document.getElementById('tab-score').style.display=ehAdmin?'':'none';
   document.getElementById('tab-ia').style.display=ehAdmin?'':'none';
-  // Auditoria: admin OU auditor
   document.getElementById('tab-auditoria').style.display=(ehAdmin||ehAuditor)?'':'none';
   document.getElementById('tab-padrao').style.display=ehAdmin?'':'none';
   document.getElementById('tab-ponto-eq').style.display=ehAdmin?'':'none';
@@ -2417,7 +2494,7 @@ async function verificarRelatorioSemanal(){
   }
 }
 
-function doLogout(){ST.user=null;showAllScr('sel');showPage('pg-login');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';}
+function doLogout(){if(auth&&signOutFn){try{signOutFn(auth);}catch(e){}}ST.user=null;showAllScr('sel');showPage('pg-login');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';}
 
 function buildStoreSelect(user){
   const sel=document.getElementById('s-store');
@@ -2830,6 +2907,12 @@ async function sendCL(){
     fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
     enviarWpp(rec).catch(e=>console.warn('Wpp:',e.message)); // não bloqueia
 
+    // RELATÓRIO AUTOMÁTICO: ao enviar o "Fechamento Atendimento", dispara o
+    // relatório consolidado do dia DAQUELA loja para os destinatários.
+    if(rec.type==='fe_atend'){
+      enviarRelatorioLojaAuto(rec.store, rec).catch(e=>console.warn('Rel auto:',e.message));
+    }
+
     document.getElementById('okd').innerHTML=`
       <div class="ok-row"><span>Loja</span><span>${rec.storeName}</span></div>
       <div class="ok-row"><span>Checklist</span><span>${CL[rec.type].icon} ${rec.typeName}</span></div>
@@ -2914,7 +2997,8 @@ async function enviarWpp(rec){
 
   // Z-API ativo? envia via proxy Vercel
   if(config.ativo !== false && config.destinatarios && config.destinatarios.length > 0){
-    await enviarZApi(msg, rec);
+    // Mensagem por checklist DESATIVADA — agora o envio é consolidado no
+    // "Relatório do Dia" (um por loja). Mantém-se apenas o alerta de fraude abaixo.
 
     // Se foi feito FORA DO LOCAL, envia aviso SEPARADO só para os gestores
     // (admin/Fabíola/Helen) — o funcionário comum não recebe nada disso
@@ -3231,6 +3315,7 @@ function updDestTipo(){
 async function loadHist(){
   const listEl = document.getElementById('hist-list');
   const subEl  = document.getElementById('hist-sub');
+  renderPeriodoBar();
   listEl.innerHTML='<div class="loading-hist">⏳ Carregando registros...</div>';
   subEl.textContent='Carregando...';
 
@@ -3244,38 +3329,43 @@ async function loadHist(){
     }
   }
 
-  // Tenta Firebase mesmo que tenha dado fbError antes (pode ser erro temporário)
+  const per = ST.histPeriodo || '7';
+  const ehAdmin = ST.user.role==='admin' || ST.user.store==='todas';
+  // Corte generoso só para reduzir o que vem do Firebase (o filtro fino é feito depois)
+  let cutoffISO = null;
+  if(per==='7')       cutoffISO = new Date(Date.now()-7*86400000).toISOString();
+  else if(per==='30') cutoffISO = new Date(Date.now()-30*86400000).toISOString();
+  else if(per==='ontem') cutoffISO = new Date(Date.now()-2*86400000).toISOString(); // folga p/ fuso
+
   if(fbReady && db){
     let snap = null;
     try{
-      if(ST.user.role==='admin'||ST.user.store==='todas'){
+      if(cutoffISO){
+        // Consulta por data (índice de campo único em 'ts' — sem índice composto)
+        snap = await getDocs(query(collection(db,'checklists'), where('ts','>=', cutoffISO)));
+      } else if(ehAdmin){
         snap = await getDocs(collection(db,'checklists'));
       } else {
-        const q = query(collection(db,'checklists'),where('store','==',ST.user.store));
-        snap = await getDocs(q);
+        snap = await getDocs(query(collection(db,'checklists'), where('store','==',ST.user.store)));
       }
     }catch(e){
       console.warn('Firebase loadHist erro:', e.message);
     }
 
-    if(snap && snap.size > 0){
-      historyCache = snap.docs
-        .map(d=>({id:d.id,...d.data()}))
-        .sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+    if(snap){
+      let docs = snap.docs.map(d=>({id:d.id,...d.data()}));
+      if(!ehAdmin) docs = docs.filter(r=>r.store===ST.user.store); // filtro de loja no cliente (evita índice composto)
+      docs = aplicarPeriodo(docs, per);                            // filtro fino por dia
+      historyCache = docs.sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
       renderHist();
-      return;
-    }
-
-    if(snap && snap.size === 0){
-      // Firebase conectou mas não tem dados ainda
-      listEl.innerHTML='<div class="empty-hist">Nenhum checklist encontrado no Firebase.<br><button onclick="loadHist()" style="margin-top:10px;background:var(--wm);color:var(--gd);border:none;border-radius:8px;padding:8px 16px;font-size:.8rem;cursor:pointer;">🔄 Tentar novamente</button></div>';
-      subEl.textContent='0 registros';
       return;
     }
   }
 
   // Firebase não disponível — usa localStorage como fallback
-  const local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+  let local = JSON.parse(localStorage.getItem('cb_hist')||'[]');
+  if(!ehAdmin) local = local.filter(r=>r.store===ST.user.store);
+  local = aplicarPeriodo(local, per);
   historyCache = local;
 
   if(local.length > 0){
@@ -3288,12 +3378,40 @@ async function loadHist(){
   } else {
     listEl.innerHTML=`
       <div class="empty-hist">
-        📶 Firebase não conectado e sem dados locais.<br>
-        <small style="color:var(--lt);display:block;margin-top:4px;">Verifique sua conexão com a internet.</small>
+        📶 Sem registros neste período (ou Firebase offline).<br>
+        <small style="color:var(--lt);display:block;margin-top:4px;">Toque em "Últimos 30 dias" ou "Todos" acima, ou verifique a internet.</small>
         <button onclick="reconectarFirebase()" style="margin-top:12px;background:var(--wm);color:var(--gd);border:none;border-radius:8px;padding:10px 18px;font-size:.82rem;cursor:pointer;font-family:inherit;">🔄 Reconectar e tentar novamente</button>
       </div>`;
-    subEl.textContent='Offline';
+    subEl.textContent='Sem registros';
   }
+}
+
+// Botões de período do histórico
+function renderPeriodoBar(){
+  const el=document.getElementById('hist-date-filters');
+  if(!el) return;
+  const per=ST.histPeriodo||'7';
+  const opts=[['ontem','Ontem'],['7','Últimos 7 dias'],['30','Últimos 30 dias'],['todos','Todos']];
+  el.innerHTML=opts.map(([v,txt])=>`<button class="hf${per===v?' on':''}" onclick="setHistPeriodo('${v}')">${txt}</button>`).join('');
+}
+
+function setHistPeriodo(v){ ST.histPeriodo=v; loadHist(); }
+
+// Filtro fino por dia, no cliente
+function aplicarPeriodo(docs, per){
+  if(per==='todos') return docs;
+  if(per==='ontem'){
+    const ontemStr=new Date(Date.now()-86400000).toLocaleDateString('pt-BR');
+    return docs.filter(r=>r.dateStr===ontemStr);
+  }
+  const dias = per==='30'?30:7;
+  const corte = Date.now() - dias*86400000;
+  return docs.filter(r=>{
+    const t = r.ts ? Date.parse(r.ts) : NaN;
+    if(!isNaN(t)) return t>=corte;
+    if(r.dateStr){ const p=r.dateStr.split('/'); const d=new Date(+p[2],+p[1]-1,+p[0]); return d.getTime()>=corte; }
+    return true;
+  });
 }
 
 async function reconectarFirebase(){
@@ -3378,6 +3496,111 @@ function editarChecklist(fbId,i){
 // ═══════════════════════════════════════════════
 //  PAINEL DO DONO
 // ═══════════════════════════════════════════════
+// Detecta item "crítico" pelo mesmo critério visual do app (texto em destaque)
+function ehItemCritico(t){
+  return /(PROIBIDO|OBRIGATÓRIO|RESPONSABILIDADE|IMEDIATAMENTE|DESLIGAR O GÁS|NENHUM|OBRIGAÇÃO|LIGAR IMEDIATAMENTE)/.test(t||'');
+}
+
+// Monta o texto do relatório consolidado de UMA loja a partir dos checklists do dia
+function montarRelatorioLoja(cls, nome, hoje){
+  cls=cls.slice().sort((a,b)=>(a.ts||'').localeCompare(b.ts||''));
+  const totalCL=cls.length;
+  const mediaPct=Math.round(cls.reduce((a,r)=>a+r.pct,0)/totalCL);
+
+  let msg=`📋 *RELATÓRIO DO DIA*\n`;
+  msg+=`🏪 *${(nome||'').toUpperCase()}*\n`;
+  msg+=`${getNomeEmpresa()} · ${hoje}\n`;
+  msg+=`━━━━━━━━━━━━━━━\n`;
+  msg+=`✅ ${totalCL} checklist(s) · média ${mediaPct}%\n\n`;
+
+  let totalCriticos=0;
+  cls.forEach(r=>{
+    const naoFeitos=(r.itensList||[]).filter(i=>!i.done);
+    const criticos=naoFeitos.filter(i=>ehItemCritico(i.text));
+    const normais=naoFeitos.filter(i=>!ehItemCritico(i.text));
+    const emoji=r.pct>=90?'🟢':r.pct>=70?'🟡':r.pct>=60?'🟠':'🔴';
+
+    msg+=`${emoji} *${r.typeName}* — ${r.pct}% (${r.operator}, ${r.timeStr})\n`;
+    if(naoFeitos.length===0){
+      msg+=`   ✓ Tudo concluído\n`;
+    } else {
+      criticos.forEach(i=>{ totalCriticos++; msg+=`   🚨 ${i.text.substring(0,75)}${i.obs?' — '+i.obs.substring(0,40):''}\n`; });
+      if(normais.length){
+        msg+=`   ⚠️ Pendentes (${normais.length}): `+normais.slice(0,6).map(i=>i.text.substring(0,38)).join('; ');
+        if(normais.length>6) msg+=` ...+${normais.length-6}`;
+        msg+=`\n`;
+      }
+    }
+    msg+=`\n`;
+  });
+
+  msg+= totalCriticos
+    ? `🚨 *${totalCriticos} item(ns) crítico(s) não feito(s) no dia*\n`
+    : `✅ Nenhum item crítico pendente hoje.\n`;
+  msg+=`\n_Relatório consolidado do dia · Gestão_`;
+
+  if(msg.length>3500) msg=msg.substring(0,3500)+'\n_...relatório truncado_';
+  return msg;
+}
+
+// BOTÃO (Painel): envia um relatório por loja com todos os checklists do dia
+async function enviarRelatorioDiaChecklists(){
+  const btn=document.getElementById('btn-rel-dia-cl');
+  const txtBtn='📲 Enviar relatório do dia (checklists) no WhatsApp';
+  if(btn){btn.disabled=true;btn.textContent='⏳ Gerando relatório...';}
+
+  const config=getZApiConfig();
+  if(!(config.ativo!==false && config.destinatarios && config.destinatarios.length>0)){
+    if(btn){btn.disabled=false;btn.textContent=txtBtn;}
+    toast('⚠️ Configure os destinatários do Z-API primeiro (Admin).');
+    return;
+  }
+
+  if(!historyCache.length) await loadHistSilent();
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const doDia=historyCache.filter(r=>r.dateStr===hoje);
+
+  if(!doDia.length){
+    if(btn){btn.disabled=false;btn.textContent=txtBtn;}
+    toast('Nenhum checklist registrado hoje.');
+    return;
+  }
+
+  const lojas={};
+  doDia.forEach(r=>{
+    if(!lojas[r.store]) lojas[r.store]={nome:r.storeName||STORES[r.store]||r.store, cls:[]};
+    lojas[r.store].cls.push(r);
+  });
+
+  let enviados=0;
+  for(const data of Object.values(lojas)){
+    const msg=montarRelatorioLoja(data.cls, data.nome, hoje);
+    try{ await enviarZApi(msg, null); enviados++; }
+    catch(e){ console.warn('Erro relatório do dia:', e.message); }
+  }
+
+  if(btn){btn.disabled=false;btn.textContent=txtBtn;}
+  toast(`✅ Relatório do dia enviado (${enviados} loja(s)).`);
+}
+
+// AUTOMÁTICO: dispara o relatório de UMA loja (usado no Fechamento Atendimento)
+async function enviarRelatorioLojaAuto(storeKey, recAtual){
+  const config=getZApiConfig();
+  if(!(config.ativo!==false && config.destinatarios && config.destinatarios.length>0)) return;
+
+  await loadHistSilent();
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  let cls=historyCache.filter(r=>r.dateStr===hoje && r.store===storeKey);
+  // Garante que o checklist recém-enviado entre no relatório (caso o Firebase ainda não reflita)
+  if(recAtual && !cls.some(r=>r.ts===recAtual.ts)) cls=[...cls, recAtual];
+  if(!cls.length) return;
+
+  const nome=(recAtual && recAtual.storeName) || STORES[storeKey] || storeKey;
+  const msg=montarRelatorioLoja(cls, nome, hoje);
+  try{ await enviarZApi(msg, null); console.log('✅ Relatório automático enviado:', nome); }
+  catch(e){ console.warn('Relatório auto:', e.message); }
+}
+
 async function loadPainel(){
   document.getElementById('painel-data').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' — '+new Date().toLocaleDateString('pt-BR');
   if(!historyCache.length) await loadHistSilent();
@@ -7228,11 +7451,13 @@ window.checkQty=checkQty;
 window.sendCL=sendCL;
 window.compressPhoto=compressPhoto;
 window.setHistFilter=setHistFilter;
+window.setHistPeriodo=setHistPeriodo;
 window.toggleHist=toggleHist;
 window.editarChecklist=editarChecklist;
 window.loadHist=loadHist;
 window.reconectarFirebase=reconectarFirebase;
 window.loadPainel=loadPainel;
+window.enviarRelatorioDiaChecklists=enviarRelatorioDiaChecklists;
 window.loadScore=loadScore;
 window.gerarRelatorioIA=gerarRelatorioIA;
 window.copiarRelatorio=copiarRelatorio;
