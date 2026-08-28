@@ -2881,15 +2881,21 @@ async function sendCL(){
     let fbId=null;
     if(fbReady && db){
       try{
-        // Protege contra limite de 1MB do Firebase: se o doc for muito grande,
-        // reduz as fotos guardadas (mantém no máximo 1 foto por item)
+        // Protege contra o limite de 1MB do Firestore: reduz fotos até o documento caber,
+        // SEM perder os dados (contagens, itens feitos, observações sempre são salvos).
         let recParaSalvar = rec;
-        const tamanho = JSON.stringify(rec).length;
-        if(tamanho > 900000){ // perto de 1MB
-          console.warn('Checklist grande ('+Math.round(tamanho/1024)+'KB), reduzindo fotos');
-          recParaSalvar = {...rec,
-            itensList: rec.itensList.map(i=>({...i, photos: (i.photos||[]).slice(0,1)}))
-          };
+        const LIMITE = 950000; // ~950KB (o limite do Firestore é 1MB)
+        if(JSON.stringify(rec).length > LIMITE){
+          console.warn('Checklist grande, reduzindo fotos para caber no Firestore');
+          recParaSalvar = {...rec, itensList: rec.itensList.map(i=>({...i, photos:(i.photos||[]).slice()})), fotosReduzidas:true};
+          // 1) no máximo 1 foto por item
+          recParaSalvar.itensList.forEach(i=>{ if(i.photos && i.photos.length>1) i.photos=i.photos.slice(0,1); });
+          // 2) se ainda passar, remove fotos item a item (do fim pro começo) até caber
+          for(let k=recParaSalvar.itensList.length-1; k>=0 && JSON.stringify(recParaSalvar).length>LIMITE; k--){
+            if(recParaSalvar.itensList[k].photos && recParaSalvar.itensList[k].photos.length){
+              recParaSalvar.itensList[k].photos=[];
+            }
+          }
         }
         const fbPromise = ST.editingId
           ? updateDoc(doc(db,'checklists',ST.editingId),recParaSalvar).then(()=>ST.editingId)
